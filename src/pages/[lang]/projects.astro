@@ -1,10 +1,7 @@
 ---
 import { getLocaleStaticPaths } from '../_shared/utils';
-import ProjectsPage from '../projects.astro';
+
 export const getStaticPaths = getLocaleStaticPaths;
-interface Props {
-  locale: string;
-}
-const { locale } = Astro.props;
+
+return Astro.redirect(`/${Astro.params.lang}/blogs`, 301);
 ---
-<ProjectsPage locale={locale} />

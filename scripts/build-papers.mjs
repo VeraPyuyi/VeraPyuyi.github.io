@@ -19,6 +19,11 @@ function run(command, args, cwd) {
   if (result.status !== 0) throw new Error(`${command} failed with exit code ${result.status ?? 'unknown'}`);
 }
 
+function validateGeneratedHtml(slug, html) {
+  if (!/<h[1-6][\s>]/i.test(html)) throw new Error(`${slug}: generated HTML has no headings`);
+  if (!/<math[\s>]/i.test(html)) throw new Error(`${slug}: generated HTML has no MathML`);
+}
+
 const hasPandoc = hasCommand('pandoc');
 const hasTectonic = hasCommand('tectonic');
 if (strict && (!hasPandoc || !hasTectonic)) {
@@ -33,6 +38,8 @@ for (const entry of readdirSync(papersRoot, { withFileTypes: true }).filter((ite
   const meta = parse(readFileSync(configPath, 'utf8'));
   const texEntry = meta.texEntry;
   if (!texEntry || !existsSync(join(paperDir, texEntry))) throw new Error(`${slug}: invalid texEntry`);
+  const htmlEntry = meta.htmlEntry ?? texEntry;
+  if (!existsSync(join(paperDir, htmlEntry))) throw new Error(`${slug}: invalid htmlEntry`);
   if (meta.bibliography && !existsSync(join(paperDir, meta.bibliography))) {
     throw new Error(`${slug}: missing bibliography ${meta.bibliography}`);
   }
@@ -41,7 +48,7 @@ for (const entry of readdirSync(papersRoot, { withFileTypes: true }).filter((ite
   mkdirSync(publicDir, { recursive: true });
 
   if (hasPandoc) {
-    const args = [texEntry, '--from=latex', '--to=html5', '--standalone', '--toc', '--mathml'];
+    const args = [htmlEntry, '--from=latex+raw_tex', '--to=html5', '--standalone', '--toc', '--mathml'];
     if (meta.bibliography) args.push('--citeproc', `--bibliography=${meta.bibliography}`);
     args.push('--output=generated.html');
     run('pandoc', args, paperDir);
@@ -49,9 +56,12 @@ for (const entry of readdirSync(papersRoot, { withFileTypes: true }).filter((ite
     const standalone = readFileSync(generatedPath, 'utf8');
     const body = standalone.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1]?.trim() ?? standalone;
     const normalized = body.replaceAll('../../../../public/og.png', '/og.png');
+    validateGeneratedHtml(slug, normalized);
     writeFileSync(generatedPath, normalized);
-  } else if (!existsSync(join(paperDir, 'generated.html'))) {
-    throw new Error(`${slug}: pandoc unavailable and no checked-in generated.html fallback exists`);
+  } else if (existsSync(join(paperDir, 'generated.html'))) {
+    validateGeneratedHtml(slug, readFileSync(join(paperDir, 'generated.html'), 'utf8'));
+  } else {
+    console.warn(`[papers] ${slug}: HTML will be produced by the strict CI build.`);
   }
 
   if (hasTectonic) {

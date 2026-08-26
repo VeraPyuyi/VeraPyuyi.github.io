@@ -25,9 +25,16 @@ const html = getPaperHtml(paper);
     <p class="text-muted-foreground">{paper.authors.join(', ')} · <time datetime={paper.date}>{paper.date}</time></p>
     <div class="flex flex-wrap gap-3">
       <a class="bg-primary inline-flex items-center gap-2 rounded-full px-4 py-2 font-semibold text-white shadow-sm hover:opacity-90" href={paper.pdfPath} download><Icon name="ri:file-pdf-2-line" />PDF</a>
-      <a class="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 font-semibold hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10" href={`https://github.com/VeraPyuyi/VeraPyuyi.github.io/tree/main/src/content/papers/${paper.id}`} target="_blank" rel="noreferrer"><Icon name="ri:code-s-slash-line" />TeX</a>
+      <a class="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 font-semibold hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10" href={paper.arxivUrl} target="_blank" rel="noopener noreferrer"><Icon name="ri:external-link-line" />arXiv {paper.arxivVersion}</a>
+      <a class="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 font-semibold hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10" href={paper.sourceUrl} target="_blank" rel="noopener noreferrer"><Icon name="ri:file-code-line" />{en ? 'TeX source' : 'TeX 源码'}</a>
+      <a class="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 font-semibold hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10" href={`https://github.com/VeraPyuyi/VeraPyuyi.github.io/tree/main/src/content/papers/${paper.id}`} target="_blank" rel="noopener noreferrer"><Icon name="ri:github-fill" />GitHub</a>
+      <a class="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 font-semibold hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10" href={paper.licenseUrl} target="_blank" rel="noopener noreferrer"><Icon name="ri:copyright-line" />{paper.license}</a>
     </div>
   </div>
+  <p class="text-muted-foreground text-sm">
+    {en ? 'Source locked to' : '源码版本锁定为'} <a class="text-primary hover:underline" href={paper.arxivUrl} target="_blank" rel="noopener noreferrer">arXiv:{paper.arxivId}{paper.arxivVersion}</a>
+    · {en ? 'Article source license' : '论文源码许可'}: <a class="text-primary hover:underline" href={paper.licenseUrl} target="_blank" rel="noopener noreferrer">{paper.license}</a>
+  </p>
   {en && !paper.abstractEn && <p class="rounded-2xl bg-amber-100/70 p-4 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">This paper has no English translation yet. The original Chinese HTML is shown below.</p>}
   <article class="paper-content prose dark:prose-invert max-w-none" data-pagefind-body set:html={html}></article>
   {paper.comments && <Comment contentId={`paper:${paper.id}`} />}

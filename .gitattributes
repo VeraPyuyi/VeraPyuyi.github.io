@@ -1,0 +1,6 @@
+# Keep imported arXiv source packages byte-for-byte stable. Their upstream
+# formatting intentionally includes trailing spaces in a few TeX/class lines.
+src/content/papers/**/*.tex -text whitespace=-trailing-space
+src/content/papers/**/*.bib -text whitespace=-trailing-space
+src/content/papers/**/*.cls -text whitespace=-trailing-space
+src/content/papers/**/00README.json -text whitespace=-trailing-space

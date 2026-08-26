@@ -60,16 +60,16 @@ const blogCollection = defineCollection({
   }) satisfies z.ZodType<BlogSchema, BlogSchemaInput>,
 });
 
-const projectCollection = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/projects' }),
+const blogDirectoryCollection = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blogs' }),
   schema: z.object({
     name: z.string(),
     description: z.string(),
     status: z.enum(['idea', 'active', 'maintained', 'archived']).default('active'),
     tags: z.array(z.string()).default([]),
     cover: z.string().optional(),
-    repository: z.url().optional(),
-    demo: z.url().optional(),
+    source: z.url().optional(),
+    url: z.url().optional(),
     order: z.number().default(0),
     language: z.enum(['zh', 'en']).default('zh'),
   }),
@@ -113,7 +113,7 @@ const albumCollection = defineCollection({
 
 export const collections = {
   blog: blogCollection,
-  projects: projectCollection,
+  blogs: blogDirectoryCollection,
   moments: momentCollection,
   albums: albumCollection,
 };

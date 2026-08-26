@@ -9,7 +9,7 @@ comments: false
 
 ## 你好，这里是 Pyuyi
 
-这是一个把技术、研究、ACG 和生活放在一起的个人站。我会在这里写博客、发布 LaTeX 论文与笔记、整理项目，也会留下照片和日常瞬间。
+这是一个把技术、研究、ACG 和生活放在一起的个人站。我会在这里写文章、发布 LaTeX 论文、整理博客站点，也会留下照片和日常瞬间。
 
 > 把好奇心写进星光里。
 
@@ -26,4 +26,4 @@ Hi, I am Pyuyi. This is my personal homepage, writing space, and small laborator
 
 ### 联系
 
-可以通过 [GitHub](https://github.com/VeraPyuyi) 或站内[留言板](/guestbook/) 找到我。
+可以通过 [GitHub](https://github.com/VeraPyuyi)、[Google Scholar](https://scholar.google.com/citations?user=Id3xCE8AAAAJ&hl=zh-CN) 或站内[留言板](/guestbook/) 找到我。

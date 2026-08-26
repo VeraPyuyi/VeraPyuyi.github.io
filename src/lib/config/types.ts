@@ -95,6 +95,7 @@ export type ResolvedSiteConfig = Omit<SiteBasicConfig, 'url'> & {
 // =============================================================================
 
 export interface SocialPlatform {
+  label?: string;
   url: string;
   icon: string;
   color: string;

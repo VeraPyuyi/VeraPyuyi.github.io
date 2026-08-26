@@ -2,15 +2,15 @@
 
 ![站点原创主视觉](public/og.png)
 
-这是 `VeraPyuyi.github.io` 的站点源码：一个默认中文、支持英文界面的 Astro 个人主页、博客与研究笔记站。主题基于 astro-koharu，上游版本与许可说明见 [UPSTREAM.md](./UPSTREAM.md)。
+这是 `VeraPyuyi.github.io` 的站点源码：一个默认中文、支持英文界面的 Astro 个人主页、文章、博客与论文站。主题基于 astro-koharu，上游版本与许可说明见 [UPSTREAM.md](./UPSTREAM.md)。
 
 ## 已实现的功能
 
 - Markdown/MDX、KaTeX、Mermaid、代码高亮、目录、Pagefind 搜索、RSS 与站点地图。
 - `src/content/papers/<slug>/` 论文流程：Pandoc 转 HTML/MathML，Tectonic 编译 PDF，任一严格构建失败即中止发布。
-- 项目、照片墙、相册灯箱、生活动态、留言板、友链和可选 Bangumi 页。
+- 独立博客目录、照片墙、相册灯箱、生活动态、留言板、友链和可选 Bangumi 页。
 - Giscus 的 GitHub 登录留言与稳定内容 ID 映射；GoatCounter 的每页公开访问次数。
-- Pages CMS 可视化编辑文章、项目、动态、相册、照片和站点配置。
+- Pages CMS 可视化编辑文章、博客、动态、相册、照片和站点配置。
 - GitHub Actions 按“校验 → 论文编译 → 图片优化 → Astro/Pagefind 构建 → 输出链接检查 → Pages 发布”执行。
 
 ## 本地开发
@@ -20,7 +20,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-本地没有 Pandoc/Tectonic 时，会使用已检入的论文 HTML 预览；GitHub Actions 始终使用 `--strict` 重新生成 HTML/PDF。
+本地没有 Pandoc/Tectonic 时，论文页会显示构建占位提示；GitHub Actions 始终使用 `--strict` 生成完整 HTML/MathML 与 PDF。
 
 ## 上线前的公开配置
 

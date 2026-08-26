@@ -9,7 +9,7 @@ import { capitalize } from 'es-toolkit';
 <div class="mt-2 grid grid-cols-3 gap-2">
   {
     Object.entries(socialConfig).map(([key, config]) => {
-      const { url, icon, color } = config;
+      const { label = capitalize(key), url, icon, color } = config;
       return (
         <div>
           <a
@@ -19,11 +19,12 @@ import { capitalize } from 'es-toolkit';
             style={color ? `--link-color: ${color}` : ''}
             data-platform={key}
             href={url}
-            title={capitalize(key)}
+            title={label}
             data-tooltip-interactive="false"
             data-tooltip-placement="top"
-            aria-label={capitalize(key)}
+            aria-label={label}
             target="_blank"
+            rel="noopener noreferrer"
            >
             <Icon name={icon} class="inline-block size-6" />
             <span class="absolute inset-0 -z-10 -translate-x-full translate-y-full rounded-xl transition-transform duration-300 group-hover:translate-x-0 group-hover:translate-y-0" />

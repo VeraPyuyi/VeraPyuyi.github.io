@@ -1,0 +1,25 @@
+title: 栅栏与循环栅栏序多项式的 Bernstein 转移与贪心记录
+titleEn: Bernstein Transfers and Greedy Records for Fence and Circular-Fence Order Polynomials
+abstract: >-
+  对由路径方向确定的栅栏偏序，本文在对称群上定义贪心的从右向左记录统计，并通过连续阈值递推与端点细化保序映射之间的 Bernstein 基转移，证明其生成函数等于栅栏序多项式的阶乘倍数。文章给出有限形式的直接递归双射，按记录集合、方向和终值细化各纤维，并将其解释为装饰端点路径以及覆盖图为毛毛虫树的记录偏序之带标记线性扩张。对于任意非常值的循环方向，文中还构造循环记录统计，得到循环栅栏序多项式的对应公式并证明相关猜想。
+abstractEn: >-
+  For the fence poset associated with an orientation of a path, we define a greedy right-to-left record statistic on the symmetric group and prove that its generating function equals the factorial-scaled order polynomial. The proof uses a Bernstein-basis transfer between a continuous threshold recurrence and endpoint-refined order-preserving maps. A finite transfer gives a direct recursive bijection, while refinements by record set, direction, and terminal value identify fibers with decorated endpoint paths and pointed linear extensions of record posets. A cyclic record statistic gives the corresponding formula for every nonconstant orientation of a cycle and resolves the circular-fence conjecture discussed in the paper.
+authors:
+  - Pyuyi Chufeng Huang
+date: 2026-07-31
+keywords:
+  - Order polynomials
+  - Fence posets
+  - Permutation statistics
+  - Bernstein basis
+  - Explicit bijections
+  - Circular fences
+texEntry: Bernstein_Transfers_EJC__1_.tex
+htmlEntry: Bernstein_Transfers_EJC__1_.tex
+cover: /og.png
+comments: true
+arxivId: '2607.22767'
+arxivVersion: v2
+sourceUrl: https://arxiv.org/src/2607.22767v2
+license: CC BY 4.0
+licenseUrl: https://creativecommons.org/licenses/by/4.0/

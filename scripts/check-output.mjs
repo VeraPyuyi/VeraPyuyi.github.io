@@ -42,13 +42,24 @@ const required = [
   'index.html',
   'posts/index.html',
   'papers/index.html',
+  'blogs/index.html',
   'projects/index.html',
   'gallery/index.html',
   'moments/index.html',
   'guestbook/index.html',
   'en/index.html',
+  'en/blogs/index.html',
+  'en/projects/index.html',
   '404.html',
 ];
+
+const paperSlugs = readdirSync(join(root, 'src/content/papers'), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name);
+for (const slug of paperSlugs) {
+  required.push(`papers/${slug}/index.html`, `en/papers/${slug}/index.html`);
+  if (process.env.CI) required.push(`papers/${slug}/paper.pdf`);
+}
 for (const path of required) if (!existsSync(join(dist, path))) failures.push(`missing required output: ${path}`);
 
 if (failures.length) throw new Error(`Broken output links:\n${[...new Set(failures)].join('\n')}`);

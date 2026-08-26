@@ -1,0 +1,26 @@
+title: 循环装饰带状复形：切割余积与交替栅栏正性
+titleEn: 'Cycle-Decorated Ribbon Complexes: Cut Coproducts and Alternating-Fence Positivity'
+abstract: >-
+  本文从一个普通置换与一个带根置换的循环枚举量出发，定义非交换对称函数带状基的二变量特化，并将其实现为对称群等变有序集合分拆复形的移位双分次 Euler 特征。当组合至多含一个奇数部分时，每个整体装饰确定一组同步分解切口，其纤维是由该切口集索引的经典带状复形，由此得到各双分次同调表示的显式非负带状展开。文章还构造与纤维分解相容的切割余积，并证明交替栅栏特化的系数非负性、同调支撑范围与零缺陷边界公式。
+abstractEn: >-
+  We define a two-variable specialization of the ribbon basis of noncommutative symmetric functions from cycle enumerators of an ordinary permutation and a rooted permutation, with reflection length recorded by the second variable. Its factorial multiple is realized as the shifted bigraded Euler characteristic of an equivariant ordered-set-partition complex. Total decorations determine simultaneous factorization cuts and classical ribbon-complex fibers, yielding explicit nonnegative ribbon expansions. A compatible cut coproduct is constructed, and the alternating-fence specialization is shown to have nonnegative coefficients together with controlled homological support and explicit defect-zero formulas.
+authors:
+  - Pyuyi Chufeng Huang
+date: 2026-08-15
+keywords:
+  - Noncommutative symmetric functions
+  - Ribbon Schur functions
+  - Equivariant homology
+  - Cut coproducts
+  - Alternating fences
+  - Order polynomials
+texEntry: main_jca_focused.tex
+htmlEntry: main_jca_focused.tex
+bibliography: references_jca_focused.bib
+cover: /og.png
+comments: true
+arxivId: '2608.07599'
+arxivVersion: v2
+sourceUrl: https://arxiv.org/src/2608.07599v2
+license: CC BY 4.0
+licenseUrl: https://creativecommons.org/licenses/by/4.0/

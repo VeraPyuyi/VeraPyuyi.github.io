@@ -1,0 +1,26 @@
+title: 离散时间庞特里亚金系统中终端收益扰动的时域一致敏感性与衰减
+titleEn: Horizon-Uniform Sensitivity and Decay of Terminal Reward Perturbations in Discrete-Time Pontryagin Systems
+abstract: >-
+  本文研究稳态极值附近有限时域离散时间庞特里亚金系统的局部驻定解。在控制驻定方程正则、约化状态—协态映射具有双曲性，且端点条件相对于稳定与不稳定子空间满足缩放横截条件时，线性化边值问题具有与时域长度无关的 Green 估计。借助加权范数中的压缩映射，文章证明了统一邻域内的存在唯一性、Lipschitz 估计与逐点二次余项，并给出可计算的先验及后验存在性判据。对于图边界条件，终端收益扰动对初始控制及驻定目标初始状态梯度的影响按指数速度衰减；在线性二次系统中，还得到 Riccati 矩阵与初始反馈增益的指数收敛率。
+abstractEn: >-
+  We study local stationary solutions of finite-horizon discrete-time Pontryagin systems near a steady extremal. Under regular stationarity, hyperbolicity of the reduced state-costate map, and scaled transversality of the endpoint conditions, the linearized boundary-value problem has a horizon-uniform Green estimate. A weighted-norm contraction argument gives existence, uniqueness, uniform Lipschitz estimates, and pointwise quadratic remainders. For graph boundary conditions, terminal reward perturbations have exponentially small effects on the initial control and the stationary objective gradient; the linear-quadratic case yields exponential convergence of Riccati matrices and initial feedback gains.
+authors:
+  - Pyuyi Chufeng Huang
+  - Zikang Song
+date: 2026-08-17
+keywords:
+  - Optimal control
+  - Pontryagin systems
+  - Sensitivity analysis
+  - Exponential dichotomies
+  - Dynamic programming
+  - Symplectic methods
+texEntry: Automatica_Bellman_Pontryagin.tex
+htmlEntry: Automatica_Bellman_Pontryagin.tex
+cover: /og.png
+comments: true
+arxivId: '2606.17762'
+arxivVersion: v3
+sourceUrl: https://arxiv.org/src/2606.17762v3
+license: CC BY 4.0
+licenseUrl: https://creativecommons.org/licenses/by/4.0/

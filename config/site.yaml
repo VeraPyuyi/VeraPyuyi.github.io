@@ -120,6 +120,7 @@ featuredSeries: []
 # 社交链接 - 显示在页脚和个人信息区域
 # =============================================================================
 # 字段说明：
+#   label: (可选) 平台的可访问名称；未填写时使用配置键名
 #   url: 链接地址（邮箱需加 mailto: 前缀）
 #   icon: Iconify 图标标识，格式为 "集合:图标名"
 #         图标查询：https://icon-sets.iconify.design/ri/
@@ -129,10 +130,17 @@ featuredSeries: []
 # -----------------------------------------------------------------------------
 social:
   github:
+    label: GitHub
     url: https://github.com/VeraPyuyi
     icon: ri:github-fill # Remix Icon 的 GitHub 图标
     color: '#191717' # (可选) 图标颜色
+  scholar:
+    label: Google Scholar
+    url: https://scholar.google.com/citations?user=Id3xCE8AAAAJ&hl=zh-CN
+    icon: fa6-solid:graduation-cap
+    color: '#4285f4'
   rss:
+    label: RSS
     url: /rss.xml # 站内 RSS 订阅地址
     icon: ri:rss-line
     color: '#ff6600'
@@ -333,7 +341,7 @@ navigation:
     nameKey: nav.home # i18n 翻译 key
     path: / # 链接路径
     icon: ri:home-heart-fill # 图标
-  - name: 博客 # 有子菜单时，path 可省略
+  - name: 文章 # 有子菜单时，path 可省略
     nameKey: nav.posts
     icon: ri:quill-pen-ai-fill
     children: # 子菜单列表
@@ -353,14 +361,14 @@ navigation:
         nameKey: nav.archives
         path: /archives
         icon: ri:archive-2-fill
-  - name: 论文与笔记
+  - name: 论文
     nameKey: nav.papers
     path: /papers
     icon: ri:book-open-fill
-  - name: 项目
-    nameKey: nav.projects
-    path: /projects
-    icon: ri:code-box-fill
+  - name: 博客
+    nameKey: nav.blogs
+    path: /blogs
+    icon: ri:global-line
   - name: 生活
     nameKey: nav.life
     icon: ri:sparkling-fill

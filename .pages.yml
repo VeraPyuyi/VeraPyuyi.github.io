@@ -9,7 +9,7 @@ media:
 
 content:
   - name: posts
-    label: 博客文章
+    label: 文章
     type: collection
     path: src/content/blog
     filename:
@@ -45,10 +45,10 @@ content:
         type: rich-text
         options: { media: images, path: blog, format: markdown, switcher: true, rename: safe }
 
-  - name: projects
-    label: 项目
+  - name: blogs
+    label: 博客
     type: collection
-    path: src/content/projects
+    path: src/content/blogs
     filename: "{name}.md"
     view:
       fields: [name, status, order]
@@ -66,9 +66,9 @@ content:
       - name: cover
         label: 封面
         type: image
-        options: { media: images, path: projects, rename: safe }
-      - { name: repository, label: 源码地址, type: string }
-      - { name: demo, label: 演示或子站地址, type: string }
+        options: { media: images, path: blogs, rename: safe }
+      - { name: source, label: 源码地址, type: string }
+      - { name: url, label: 博客地址, type: string }
       - { name: order, label: 排序, type: number }
       - { name: language, label: 语言, type: select, options: { values: [zh, en] } }
       - { name: body, label: 详情, type: rich-text, options: { format: markdown, switcher: true } }
