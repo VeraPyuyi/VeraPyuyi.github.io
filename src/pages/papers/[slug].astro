@@ -1,0 +1,41 @@
+---
+import { Icon } from 'astro-icon/components';
+import { Comment } from '@/components/comment';
+import PageChrome from '@/components/personal/PageChrome.astro';
+import { defaultLocale } from '@/i18n';
+import { getPaper, getPaperHtml } from '@/lib/papers';
+import { paperRoute } from '../_shared/routes';
+
+export const getStaticPaths = paperRoute.root;
+interface Props {
+  paperId: string;
+  locale?: string;
+}
+const { paperId, locale = defaultLocale } = Astro.props;
+const paper = getPaper(paperId);
+if (!paper) throw new Error(`Paper not found: ${paperId}`);
+const en = locale === 'en';
+const title = en && paper.titleEn ? paper.titleEn : paper.title;
+const description = en && paper.abstractEn ? paper.abstractEn : paper.abstract;
+const html = getPaperHtml(paper);
+---
+
+<PageChrome locale={locale} title={title} description={description}>
+  <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/55 p-4 text-sm dark:border-white/10 dark:bg-white/5">
+    <p class="text-muted-foreground">{paper.authors.join(', ')} · <time datetime={paper.date}>{paper.date}</time></p>
+    <div class="flex flex-wrap gap-3">
+      <a class="bg-primary inline-flex items-center gap-2 rounded-full px-4 py-2 font-semibold text-white shadow-sm hover:opacity-90" href={paper.pdfPath} download><Icon name="ri:file-pdf-2-line" />PDF</a>
+      <a class="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 font-semibold hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10" href={`https://github.com/VeraPyuyi/VeraPyuyi.github.io/tree/main/src/content/papers/${paper.id}`} target="_blank" rel="noreferrer"><Icon name="ri:code-s-slash-line" />TeX</a>
+    </div>
+  </div>
+  {en && !paper.abstractEn && <p class="rounded-2xl bg-amber-100/70 p-4 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">This paper has no English translation yet. The original Chinese HTML is shown below.</p>}
+  <article class="paper-content prose dark:prose-invert max-w-none" data-pagefind-body set:html={html}></article>
+  {paper.comments && <Comment contentId={`paper:${paper.id}`} />}
+</PageChrome>
+
+<style is:global>
+  .paper-content #TOC { margin: 1.5rem 0 2.5rem; border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); border-radius: 1.25rem; padding: 1.25rem 1.5rem; background: color-mix(in srgb, var(--primary) 5%, transparent); }
+  .paper-content math[display="block"] { overflow-x: auto; padding: 1rem 0; font-size: 1.2rem; }
+  .paper-content table { display: table; width: 100%; }
+  .paper-content figure img { border-radius: 1.25rem; }
+</style>

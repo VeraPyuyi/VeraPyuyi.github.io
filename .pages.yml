@@ -1,0 +1,154 @@
+media:
+  - name: images
+    label: 公开图片
+    input: public/uploads
+    output: /uploads
+    rename: safe
+    categories: [image]
+    extensions: [jpg, jpeg, png, webp, avif]
+
+content:
+  - name: posts
+    label: 博客文章
+    type: collection
+    path: src/content/blog
+    filename:
+      template: "{year}-{month}-{day}-{title}.md"
+      field: create
+    view:
+      fields: [title, date, draft, sticky]
+      primary: title
+      sort: [date, title]
+      search: [title, description, tags]
+      default:
+        sort: date
+        order: desc
+    fields:
+      - { name: link, label: 稳定链接 ID, type: string, required: true, description: 例如 tech/my-first-post；发布后不要修改，以保持网址与留言不变 }
+      - { name: title, label: 标题, type: string, required: true }
+      - { name: description, label: 摘要, type: text, required: true }
+      - { name: date, label: 发布时间, type: date, required: true }
+      - { name: updated, label: 更新时间, type: date }
+      - name: cover
+        label: 封面
+        type: image
+        options: { media: images, path: blog, rename: safe }
+      - { name: tags, label: 标签, type: string, list: true }
+      - { name: categories, label: 分类, type: string, list: true }
+      - { name: draft, label: 草稿, type: boolean }
+      - { name: sticky, label: 置顶, type: boolean }
+      - { name: comments, label: 允许 GitHub 留言, type: boolean }
+      - { name: math, label: 启用数学公式, type: boolean }
+      - { name: catalog, label: 显示目录, type: boolean }
+      - name: body
+        label: 正文
+        type: rich-text
+        options: { media: images, path: blog, format: markdown, switcher: true, rename: safe }
+
+  - name: projects
+    label: 项目
+    type: collection
+    path: src/content/projects
+    filename: "{name}.md"
+    view:
+      fields: [name, status, order]
+      primary: name
+      sort: [order, name]
+    fields:
+      - { name: name, label: 名称, type: string, required: true }
+      - { name: description, label: 简介, type: text, required: true }
+      - name: status
+        label: 状态
+        type: select
+        options:
+          values: [idea, active, maintained, archived]
+      - { name: tags, label: 技术标签, type: string, list: true }
+      - name: cover
+        label: 封面
+        type: image
+        options: { media: images, path: projects, rename: safe }
+      - { name: repository, label: 源码地址, type: string }
+      - { name: demo, label: 演示或子站地址, type: string }
+      - { name: order, label: 排序, type: number }
+      - { name: language, label: 语言, type: select, options: { values: [zh, en] } }
+      - { name: body, label: 详情, type: rich-text, options: { format: markdown, switcher: true } }
+
+  - name: moments
+    label: 生活动态
+    type: collection
+    path: src/content/moments
+    filename: "{year}-{month}-{day}-{hour}-{minute}.md"
+    view:
+      fields: [date, location, draft]
+      sort: [date]
+      default: { sort: date, order: desc }
+    fields:
+      - { name: date, label: 时间, type: date, required: true }
+      - name: photos
+        label: 照片
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{alt} ({index})" }
+        fields:
+          - name: src
+            label: 图片
+            type: image
+            required: true
+            options: { media: images, path: moments, rename: safe }
+          - { name: alt, label: 替代文字, type: string, required: true }
+      - { name: location, label: 地点（可选）, type: string, description: 请勿填写精确位置或私密住址 }
+      - { name: language, label: 语言, type: select, options: { values: [zh, en] } }
+      - { name: draft, label: 草稿, type: boolean }
+      - { name: body, label: 正文, type: rich-text, required: true, options: { format: markdown, switcher: true } }
+
+  - name: albums
+    label: 相册
+    type: collection
+    path: src/content/albums
+    filename: "{name}.md"
+    view:
+      fields: [name, date]
+      primary: name
+      sort: [date, name]
+    fields:
+      - { name: name, label: 相册名, type: string, required: true }
+      - { name: description, label: 说明, type: text }
+      - name: cover
+        label: 封面
+        type: image
+        required: true
+        options: { media: images, path: albums, rename: safe }
+      - { name: date, label: 拍摄日期, type: date }
+      - { name: language, label: 语言, type: select, options: { values: [zh, en] } }
+      - name: photos
+        label: 照片
+        type: object
+        list:
+          min: 1
+          collapsible: { collapsed: true, summary: "{alt} ({index})" }
+        fields:
+          - name: src
+            label: 图片
+            type: image
+            required: true
+            options: { media: images, path: albums, rename: safe }
+          - { name: alt, label: 替代文字, type: string, required: true }
+          - { name: date, label: 拍摄日期, type: date }
+      - { name: body, label: 相册故事, type: rich-text, options: { format: markdown, switcher: true } }
+
+  - name: site
+    label: 站点与导航配置
+    type: file
+    path: config/site.yaml
+    format: code
+    operations: { create: false, rename: false, delete: false }
+
+settings:
+  content:
+    merge: true
+  commit:
+    templates:
+      create: "content: add {filename}"
+      update: "content: update {filename}"
+      delete: "content: remove {filename}"
+      rename: "content: rename {oldFilename} to {newFilename}"

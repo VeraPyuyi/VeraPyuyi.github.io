@@ -1,0 +1,15 @@
+title: 星光笔记：一个可复现的 LaTeX 发布样例
+titleEn: "Starlight Notes: A Reproducible LaTeX Publishing Example"
+abstract: 这个样例验证公式、图片、表格、引用和参考文献能够同时输出为语义化 HTML 与 PDF。
+abstractEn: This example verifies a dual HTML/PDF workflow for equations, figures, tables, citations, and references.
+authors:
+  - Pyuyi
+date: 2026-08-26
+keywords:
+  - LaTeX
+  - Pandoc
+  - Tectonic
+texEntry: main.tex
+bibliography: references.bib
+cover: /og.png
+comments: true

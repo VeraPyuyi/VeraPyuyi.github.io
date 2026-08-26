@@ -1,0 +1,39 @@
+---
+const code = import.meta.env.PUBLIC_GOATCOUNTER_CODE?.trim() ?? '';
+---
+
+<p class="text-muted-foreground flex items-center gap-1.5 text-xs" data-page-view-row data-counter-code={code}>
+  <span aria-hidden="true">✦</span>
+  <span>{Astro.url.pathname.startsWith('/en/') ? 'Views' : '访问'}</span>
+  <span data-page-view-count aria-live="polite">—</span>
+  <span>{Astro.url.pathname.startsWith('/en/') ? 'times' : '次'}</span>
+</p>
+
+<script>
+  function installPageCounters() {
+    document.querySelectorAll<HTMLElement>('[data-page-view-row]:not([data-ready])').forEach((row) => {
+      row.dataset.ready = 'true';
+      const code = row.dataset.counterCode;
+      const target = row.querySelector<HTMLElement>('[data-page-view-count]');
+      if (!code || !target) return;
+      const rawPath = window.location.pathname.replace(/^\/en(?=\/|$)/, '') || '/';
+      const path = rawPath.endsWith('/') && rawPath !== '/' ? rawPath.slice(0, -1) : rawPath;
+      const url = `https://${code}.goatcounter.com/counter/${encodeURIComponent(path)}.json`;
+      fetch(url)
+        .then((response) => {
+          if (!response.ok) throw new Error(String(response.status));
+          return response.json();
+        })
+        .then((data: { count?: string | number; count_unique?: string | number }) => {
+          const value = data.count ?? data.count_unique;
+          if (value !== undefined) target.textContent = String(value);
+        })
+        .catch(() => {
+          target.textContent = '—';
+        });
+    });
+  }
+
+  installPageCounters();
+  document.addEventListener('astro:page-load', installPageCounters);
+</script>

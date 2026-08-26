@@ -1,0 +1,10 @@
+---
+import Giscus from './Giscus';
+
+interface Props {
+  contentId?: string;
+}
+const { contentId } = Astro.props;
+---
+
+<Giscus client:only="react" contentId={contentId} />

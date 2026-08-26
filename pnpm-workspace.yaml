@@ -1,0 +1,9 @@
+packages:
+  - '.'
+allowBuilds:
+  esbuild: true
+  nice-napi: false
+  onnxruntime-node: false
+  protobufjs: false
+  re2: false
+  sharp: true

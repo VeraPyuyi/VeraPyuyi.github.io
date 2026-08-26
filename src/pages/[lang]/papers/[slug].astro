@@ -1,0 +1,11 @@
+---
+import { paperRoute } from '../../_shared/routes';
+import PaperPage from '../../papers/[slug].astro';
+export const getStaticPaths = paperRoute.mirror;
+interface Props {
+  paperId: string;
+  locale: string;
+}
+const { paperId, locale } = Astro.props;
+---
+<PaperPage paperId={paperId} locale={locale} />

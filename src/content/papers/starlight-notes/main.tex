@@ -1,0 +1,50 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\title{Starlight Notes: A Reproducible LaTeX Publishing Example}
+\author{Pyuyi}
+\date{2026-08-26}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This example verifies that equations, images, tables, citations, and references can be published as both semantic HTML and PDF.
+\end{abstract}
+
+\section{Equation}
+Euler's identity connects five fundamental constants:
+\begin{equation}
+  e^{i\pi}+1=0.
+\end{equation}
+
+\section{Image and table}
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=.76\linewidth]{../../../../public/og.png}
+  \caption{Original artwork for Pyuyi's personal site.}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Stage & Tool & Output \\
+\midrule
+Typesetting & Tectonic & PDF \\
+Conversion & Pandoc & HTML/MathML \\
+Publishing & Astro & Static site \\
+\bottomrule
+\end{tabular}
+\caption{The paper publishing pipeline.}
+\end{table}
+
+\section{Reproducible publishing}
+This document uses Pandoc for semantic conversion \cite{macfarlane2024pandoc}, while Tectonic produces the PDF \cite{tectonic2024}.
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}

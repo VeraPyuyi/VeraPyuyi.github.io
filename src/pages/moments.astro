@@ -1,0 +1,36 @@
+---
+import { getCollection, render } from 'astro:content';
+import CustomContent from '@components/common/CustomContent.astro';
+import { Icon } from 'astro-icon/components';
+import PageChrome from '@/components/personal/PageChrome.astro';
+import ResponsiveImage from '@/components/personal/ResponsiveImage.astro';
+import { defaultLocale } from '@/i18n';
+
+interface Props {
+  locale?: string;
+}
+const { locale = defaultLocale } = Astro.props;
+const en = locale === 'en';
+const moments = (await getCollection('moments'))
+  .filter((entry) => !entry.data.draft && (entry.data.language === 'zh' || entry.data.language === locale))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const rendered = await Promise.all(moments.map(async (entry) => ({ entry, Content: (await render(entry)).Content })));
+---
+
+<PageChrome locale={locale} title={en ? 'Moments' : '生活动态'} description={en ? 'Small notes, photos, and sparks from everyday life.' : '一些不必写成长文的想法、照片与日常闪光。'}>
+  <ol class="relative ml-3 space-y-8 border-l border-pink-300/70 pl-8 dark:border-pink-400/25" data-pagefind-body>
+    {rendered.map(({ entry, Content }) => (
+      <li class="relative">
+        <span class="border-background absolute -left-[2.64rem] top-1 size-4 rounded-full border-4 bg-pink-400 shadow" aria-hidden="true"></span>
+        <article class="rounded-3xl border border-black/5 bg-white/55 p-6 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
+          <div class="text-muted-foreground mb-4 flex flex-wrap items-center gap-3 text-xs">
+            <time datetime={entry.data.date.toISOString()}>{new Intl.DateTimeFormat(en ? 'en' : 'zh-CN', { dateStyle: 'long', timeStyle: 'short' }).format(entry.data.date)}</time>
+            {entry.data.location && <span class="inline-flex items-center gap-1"><Icon name="ri:map-pin-2-line" />{entry.data.location}</span>}
+          </div>
+          <div class="prose dark:prose-invert"><CustomContent Content={Content} /></div>
+          {entry.data.photos.length > 0 && <div class="mt-5 grid gap-3 sm:grid-cols-2">{entry.data.photos.map((photo) => <ResponsiveImage src={photo.src} alt={photo.alt} class="aspect-[4/3] w-full rounded-2xl object-cover" />)}</div>}
+        </article>
+      </li>
+    ))}
+  </ol>
+</PageChrome>

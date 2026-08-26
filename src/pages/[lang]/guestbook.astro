@@ -1,0 +1,10 @@
+---
+import { getLocaleStaticPaths } from '../_shared/utils';
+import GuestbookPage from '../guestbook.astro';
+export const getStaticPaths = getLocaleStaticPaths;
+interface Props {
+  locale: string;
+}
+const { locale } = Astro.props;
+---
+<GuestbookPage locale={locale} />

@@ -1,0 +1,71 @@
+---
+import { Icon } from 'astro-icon/components';
+import { localizedPath } from '@/i18n';
+
+interface Props {
+  locale: string;
+}
+
+const { locale } = Astro.props;
+const en = locale === 'en';
+const features = [
+  {
+    href: '/papers',
+    icon: 'ri:book-open-fill',
+    title: en ? 'Papers & Notes' : '论文与笔记',
+    text: en
+      ? 'LaTeX sources published as accessible HTML and downloadable PDF.'
+      : 'LaTeX 源文档同步发布为可访问的 HTML 与可下载 PDF。',
+    tone: 'from-pink-200/70 to-violet-200/60 dark:from-pink-500/15 dark:to-violet-500/15',
+  },
+  {
+    href: '/projects',
+    icon: 'ri:code-box-fill',
+    title: en ? 'Projects' : '项目',
+    text: en
+      ? 'Experiments, open source work, and future GitHub Pages sub-sites.'
+      : '实验、开源作品，以及未来的 GitHub Pages 项目子站。',
+    tone: 'from-sky-200/70 to-cyan-100/70 dark:from-sky-500/15 dark:to-cyan-500/10',
+  },
+  {
+    href: '/gallery',
+    icon: 'ri:gallery-fill',
+    title: en ? 'Photo Wall' : '照片墙',
+    text: en
+      ? 'Responsive albums with captions, alt text, and a lightweight lightbox.'
+      : '带说明、替代文字与轻量灯箱的响应式相册。',
+    tone: 'from-amber-100/80 to-rose-200/60 dark:from-amber-500/10 dark:to-rose-500/15',
+  },
+  {
+    href: '/moments',
+    icon: 'ri:chat-smile-3-fill',
+    title: en ? 'Moments' : '生活动态',
+    text: en ? 'Short notes and everyday sparks, kept calm and chronological.' : '按时间记录短动态、照片和日常闪光。',
+    tone: 'from-indigo-100/80 to-blue-200/60 dark:from-indigo-500/10 dark:to-blue-500/15',
+  },
+];
+---
+
+<section aria-labelledby="explore-title" class="space-y-4">
+  <div class="flex items-end justify-between gap-4">
+    <div>
+      <p class="text-primary text-xs font-semibold tracking-[0.22em] uppercase">Explore</p>
+      <h2 id="explore-title" class="font-chill-round mt-1 text-2xl font-bold">{en ? 'A small universe in progress' : '正在生长的小宇宙'}</h2>
+    </div>
+    <a class="text-primary text-sm hover:underline" href={localizedPath('/about', locale)}>{en ? 'About me →' : '关于我 →'}</a>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2">
+    {features.map((feature) => (
+      <a
+        href={localizedPath(feature.href, locale)}
+        class={`group rounded-3xl border border-white/60 bg-gradient-to-br p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none motion-reduce:transition-none dark:border-white/10 ${feature.tone}`}
+      >
+        <span class="bg-background/75 text-primary mb-5 inline-flex size-11 items-center justify-center rounded-2xl shadow-sm backdrop-blur">
+          <Icon name={feature.icon} class="size-5" />
+        </span>
+        <h3 class="text-lg font-bold">{feature.title}</h3>
+        <p class="text-muted-foreground mt-2 text-sm leading-6">{feature.text}</p>
+      </a>
+    ))}
+  </div>
+</section>

@@ -1,0 +1,66 @@
+---
+import { getCollection } from 'astro:content';
+import PageChrome from '@/components/personal/PageChrome.astro';
+import ResponsiveImage from '@/components/personal/ResponsiveImage.astro';
+import { defaultLocale } from '@/i18n';
+
+interface Props {
+  locale?: string;
+}
+const { locale = defaultLocale } = Astro.props;
+const en = locale === 'en';
+const albums = (await getCollection('albums'))
+  .filter((entry) => entry.data.language === 'zh' || entry.data.language === locale)
+  .sort((a, b) => (b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0));
+---
+
+<PageChrome locale={locale} title={en ? 'Photo Wall' : '照片墙'} description={en ? 'Public, captioned photos arranged into responsive albums.' : '把可以公开的照片整理成相册；每张图片都带有替代文字。'}>
+  <div class="space-y-10" data-pagefind-body>
+    {albums.map((album) => (
+      <section class="space-y-4">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div><h2 class="text-2xl font-bold">{album.data.name}</h2>{album.data.description && <p class="text-muted-foreground mt-1 text-sm">{album.data.description}</p>}</div>
+          {album.data.date && <time class="text-muted-foreground text-xs" datetime={album.data.date.toISOString()}>{new Intl.DateTimeFormat(en ? 'en' : 'zh-CN', { dateStyle: 'long' }).format(album.data.date)}</time>}
+        </div>
+        <div class="columns-1 gap-4 sm:columns-2 lg:columns-3">
+          {album.data.photos.map((photo, index) => (
+            <button type="button" class="photo-trigger group relative mb-4 block w-full cursor-zoom-in overflow-hidden rounded-3xl bg-black/5 text-left shadow-sm" data-src={photo.src} data-alt={photo.alt} data-index={index}>
+              <ResponsiveImage src={photo.src} alt={photo.alt} class="w-full object-cover transition duration-500 group-hover:scale-[1.025] motion-reduce:transition-none" />
+              <span class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10 text-xs text-white opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">{photo.alt}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+  <dialog id="gallery-lightbox" class="m-auto max-h-[92vh] max-w-[94vw] rounded-3xl bg-transparent p-0 backdrop:bg-black/85">
+    <div class="relative overflow-hidden rounded-3xl bg-black p-2 shadow-2xl">
+      <button type="button" data-close class="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-black/55 text-xl text-white" aria-label={en ? 'Close' : '关闭'}>×</button>
+      <img data-lightbox-image src="" alt="" class="max-h-[86vh] max-w-[90vw] rounded-2xl object-contain" />
+      <p data-lightbox-caption class="absolute inset-x-5 bottom-5 rounded-2xl bg-black/55 px-4 py-2 text-center text-sm text-white backdrop-blur"></p>
+    </div>
+  </dialog>
+</PageChrome>
+
+<script>
+  function installGallery() {
+    const dialog = document.querySelector<HTMLDialogElement>('#gallery-lightbox');
+    if (!dialog || dialog.dataset.ready) return;
+    dialog.dataset.ready = 'true';
+    const image = dialog.querySelector<HTMLImageElement>('[data-lightbox-image]');
+    const caption = dialog.querySelector<HTMLElement>('[data-lightbox-caption]');
+    document.querySelectorAll<HTMLButtonElement>('.photo-trigger').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (!image || !caption) return;
+        image.src = button.dataset.src ?? '';
+        image.alt = button.dataset.alt ?? '';
+        caption.textContent = button.dataset.alt ?? '';
+        dialog.showModal();
+      });
+    });
+    dialog.querySelector('[data-close]')?.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+  }
+  installGallery();
+  document.addEventListener('astro:page-load', installGallery);
+</script>

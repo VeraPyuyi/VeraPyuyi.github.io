@@ -1,0 +1,39 @@
+---
+const code = import.meta.env.PUBLIC_GOATCOUNTER_CODE?.trim() ?? '';
+const endpoint = code ? `https://${code}.goatcounter.com/count` : '';
+---
+
+{code && <script is:inline define:vars={{ endpoint }}>
+  (() => {
+    if (window.__pyuyiGoatCounterInstalled) return;
+    window.__pyuyiGoatCounterInstalled = true;
+
+    const normalizedPath = () => {
+      const raw = window.location.pathname.replace(/^\/en(?=\/|$)/, '') || '/';
+      return raw.endsWith('/') && raw !== '/' ? raw.slice(0, -1) : raw;
+    };
+
+    window.goatcounter = window.goatcounter || {};
+    window.goatcounter.no_onload = true;
+    const counted = window.__pyuyiCountedPaths || new Set();
+    window.__pyuyiCountedPaths = counted;
+    const count = () => {
+      const path = normalizedPath();
+      if (counted.has(path) || typeof window.goatcounter?.count !== 'function') return;
+      counted.add(path);
+      window.goatcounter.count({ path, title: document.title, referrer: document.referrer });
+    };
+    document.addEventListener('astro:page-load', count);
+    window.addEventListener('load', count, { once: true });
+
+    if (!document.querySelector('script[data-pyuyi-goatcounter]')) {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://gc.zgo.at/count.js';
+      script.dataset.goatcounter = endpoint;
+      script.dataset.pyuyiGoatcounter = 'true';
+      script.addEventListener('load', count, { once: true });
+      document.head.append(script);
+    }
+  })();
+</script>}

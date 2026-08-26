@@ -1,0 +1,10 @@
+---
+import { getLocaleStaticPaths } from '../_shared/utils';
+import MomentsPage from '../moments.astro';
+export const getStaticPaths = getLocaleStaticPaths;
+interface Props {
+  locale: string;
+}
+const { locale } = Astro.props;
+---
+<MomentsPage locale={locale} />
