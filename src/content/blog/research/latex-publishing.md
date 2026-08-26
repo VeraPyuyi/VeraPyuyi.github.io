@@ -21,4 +21,4 @@ math: true
 2. Pandoc 转换为语义化 HTML/MathML；
 3. 任一步失败都会阻止新版本发布。
 
-[查看可运行的样例论文](/papers/starlight-notes/)。
+[查看已发布的论文](/papers/horizon-uniform-sensitivity/)。
