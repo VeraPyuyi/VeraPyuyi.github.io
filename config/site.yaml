@@ -16,7 +16,7 @@ site:
   subtitle: 把好奇心写进星光里 # 网站副标题
   name: Pyuyi # 作者名称
   description: Pyuyi 的个人主页，记录技术、研究、ACG 与生活灵感。 # 网站描述
-  avatar: /og.png # 暂用原创主视觉，可随时替换为个人头像
+  avatar: https://github.com/VeraPyuyi.png?size=512 # 暂用原创主视觉，可随时替换为个人头像
   showLogo: false # 使用文字品牌，避免沿用上游图形标识
   author: Pyuyi # 作者名称
   url: https://verapyuyi.github.io # 站点 URL 用于 RSS 和 SEO
