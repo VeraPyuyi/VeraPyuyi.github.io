@@ -70,13 +70,18 @@ function listTarEntries(archivePath: string): string[] {
  * 从 tar.gz 中提取 manifest.json 内容（不解压整个文件）
  */
 export function tarExtractManifest(archivePath: string): string | null {
-  const result = spawnSync('tar', ['-xzf', archivePath, '-O', 'manifest.json'], {
-    encoding: 'utf-8',
-    cwd: PROJECT_ROOT,
-    stdio: ['pipe', 'pipe', 'pipe'],
-  });
-  if (result.status === 0 && result.stdout) {
-    return result.stdout;
+  // Archives created from `.` contain `./manifest.json`. BSD tar accepts the
+  // unprefixed name too, while GNU tar (used by GitHub Actions) requires the
+  // exact stored path, so support both spellings explicitly.
+  for (const manifestEntry of ['manifest.json', './manifest.json']) {
+    const result = spawnSync('tar', ['-xzf', archivePath, '-O', manifestEntry], {
+      encoding: 'utf-8',
+      cwd: PROJECT_ROOT,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    if (result.status === 0 && result.stdout) {
+      return result.stdout;
+    }
   }
   return null;
 }
