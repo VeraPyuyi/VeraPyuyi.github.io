@@ -15,7 +15,7 @@ site:
   alternate: PYUYI'S LOG # 网站英文名称 用于页脚、Logo、@ handle 等
   subtitle: 把好奇心写进星光里 # 网站副标题
   name: Pyuyi # 作者名称
-  description: Hi～ 我是Pyuyi 欢迎来我的藏宝库玩！。 # 网站描述
+  description: Hi～ 我是Pyuyi，欢迎来我的藏宝库玩！ # 网站描述
   avatar: https://github.com/VeraPyuyi.png?size=512 # 暂用原创主视觉，可随时替换为个人头像
   showLogo: false # 使用文字品牌，避免沿用上游图形标识
   author: Pyuyi # 作者名称
