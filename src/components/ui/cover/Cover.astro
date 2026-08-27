@@ -3,10 +3,10 @@ import { Routes } from '@constants/router';
 import { createArticleStatsConfig, siteConfig } from '@constants/site-config';
 import { getPostReadingTime } from '@lib/content/posts';
 import { displayDate } from '@lib/date';
-import { getLqipStyle } from '@lib/lqip';
 import { routeBuilder } from '@lib/route';
 import { Icon } from 'astro-icon/components';
 import type { BlogPost } from 'types/blog';
+import ResponsiveImage from '@/components/personal/ResponsiveImage.astro';
 import UmamiPVSpan from '@/components/umami/UmamiPVSpan';
 import { MAX_WIDTH } from '@/constants/layout';
 import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
@@ -17,17 +17,19 @@ export interface CoverProps {
   title?: string;
   /** Utility pages can opt into a shorter cover with a neutral loading surface. */
   compact?: boolean;
+  image?: string;
+  imageAlt?: string;
+  paperFontProfile?: 'latin-modern' | 'computer-modern';
 }
 
-const { data, title, compact = false } = Astro.props as CoverProps;
+const { data, title, compact = false, image = '/og.png', imageAlt, paperFontProfile } = Astro.props as CoverProps;
 
 const { date, updated, title: dataTitle, draft } = data?.data ?? {};
 
 const readState = data ? getPostReadingTime(data) : null;
 const isDraft = import.meta.env.DEV && draft === true;
 
-// 获取横幅图片的 LQIP 样式
-const bannerLqipStyle = compact ? undefined : getLqipStyle('/og.png');
+const resolvedImageAlt = imageAlt ?? 'Pyuyi 的小宇宙：粉蓝色星空书房与原创星星猫插画';
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 
@@ -44,6 +46,7 @@ const copyFailedLabel = t(locale, 'common.copyFailed');
     'relative z-0 flex overflow-hidden',
     compact ? 'h-[42dvh] min-h-72 max-h-120 tablet:h-[36dvh] tablet:min-h-64' : 'h-[60dvh] max-h-200',
   ]}
+  data-paper-font={paperFontProfile}
 >
   <div class="absolute inset-0 h-full bg-black/40"></div>
   <div
@@ -130,27 +133,17 @@ const copyFailedLabel = t(locale, 'common.copyFailed');
   </div>
   <div
     class:list={['relative -z-10 h-full min-h-60 w-full', compact && 'bg-card']}
-    transition:persist="page-cover-banner"
     id="banner-box"
-    style={bannerLqipStyle}
   >
-    <picture class="block h-full w-full">
-      <source
-        type="image/avif"
-        sizes="100vw"
-        srcset="/og-480.avif 480w,/og-960.avif 960w,/og-1600.avif 1600w"
-      />
-      <img
-        src="/og-1600.webp"
-        alt="Pyuyi 的小宇宙：粉蓝色星空书房与原创星星猫插画"
-        class="h-full w-full object-cover"
-        sizes="100vw"
-        srcset="/og-480.webp 480w,/og-960.webp 960w,/og-1600.webp 1600w"
-        loading="eager"
-        fetchpriority="high"
-        decoding="async"
-      />
-    </picture>
+    <ResponsiveImage
+      src={image}
+      alt={resolvedImageAlt}
+      class="h-full w-full object-cover"
+      pictureClass="h-full w-full"
+      sizes="100vw"
+      loading="eager"
+      fetchpriority="high"
+    />
   </div>
   <WaveSvg />
 </div>

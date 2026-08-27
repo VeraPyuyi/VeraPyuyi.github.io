@@ -8,6 +8,7 @@ interface Props {
   pictureClass?: string;
   sizes?: string;
   loading?: 'eager' | 'lazy';
+  fetchpriority?: 'high' | 'low' | 'auto';
 }
 
 const {
@@ -17,6 +18,7 @@ const {
   pictureClass,
   sizes = '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw',
   loading = 'lazy',
+  fetchpriority,
 } = Astro.props;
 const media = getResponsiveMedia(src);
 const placeholderStyle = media.lqip ? `background-image:url('${media.lqip}')` : undefined;
@@ -25,5 +27,14 @@ const placeholderStyle = media.lqip ? `background-image:url('${media.lqip}')` : 
 <picture class:list={['block bg-cover bg-center', pictureClass]} style={placeholderStyle}>
   {media.avifSrcset && <source type="image/avif" srcset={media.avifSrcset} sizes={sizes} />}
   {media.webpSrcset && <source type="image/webp" srcset={media.webpSrcset} sizes={sizes} />}
-  <img src={media.fallback} srcset={media.webpSrcset} sizes={sizes} alt={alt} class={className} loading={loading} decoding="async" />
+  <img
+    src={media.fallback}
+    srcset={media.webpSrcset}
+    sizes={sizes}
+    alt={alt}
+    class={className}
+    loading={loading}
+    fetchpriority={fetchpriority}
+    decoding="async"
+  />
 </picture>

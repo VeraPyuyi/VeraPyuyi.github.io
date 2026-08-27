@@ -17,7 +17,9 @@ keywords:
 texEntry: Bernstein_Transfers_EJC__1_.tex
 htmlEntry: Bernstein_Transfers_EJC__1_.tex
 fontProfile: computer-modern
-cover: /og.png
+cover: /uploads/papers/bernstein-transfers-greedy-records/cover.png
+coverAlt: 星星猫沿粉蓝星空中的发光栅栏路径前行，明亮的记录节点延伸成循环栅栏。
+coverAltEn: A star cat follows a luminous fence path whose bright record nodes extend into a circular fence in a pastel cosmos.
 comments: true
 arxivId: '2607.22767'
 arxivVersion: v2

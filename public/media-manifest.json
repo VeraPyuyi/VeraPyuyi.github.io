@@ -7,5 +7,32 @@
     "/og-1600.webp",
     "/og-1600.avif",
     "/og-lqip.webp"
+  ],
+  "/uploads/papers/bernstein-transfers-greedy-records/cover.png": [
+    "/media/papers/bernstein-transfers-greedy-records/cover-480.webp",
+    "/media/papers/bernstein-transfers-greedy-records/cover-480.avif",
+    "/media/papers/bernstein-transfers-greedy-records/cover-960.webp",
+    "/media/papers/bernstein-transfers-greedy-records/cover-960.avif",
+    "/media/papers/bernstein-transfers-greedy-records/cover-1600.webp",
+    "/media/papers/bernstein-transfers-greedy-records/cover-1600.avif",
+    "/media/papers/bernstein-transfers-greedy-records/cover-lqip.webp"
+  ],
+  "/uploads/papers/cycle-decorated-ribbon-complexes/cover.png": [
+    "/media/papers/cycle-decorated-ribbon-complexes/cover-480.webp",
+    "/media/papers/cycle-decorated-ribbon-complexes/cover-480.avif",
+    "/media/papers/cycle-decorated-ribbon-complexes/cover-960.webp",
+    "/media/papers/cycle-decorated-ribbon-complexes/cover-960.avif",
+    "/media/papers/cycle-decorated-ribbon-complexes/cover-1600.webp",
+    "/media/papers/cycle-decorated-ribbon-complexes/cover-1600.avif",
+    "/media/papers/cycle-decorated-ribbon-complexes/cover-lqip.webp"
+  ],
+  "/uploads/papers/horizon-uniform-sensitivity/cover.png": [
+    "/media/papers/horizon-uniform-sensitivity/cover-480.webp",
+    "/media/papers/horizon-uniform-sensitivity/cover-480.avif",
+    "/media/papers/horizon-uniform-sensitivity/cover-960.webp",
+    "/media/papers/horizon-uniform-sensitivity/cover-960.avif",
+    "/media/papers/horizon-uniform-sensitivity/cover-1600.webp",
+    "/media/papers/horizon-uniform-sensitivity/cover-1600.avif",
+    "/media/papers/horizon-uniform-sensitivity/cover-lqip.webp"
   ]
 }

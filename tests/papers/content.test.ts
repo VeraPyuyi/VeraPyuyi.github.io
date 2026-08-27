@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
+import sharp from 'sharp';
 import { getPapers } from '../../src/lib/papers';
 
 const root = process.cwd();
@@ -55,7 +56,30 @@ test('paper metadata is version-locked and complete', () => {
     assert.equal(paper.fontProfile, source.fontProfile);
     assert.ok(paper.titleEn);
     assert.ok(paper.abstractEn);
+    assert.equal(paper.cover, `/uploads/papers/${paper.id}/cover.png`);
+    assert.ok(paper.coverAlt);
+    assert.ok(paper.coverAltEn);
   }
+});
+
+test('paper covers are normalized, responsive, and locally described', async () => {
+  const manifest = JSON.parse(readFileSync(join(root, 'public/media-manifest.json'), 'utf8')) as Record<string, string[]>;
+  for (const paper of getPapers()) {
+    assert.ok(paper.cover);
+    const source = join(root, 'public', paper.cover.slice(1));
+    assert.ok(existsSync(source), paper.cover);
+    const metadata = await sharp(source).metadata();
+    assert.equal(metadata.width, 1600);
+    assert.equal(metadata.height, 900);
+
+    const variants = manifest[paper.cover];
+    assert.equal(variants.length, 7);
+    for (const variant of variants) assert.ok(existsSync(join(root, 'public', variant.slice(1))), variant);
+  }
+
+  const provenance = readFileSync(join(papersRoot, 'COVER_ART.md'), 'utf8');
+  assert.match(provenance, /built-in GPT Image/);
+  assert.match(provenance, /style reference only/);
 });
 
 test('Scholar URL uses the exact lowercase profile id and required parameters', () => {

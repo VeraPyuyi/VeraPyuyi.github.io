@@ -38,6 +38,9 @@ test('web adapter emits static MathML, linked references, citations, and bibliog
   });
 
   assert.match(html, /<math[^>]+display="block"/);
+  assert.match(html, /class="paper-equation"/);
+  assert.match(html, /class="paper-equation-scroll"/);
+  assert.match(html, /class="paper-equation-hint" aria-hidden="true"/);
   assert.match(html, /id="eq:test"/);
   assert.match(html, /href="#eq:test">\(1\.1\)<\/a>/);
   assert.match(html, /href="#thm:test">Theorem 1\.2<\/a>/);
@@ -57,5 +60,9 @@ test('strict HTML validation rejects leaked LaTeX and mojibake', () => {
   assert.throws(
     () => validateGeneratedHtml('bad-encoding', '<h1 id="x">X</h1><math><mi>x</mi></math><p>FranÃ§ais</p>'),
     /mojibake/,
+  );
+  assert.throws(
+    () => validateGeneratedHtml('bare-display', '<h1 id="x">X</h1><math display="block"><mi>x</mi></math>'),
+    /wrapper mismatch/,
   );
 });

@@ -20,7 +20,14 @@ const description = en && paper.abstractEn ? paper.abstractEn : paper.abstract;
 const html = getPaperHtml(paper);
 ---
 
-<PageChrome locale={locale} title={title} description={description} paperFontProfile={paper.fontProfile}>
+<PageChrome
+  locale={locale}
+  title={title}
+  description={description}
+  paperFontProfile={paper.fontProfile}
+  cover={paper.cover}
+  coverAlt={(en ? paper.coverAltEn : paper.coverAlt) ?? (en ? 'Pyuyi paper cover' : 'Pyuyi 论文封面')}
+>
   <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/55 p-4 text-sm dark:border-white/10 dark:bg-white/5">
     <p class="text-muted-foreground">{paper.authors.join(', ')} · <time datetime={paper.date}>{paper.date}</time></p>
     <div class="flex flex-wrap gap-3">
@@ -53,14 +60,215 @@ const html = getPaperHtml(paper);
   @font-face { font-family: 'Paper Computer Modern Math'; src: url('/fonts/papers/computer-modern-math.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; }
   [data-paper-font='latin-modern'] { font-family: 'Paper Latin Modern', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif; }
   [data-paper-font='computer-modern'] { font-family: 'Paper Computer Modern', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif; }
-  [data-paper-font] :where(h1, h2, h3, h4, h5, h6, p, li, table, blockquote) { font-family: inherit; }
-  .paper-content #TOC { margin: 1.5rem 0 2.5rem; border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); border-radius: 1.25rem; padding: 1.25rem 1.5rem; background: color-mix(in srgb, var(--primary) 5%, transparent); }
+  html [data-paper-font] .paper-content,
+  html [data-paper-font] .paper-content :where(h1, h2, h3, h4, h5, h6, p, li, table, blockquote) { font-family: inherit; }
+  .paper-content {
+    width: min(100%, 86ch);
+    max-width: 86ch;
+    margin-inline: auto;
+    overflow-wrap: break-word;
+    line-height: var(--reader-line-height, 1.82);
+    text-rendering: optimizeLegibility;
+  }
+  .paper-content #title-block-header { margin-bottom: 2.5rem; text-align: center; }
+  .paper-content #title-block-header > .title { margin-bottom: 1rem; font-size: clamp(1.75rem, 4vw, 2.55rem); line-height: 1.2; text-wrap: balance; }
+  .paper-content #title-block-header > :is(.author, .date) { margin-block: 0.25rem; color: hsl(var(--muted-foreground)); }
+  .paper-content #TOC {
+    margin: 1.75rem 0 3rem;
+    border: 1px solid hsl(var(--primary) / 0.2);
+    border-radius: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.07), hsl(var(--shoka-info) / 0.05));
+    box-shadow: 0 1rem 3rem rgb(35 38 88 / 0.05);
+  }
+  .paper-content #TOC::before { display: block; margin-bottom: 0.75rem; color: hsl(var(--primary)); content: 'Contents'; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+  .paper-content #TOC ul { margin-block: 0.35rem; }
+  .paper-content #TOC li { margin-block: 0.2rem; }
+  .paper-content .abstract {
+    margin: 2rem 0 0;
+    border: 1px solid hsl(var(--primary) / 0.18);
+    border-radius: 1.25rem;
+    padding: clamp(1.15rem, 3vw, 1.75rem);
+    background: linear-gradient(145deg, hsl(var(--primary) / 0.09), hsl(var(--shoka-info) / 0.045) 58%, transparent);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45), 0 1rem 3rem rgb(35 38 88 / 0.05);
+    text-align: start;
+  }
+  .paper-content .abstract-title { margin-bottom: 0.75rem; color: hsl(var(--primary)); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+  .paper-content .abstract p { margin: 0; font-size: 0.96em; line-height: 1.78; }
   [data-paper-font='latin-modern'] .paper-content math { font-family: 'Paper Latin Modern Math', math; }
   [data-paper-font='computer-modern'] .paper-content math { font-family: 'Paper Computer Modern Math', math; }
-  .paper-content math[display='block'] { overflow-x: auto; padding: 1rem 0; font-size: 1.2rem; }
-  .paper-content .paper-anchor { display: block; position: relative; top: -5rem; visibility: hidden; }
-  .paper-content .paper-reference, .paper-content .paper-citation { color: var(--primary); text-decoration: none; }
+  .paper-content math:not([display='block']) { font-size: 1.02em; vertical-align: -0.08em; }
+  .paper-content .paper-equation {
+    position: relative;
+    display: block;
+    max-width: 100%;
+    margin: clamp(1.2rem, 3vw, 1.8rem) 0;
+    border: 1px solid hsl(var(--primary) / 0.16);
+    border-radius: 1rem;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.055), hsl(var(--shoka-info) / 0.035));
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.38);
+    font-style: normal;
+    isolation: isolate;
+  }
+  .paper-content .paper-equation-scroll {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: clamp(1rem, 3vw, 1.35rem) clamp(0.75rem, 3vw, 1.5rem) clamp(1.25rem, 3vw, 1.55rem);
+    scrollbar-color: hsl(var(--primary) / 0.42) transparent;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .paper-content .paper-equation-scroll:focus-visible { outline: 2px solid hsl(var(--primary) / 0.65); outline-offset: 3px; }
+  .paper-content .paper-equation math[display='block'] {
+    display: block;
+    width: max-content;
+    min-width: 100%;
+    margin: 0 auto;
+    padding: 0;
+    overflow: visible;
+    font-size: clamp(1rem, 0.92rem + 0.36vw, 1.22rem);
+    font-style: normal;
+    text-align: center;
+  }
+  .paper-content .paper-equation .tml-tag { padding-inline-start: 1.35rem; color: hsl(var(--muted-foreground)); font-size: 0.82em; white-space: nowrap; }
+  .paper-content .paper-equation::before,
+  .paper-content .paper-equation::after {
+    position: absolute;
+    z-index: 2;
+    top: 0.4rem;
+    bottom: 1.7rem;
+    width: 1.5rem;
+    opacity: 0;
+    pointer-events: none;
+    content: '';
+    transition: opacity 160ms ease;
+  }
+  .paper-content .paper-equation::before { left: 0; border-radius: 1rem 0 0 1rem; background: linear-gradient(90deg, hsl(var(--background) / 0.92), transparent); }
+  .paper-content .paper-equation::after { right: 0; border-radius: 0 1rem 1rem 0; background: linear-gradient(270deg, hsl(var(--background) / 0.92), transparent); }
+  .paper-content .paper-equation[data-overflowing][data-at-start='false']::before,
+  .paper-content .paper-equation[data-overflowing][data-at-end='false']::after { opacity: 1; }
+  .paper-content .paper-equation-hint {
+    position: absolute;
+    z-index: 3;
+    right: 0.75rem;
+    bottom: 0.2rem;
+    display: none;
+    color: hsl(var(--muted-foreground));
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.67rem;
+    font-style: normal;
+    letter-spacing: 0.02em;
+  }
+  .paper-content .paper-equation[data-overflowing] .paper-equation-hint { display: block; }
+  .paper-content .paper-anchor { position: absolute; top: -5rem; display: block; visibility: hidden; }
+  .paper-content .paper-reference, .paper-content .paper-citation { color: hsl(var(--primary)); text-decoration: none; }
   .paper-content .paper-reference:hover, .paper-content .paper-citation:hover { text-decoration: underline; }
-  .paper-content table { display: table; width: 100%; }
+  .paper-content :is(.theorem, .lemma, .proposition, .corollary, .definition) {
+    margin: 1.65rem 0;
+    border: 1px solid hsl(var(--primary) / 0.14);
+    border-left: 0.24rem solid hsl(var(--primary) / 0.58);
+    border-radius: 0 1rem 1rem 0;
+    padding: 1rem clamp(1rem, 2.5vw, 1.4rem);
+    background: hsl(var(--primary) / 0.045);
+  }
+  .paper-content :is(.lemma, .corollary) { border-left-color: hsl(var(--shoka-info) / 0.58); background: hsl(var(--shoka-info) / 0.04); }
+  .paper-content .definition { border-left-color: hsl(var(--shoka-success) / 0.5); background: hsl(var(--shoka-success) / 0.035); }
+  .paper-content :is(.theorem, .lemma, .proposition, .corollary, .definition) > :first-child { margin-top: 0; }
+  .paper-content :is(.theorem, .lemma, .proposition, .corollary, .definition) > :last-child { margin-bottom: 0; }
+  .paper-content .proof { margin: 1.35rem 0; border-left: 1px dashed hsl(var(--muted-foreground) / 0.35); padding-left: clamp(0.9rem, 2vw, 1.25rem); }
+  .paper-content .proof > :first-child { margin-top: 0; }
+  .paper-content .proof > :last-child { margin-bottom: 0; }
+  .paper-content :is(.remark, .example) { margin: 1.35rem 0; border-radius: 0.85rem; padding: 0.8rem 1rem; background: hsl(var(--muted) / 0.32); }
+  .paper-content table { display: block; width: 100%; max-width: 100%; overflow-x: auto; border-radius: 0.75rem; }
   .paper-content figure img { border-radius: 1.25rem; }
+  .paper-content #refs { border-top: 1px solid hsl(var(--border)); padding-top: 1.5rem; }
+  @media (max-width: 639px) {
+    .paper-content { width: 100%; font-size: 0.98rem; }
+    .paper-content .paper-equation { margin-inline: -0.4rem; max-width: calc(100% + 0.8rem); border-radius: 0.8rem; }
+    .paper-content .paper-equation-scroll { padding-inline: 0.65rem; }
+    .paper-content .paper-equation math[display='block'] { font-size: 0.98rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .paper-content .paper-equation::before,
+    .paper-content .paper-equation::after { transition: none; }
+  }
 </style>
+
+<script>
+  let equationObserver: ResizeObserver | undefined;
+
+  function updatePaperEquation(scroller: HTMLElement) {
+    const shell = scroller.closest<HTMLElement>('.paper-equation');
+    if (!shell) return;
+    const overflow = scroller.scrollWidth - scroller.clientWidth > 2;
+    const locale = document.documentElement.lang.toLowerCase();
+    const label = locale.startsWith('en')
+      ? 'Scroll horizontally to view the full equation'
+      : '横向滚动查看完整公式';
+    const hint = shell.querySelector<HTMLElement>('.paper-equation-hint');
+    if (hint) hint.textContent = label;
+
+    if (!overflow) {
+      delete shell.dataset.overflowing;
+      delete shell.dataset.atStart;
+      delete shell.dataset.atEnd;
+      scroller.removeAttribute('tabindex');
+      scroller.removeAttribute('aria-label');
+      return;
+    }
+
+    shell.dataset.overflowing = '';
+    shell.dataset.atStart = String(scroller.scrollLeft <= 1);
+    shell.dataset.atEnd = String(scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 1);
+    scroller.tabIndex = 0;
+    scroller.setAttribute('aria-label', label);
+  }
+
+  function installPaperEquations() {
+    equationObserver?.disconnect();
+    equationObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const target = entry.target as HTMLElement;
+        const scroller = target.classList.contains('paper-equation-scroll')
+          ? target
+          : target.closest<HTMLElement>('.paper-equation-scroll');
+        if (scroller) updatePaperEquation(scroller);
+      }
+    });
+
+    const scrollers = document.querySelectorAll<HTMLElement>('.paper-equation-scroll');
+    for (const scroller of scrollers) {
+      if (!scroller.dataset.overflowListener) {
+        scroller.dataset.overflowListener = 'true';
+        scroller.addEventListener('scroll', () => updatePaperEquation(scroller), { passive: true });
+        scroller.addEventListener('keydown', (event) => {
+          if (!scroller.closest('.paper-equation')?.hasAttribute('data-overflowing')) return;
+          const step = Math.max(48, scroller.clientWidth * 0.18);
+          if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault();
+            scroller.scrollLeft += event.key === 'ArrowLeft' ? -step : step;
+          } else if (event.key === 'Home' || event.key === 'End') {
+            event.preventDefault();
+            scroller.scrollLeft = event.key === 'Home' ? 0 : scroller.scrollWidth;
+          } else {
+            return;
+          }
+          updatePaperEquation(scroller);
+        });
+      }
+      equationObserver.observe(scroller);
+      const math = scroller.querySelector<HTMLElement>('math[display="block"]');
+      if (math) equationObserver.observe(math);
+      updatePaperEquation(scroller);
+    }
+
+    document.fonts.ready.then(() => {
+      for (const scroller of scrollers) updatePaperEquation(scroller);
+    });
+  }
+
+  installPaperEquations();
+  document.addEventListener('astro:page-load', installPaperEquations);
+</script>

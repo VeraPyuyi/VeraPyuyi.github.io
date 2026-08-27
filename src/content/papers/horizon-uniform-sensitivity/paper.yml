@@ -18,7 +18,9 @@ keywords:
 texEntry: Automatica_Bellman_Pontryagin.tex
 htmlEntry: Automatica_Bellman_Pontryagin.tex
 fontProfile: latin-modern
-cover: /og.png
+cover: /uploads/papers/horizon-uniform-sensitivity/cover.png
+coverAlt: 粉蓝星空中，星星猫在控制台旁观察两条随终端扰动向后衰减的发光轨迹。
+coverAltEn: A star cat watches two glowing phase-space trajectories as a terminal ripple fades backward across a pastel cosmic horizon.
 comments: true
 arxivId: '2606.17762'
 arxivVersion: v3

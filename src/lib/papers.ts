@@ -18,6 +18,8 @@ interface PaperYaml {
   bibliography?: string;
   fontProfile?: PaperFontProfile;
   cover?: string;
+  coverAlt?: string;
+  coverAltEn?: string;
   comments?: boolean;
   arxivId?: string;
   arxivVersion?: string;
@@ -62,6 +64,9 @@ export function getPapers(): PaperMeta[] {
       if (!data.fontProfile || !['latin-modern', 'computer-modern'].includes(data.fontProfile)) {
         throw new Error(`[papers] ${id}: invalid fontProfile`);
       }
+      if (data.cover && (!data.coverAlt?.trim() || !data.coverAltEn?.trim())) {
+        throw new Error(`[papers] ${id}: coverAlt and coverAltEn are required when cover is set`);
+      }
       const arxivId = required(data.arxivId, 'arxivId', id);
       if (!/^\d{4}\.\d{4,5}$/.test(arxivId)) throw new Error(`[papers] ${id}: invalid arxivId`);
       const arxivVersion = required(data.arxivVersion, 'arxivVersion', id);
@@ -81,6 +86,8 @@ export function getPapers(): PaperMeta[] {
         bibliography: data.bibliography,
         fontProfile: data.fontProfile,
         cover: data.cover,
+        coverAlt: data.coverAlt,
+        coverAltEn: data.coverAltEn,
         comments: data.comments ?? true,
         arxivId,
         arxivVersion,

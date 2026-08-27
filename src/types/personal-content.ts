@@ -15,6 +15,8 @@ export interface PaperMeta {
   bibliography?: string;
   fontProfile: PaperFontProfile;
   cover?: string;
+  coverAlt?: string;
+  coverAltEn?: string;
   comments: boolean;
   arxivId: string;
   arxivVersion: string;

@@ -1,6 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import PageChrome from '@/components/personal/PageChrome.astro';
+import ResponsiveImage from '@/components/personal/ResponsiveImage.astro';
 import { defaultLocale, localizedPath } from '@/i18n';
 import { getPapers } from '@/lib/papers';
 
@@ -16,7 +17,14 @@ const papers = getPapers();
   <div class="space-y-5" data-pagefind-body>
     {papers.map((paper) => (
       <article class="grid overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur md:grid-cols-[15rem_1fr] dark:border-white/10 dark:bg-white/5">
-        <img src={paper.cover ?? '/og.png'} alt="" class="h-full min-h-48 w-full object-cover" loading="lazy" />
+        <ResponsiveImage
+          src={paper.cover ?? '/og.png'}
+          alt={(en ? paper.coverAltEn : paper.coverAlt) ?? (en ? 'Pyuyi paper cover' : 'Pyuyi 论文封面')}
+          class="h-full min-h-48 w-full object-cover"
+          pictureClass="h-full min-h-48 w-full"
+          sizes="(min-width: 768px) 15rem, 100vw"
+          loading="lazy"
+        />
         <div class="space-y-4 p-6">
           <div class="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 text-xs"><time datetime={paper.date}>{paper.date}</time><span>{paper.authors.join(', ')}</span></div>
           <div><h2 class="text-xl font-bold"><a class="hover:text-primary" href={localizedPath(`/papers/${paper.id}`, locale)}>{en && paper.titleEn ? paper.titleEn : paper.title}</a></h2><p class="text-muted-foreground mt-2 text-sm leading-6">{en && paper.abstractEn ? paper.abstractEn : paper.abstract}</p></div>

@@ -3,7 +3,7 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFile
 import { tmpdir } from 'node:os';
 import { basename, extname, join } from 'node:path';
 import { parse } from 'yaml';
-import { convertPandocHtml, parseAux, prepareWebTex, validateGeneratedHtml } from './paper-html.mjs';
+import { convertPandocHtml, normalizeGeneratedHtml, parseAux, prepareWebTex } from './paper-html.mjs';
 
 const strict = process.argv.includes('--strict');
 const requestedSlug = process.argv.find((argument) => argument.startsWith('--paper='))?.slice('--paper='.length);
@@ -101,7 +101,9 @@ for (const entry of paperEntries) {
     });
     writeFileSync(join(paperDir, 'generated.html'), html, 'utf8');
   } else if (existsSync(join(paperDir, 'generated.html')) && existsSync(join(publicDir, 'paper.pdf'))) {
-    validateGeneratedHtml(slug, readFileSync(join(paperDir, 'generated.html'), 'utf8'));
+    const generatedPath = join(paperDir, 'generated.html');
+    const normalized = normalizeGeneratedHtml(slug, readFileSync(generatedPath, 'utf8'));
+    writeFileSync(generatedPath, normalized, 'utf8');
   } else if (strict) {
     throw new Error(`${slug}: paper toolchain unavailable`);
   } else {

@@ -11,14 +11,23 @@ interface Props {
   title: string;
   description: string;
   paperFontProfile?: 'latin-modern' | 'computer-modern';
+  cover?: string;
+  coverAlt?: string;
 }
 
-const { locale, title, description, paperFontProfile } = Astro.props;
+const { locale, title, description, paperFontProfile, cover, coverAlt } = Astro.props;
 ---
 
 <Layout locale={locale} title={`${title} | ${siteConfig.title}`} description={description}>
   <TwoColumnLayout showPostFooter={false}>
-    <Cover slot="cover" title={title} compact />
+    <Cover
+      slot="cover"
+      title={title}
+      compact
+      image={cover}
+      imageAlt={coverAlt}
+      paperFontProfile={paperFontProfile}
+    />
     <HomeSider slot="sider" />
     <div
       class={`shadow-box bg-gradient-start flex min-w-0 w-full max-w-full flex-col gap-8 overflow-x-clip ${CONTENT_PADDING.standard}`}

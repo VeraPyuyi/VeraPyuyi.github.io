@@ -356,7 +356,18 @@ function renderMath(tex, displayMode, labels, macros) {
     throwOnError: true,
     trust: false,
   });
-  return `${anchors.join('')}${mathml}`;
+  const anchorHtml = anchors.join('');
+  if (!displayMode) return `${anchorHtml}${mathml}`;
+
+  return [
+    '<span class="paper-equation">',
+    anchorHtml,
+    '<span class="paper-equation-scroll">',
+    mathml,
+    '</span>',
+    '<span class="paper-equation-hint" aria-hidden="true"></span>',
+    '</span>',
+  ].join('');
 }
 
 function replaceMathNodes(parent, aux, macros) {
@@ -376,6 +387,32 @@ function replaceMathNodes(parent, aux, macros) {
   }
 }
 
+function wrapDisplayMathNodes(parent) {
+  const children = parent.childNodes ?? [];
+  for (let index = 0; index < children.length; index++) {
+    const node = children[index];
+    if (node.tagName === 'math' && attribute(node, 'display') === 'block' && !hasClass(parent, 'paper-equation-scroll')) {
+      let start = index;
+      while (start > 0 && hasClass(children[start - 1], 'paper-anchor')) start--;
+
+      const shell = parseFragment(
+        '<span class="paper-equation"><span class="paper-equation-scroll"></span><span class="paper-equation-hint" aria-hidden="true"></span></span>',
+      ).childNodes[0];
+      const scroller = shell.childNodes.find((child) => hasClass(child, 'paper-equation-scroll'));
+      const anchors = children.slice(start, index);
+      for (const anchor of anchors) anchor.parentNode = shell;
+      node.parentNode = scroller;
+      scroller.childNodes = [node];
+      shell.childNodes = [...anchors, ...shell.childNodes];
+      shell.parentNode = parent;
+      children.splice(start, index - start + 1, shell);
+      index = start;
+      continue;
+    }
+    wrapDisplayMathNodes(node);
+  }
+}
+
 function replaceMarkers(html, replacements) {
   let output = html;
   for (const [marker, replacement] of replacements) output = output.replaceAll(marker, replacement);
@@ -390,6 +427,24 @@ function collectHtmlFacts(node, facts) {
     if (href?.startsWith('#') && href.length > 1) facts.links.add(decodeURIComponent(href.slice(1)));
   }
   for (const child of node.childNodes ?? []) collectHtmlFacts(child, facts);
+}
+
+function hasClass(node, name) {
+  return (attribute(node, 'class')?.split(/\s+/) ?? []).includes(name);
+}
+
+function collectEquationFacts(node, facts) {
+  if (node.tagName === 'math' && attribute(node, 'display') === 'block') facts.displayMath.push(node);
+  if (hasClass(node, 'paper-equation')) facts.equations.push(node);
+  if (hasClass(node, 'paper-equation-scroll')) facts.scrollers.push(node);
+  if (hasClass(node, 'paper-anchor')) facts.anchors.push(node);
+  for (const child of node.childNodes ?? []) collectEquationFacts(child, facts);
+}
+
+function displayMathDescendants(node) {
+  const facts = { displayMath: [], equations: [], scrollers: [], anchors: [] };
+  collectEquationFacts(node, facts);
+  return facts.displayMath;
 }
 
 export function validateGeneratedHtml(slug, html) {
@@ -411,6 +466,42 @@ export function validateGeneratedHtml(slug, html) {
   collectHtmlFacts(document, facts);
   const missing = [...facts.links].filter((target) => !facts.ids.has(target));
   if (missing.length > 0) throw new Error(`${slug}: missing internal link targets: ${missing.slice(0, 8).join(', ')}`);
+
+  const equations = { displayMath: [], equations: [], scrollers: [], anchors: [] };
+  collectEquationFacts(document, equations);
+  if (
+    equations.displayMath.length !== equations.equations.length ||
+    equations.displayMath.length !== equations.scrollers.length
+  ) {
+    throw new Error(
+      `${slug}: display MathML wrapper mismatch (${equations.displayMath.length} math, ${equations.equations.length} containers, ${equations.scrollers.length} scrollers)`,
+    );
+  }
+  for (const math of equations.displayMath) {
+    const scroller = math.parentNode;
+    const shell = scroller?.parentNode;
+    if (!hasClass(scroller, 'paper-equation-scroll') || !hasClass(shell, 'paper-equation')) {
+      throw new Error(`${slug}: display MathML is not inside the required equation container`);
+    }
+  }
+  for (const shell of equations.equations) {
+    if (displayMathDescendants(shell).length !== 1) {
+      throw new Error(`${slug}: each equation container must contain exactly one display MathML node`);
+    }
+  }
+  for (const anchor of equations.anchors) {
+    if (!hasClass(anchor.parentNode, 'paper-equation')) {
+      throw new Error(`${slug}: equation anchor is outside its container`);
+    }
+  }
+}
+
+export function normalizeGeneratedHtml(slug, html) {
+  const document = parseFragment(html);
+  wrapDisplayMathNodes(document);
+  const normalized = serialize(document).trim();
+  validateGeneratedHtml(slug, normalized);
+  return normalized;
 }
 
 export function convertPandocHtml({ slug, standaloneHtml, aux, replacements, macros = {} }) {
@@ -420,6 +511,5 @@ export function convertPandocHtml({ slug, standaloneHtml, aux, replacements, mac
   if (!body) throw new Error(`${slug}: Pandoc output has no body`);
   replaceMathNodes(body, aux, macros);
   const converted = replaceMarkers(serialize(body), replacements).replaceAll('../../../../public/og.png', '/og.png').trim();
-  validateGeneratedHtml(slug, converted);
-  return converted;
+  return normalizeGeneratedHtml(slug, converted);
 }
