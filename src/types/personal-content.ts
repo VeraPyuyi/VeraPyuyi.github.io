@@ -1,4 +1,5 @@
 export type BlogStatus = 'idea' | 'active' | 'maintained' | 'archived';
+export type PaperFontProfile = 'latin-modern' | 'computer-modern';
 
 export interface PaperMeta {
   id: string;
@@ -12,6 +13,7 @@ export interface PaperMeta {
   texEntry: string;
   htmlEntry: string;
   bibliography?: string;
+  fontProfile: PaperFontProfile;
   cover?: string;
   comments: boolean;
   arxivId: string;

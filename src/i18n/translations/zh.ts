@@ -347,6 +347,8 @@ export const uiStrings = {
   'audio.empty': '暂无曲目',
   'audio.listTab': '列表 {index}',
   'audio.closePanel': '关闭面板',
+  'audio.autoplayBlocked': '点击播放音乐',
+  'audio.turnOff': '关闭音乐并记住选择',
 
   // ── Table of Contents ───────────────────────────────────────
   'toc.title': '文章目录',

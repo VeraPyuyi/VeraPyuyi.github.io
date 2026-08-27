@@ -1,26 +1,9 @@
 ---
 layout: ../layouts/PageLayout.astro
-title: "歌单"
-description: "我喜欢的音乐"
+title: "音乐"
+description: "音乐播放框架"
 ---
 
-这里可以放你喜欢的音乐歌单。
+全站音乐播放框架已经准备好，目前暂未配置歌单，因此不会加载播放器，也不会请求第三方音乐接口。
 
-使用 `{% media audio %}` 标签嵌入网易云音乐或 QQ 音乐歌单：
-
-```markdown
-{% media audio %}
-- title: 我的歌单
-  list:
-    - https://music.163.com/#/playlist?id=你的歌单ID
-{% endmedia %}
-```
-
-{% media audio %}
-- title: 诗岸歌单 山山～全是山山～
-  list:
-    - https://music.163.com/#/playlist?id=8676645748
-- title: 超かぐや姫！
-  list:
-    - https://music.163.com/#/album?id=358640968
-{% endmedia %}
+之后添加音源时，访问者可以暂停当前播放，或关闭音乐并记住自己的选择。如果浏览器阻止自动播放，页面会显示手动播放提示。

@@ -17,6 +17,7 @@ keywords:
   - Symplectic methods
 texEntry: Automatica_Bellman_Pontryagin.tex
 htmlEntry: Automatica_Bellman_Pontryagin.tex
+fontProfile: latin-modern
 cover: /og.png
 comments: true
 arxivId: '2606.17762'

@@ -135,7 +135,7 @@ social:
     color: '#191717' # (可选) 图标颜色
   scholar:
     label: Google Scholar
-    url: https://scholar.google.com/citations?user=Id3xCE8AAAAJ&hl=zh-CN
+    url: https://scholar.google.com/citations?user=ld3xCE8AAAAJ&hl=zh-CN&oi=ao
     icon: fa6-solid:graduation-cap
     color: '#4285f4'
   rss:
@@ -581,15 +581,11 @@ seo:
 # Christmas/Seasonal Features
 # =============================================================================
 bgm:
-  enabled: false  # 配置自己的播放列表后再启用；播放器不会自动播放
+  enabled: false  # 音乐框架已就绪；配置歌单并启用后才会加载播放器
+  autoplay: true  # 浏览器允许时自动播放；被拦截时显示手动播放提示
+  rememberOptOut: true  # 记住访问者“关闭音乐”的选择
   # metingApi: https://163.hyc.moe/  # Meting API 地址，默认为 https://163.hyc.moe/，推荐自部署
-  audio:
-    - title: 最爱山山
-      list:
-        - https://music.163.com/playlist?id=8676645748
-    - title: Love Vocaloid
-      list:
-        - https://music.163.com/playlist?id=8882890045
+  audio: []  # 后续可填入网易云或 QQ 音乐歌曲、专辑或歌单链接
 
 christmas:
   enabled: false # 总开关

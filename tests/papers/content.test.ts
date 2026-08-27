@@ -11,6 +11,7 @@ const papersRoot = join(root, 'src/content/papers');
 const expected = {
   'horizon-uniform-sensitivity': {
     arxiv: '2606.17762v3',
+    fontProfile: 'latin-modern',
     files: {
       '00README.json': 'ecd505b67892e00c8ed323f45949945abce4930e57888afe452ea0352cc6dd25',
       'Automatica_Bellman_Pontryagin.tex': '9d8bac66c9aeafba841b3b8d985ba820f4376481e47c487c2b0e13519d3ba3ba',
@@ -19,6 +20,7 @@ const expected = {
   },
   'bernstein-transfers-greedy-records': {
     arxiv: '2607.22767v2',
+    fontProfile: 'computer-modern',
     files: {
       '00README.json': 'c0a202a4a0265bbf104322b7c4c56607a874ce3825b0004f6fbfcb748ac49eeb',
       'Bernstein_Transfers_EJC__1_.tex': 'f1794bd7f2fb8a17975efff770ff8f5c48f1162458299bc8a9654b8e9a379f24',
@@ -26,6 +28,7 @@ const expected = {
   },
   'cycle-decorated-ribbon-complexes': {
     arxiv: '2608.07599v2',
+    fontProfile: 'latin-modern',
     files: {
       '00README.json': 'fac11ed6b675abaa4e3b095d78f51b949eab040706ec4aba28c6f700ee82c38b',
       'main_jca_focused.tex': '63e428796d6474fcf29d3a357f3835700cc031d496cba50aed6f8cac4e896eb6',
@@ -49,9 +52,37 @@ test('paper metadata is version-locked and complete', () => {
     assert.equal(paper.sourceUrl, `https://arxiv.org/src/${source.arxiv}`);
     assert.equal(paper.license, 'CC BY 4.0');
     assert.equal(paper.licenseUrl, 'https://creativecommons.org/licenses/by/4.0/');
+    assert.equal(paper.fontProfile, source.fontProfile);
     assert.ok(paper.titleEn);
     assert.ok(paper.abstractEn);
   }
+});
+
+test('Scholar URL uses the exact lowercase profile id and required parameters', () => {
+  const expectedUrl = 'https://scholar.google.com/citations?user=ld3xCE8AAAAJ&hl=zh-CN&oi=ao';
+  const siteConfig = readFileSync(join(root, 'config/site.yaml'), 'utf8');
+  const about = readFileSync(join(root, 'src/pages/about.md'), 'utf8');
+  assert.match(siteConfig, new RegExp(expectedUrl.replace(/[?&]/g, '\\$&')));
+  assert.ok(about.includes(expectedUrl));
+  assert.doesNotMatch(siteConfig, /user=Id3xCE8AAAAJ/);
+});
+
+test('paper web fonts are self-hosted with license files', () => {
+  const fontRoot = join(root, 'public/fonts/papers');
+  for (const filename of [
+    'latin-modern-regular.woff2',
+    'latin-modern-math.woff2',
+    'computer-modern-regular.woff2',
+    'computer-modern-math.woff2',
+    'licenses/latin-modern-GUST.txt',
+    'licenses/computer-modern-OFL.txt',
+  ]) {
+    assert.ok(existsSync(join(fontRoot, filename)), filename);
+  }
+
+  const paperPage = readFileSync(join(root, 'src/pages/papers/[slug].astro'), 'utf8');
+  assert.match(paperPage, /\[data-paper-font='latin-modern'\] \.paper-content math[^}]+Paper Latin Modern Math/);
+  assert.match(paperPage, /\[data-paper-font='computer-modern'\] \.paper-content math[^}]+Paper Computer Modern Math/);
 });
 
 test('imported arXiv files remain byte-for-byte unchanged', () => {

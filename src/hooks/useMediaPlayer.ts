@@ -47,7 +47,7 @@ export function useMediaPlayer<T>({ tracks, getUrl, getElement }: UseMediaPlayer
   const tracksRef = useRef(tracks);
   const getUrlRef = useRef(getUrl);
   const getElementRef = useRef(getElement);
-  const loadAndPlayRef = useRef<(index: number) => void>(() => {});
+  const loadAndPlayRef = useRef<(index: number) => Promise<boolean>>(async () => false);
   const [timeStore] = useState(() => createPlaybackTimeStore());
 
   const [state, setState] = useState<MediaPlayerState>({
@@ -62,15 +62,21 @@ export function useMediaPlayer<T>({ tracks, getUrl, getElement }: UseMediaPlayer
   const stateRef = useRef(state);
 
   const loadAndPlay = useCallback(
-    (index: number) => {
+    async (index: number): Promise<boolean> => {
       const el = getElementRef.current();
       const currentTracks = tracksRef.current;
-      if (!el || !currentTracks[index]) return;
+      if (!el || !currentTracks[index]) return false;
       el.src = getUrlRef.current(currentTracks[index]);
-      el.play().catch(() => {});
-      $activePlayerId.set(playerId);
       timeStore.reset();
       setState((s) => ({ ...s, currentIndex: index, loading: true, error: null }));
+      try {
+        await el.play();
+        $activePlayerId.set(playerId);
+        return true;
+      } catch {
+        setState((s) => ({ ...s, playing: false, loading: false }));
+        return false;
+      }
     },
     [playerId, timeStore],
   );
@@ -143,7 +149,7 @@ export function useMediaPlayer<T>({ tracks, getUrl, getElement }: UseMediaPlayer
       } else {
         nextIndex = prev.currentIndex + 1 >= currentTracks.length ? 0 : prev.currentIndex + 1;
       }
-      loadAndPlayRef.current(nextIndex);
+      void loadAndPlayRef.current(nextIndex);
     };
 
     el.addEventListener('timeupdate', onTimeUpdate);
@@ -173,15 +179,19 @@ export function useMediaPlayer<T>({ tracks, getUrl, getElement }: UseMediaPlayer
   }, [activeId, playerId, state.playing]);
 
   const play = useCallback(
-    (index?: number) => {
+    async (index?: number): Promise<boolean> => {
       const el = getElementRef.current();
-      if (!el || tracksRef.current.length === 0) return;
+      if (!el || tracksRef.current.length === 0) return false;
       const targetIndex = index ?? state.currentIndex;
       if (index != null || !el.src) {
-        loadAndPlay(targetIndex);
-      } else {
-        el.play().catch(() => {});
+        return loadAndPlay(targetIndex);
+      }
+      try {
+        await el.play();
         $activePlayerId.set(playerId);
+        return true;
+      } catch {
+        return false;
       }
     },
     [state.currentIndex, loadAndPlay, playerId],
@@ -191,9 +201,9 @@ export function useMediaPlayer<T>({ tracks, getUrl, getElement }: UseMediaPlayer
     getElementRef.current()?.pause();
   }, []);
 
-  const togglePlay = useCallback(() => {
+  const togglePlay = useCallback(async () => {
     if (state.playing) pause();
-    else play();
+    else await play();
   }, [state.playing, pause, play]);
 
   const nextTrack = useCallback(() => {
@@ -205,7 +215,7 @@ export function useMediaPlayer<T>({ tracks, getUrl, getElement }: UseMediaPlayer
     } else {
       next = (state.currentIndex + 1) % currentTracks.length;
     }
-    loadAndPlay(next);
+    void loadAndPlay(next);
   }, [state.mode, state.currentIndex, loadAndPlay]);
 
   const prevTrack = useCallback(() => {
@@ -217,7 +227,7 @@ export function useMediaPlayer<T>({ tracks, getUrl, getElement }: UseMediaPlayer
     } else {
       prev = state.currentIndex - 1 < 0 ? currentTracks.length - 1 : state.currentIndex - 1;
     }
-    loadAndPlay(prev);
+    void loadAndPlay(prev);
   }, [state.mode, state.currentIndex, loadAndPlay]);
 
   const seek = useCallback(

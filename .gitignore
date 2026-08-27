@@ -5,6 +5,10 @@ dist/
 # generated types
 .astro/
 
+# paper artifacts are recreated by the pinned Pandoc/Tectonic workflow
+src/content/papers/*/generated.html
+public/papers/*/paper.pdf
+
 # dependencies
 node_modules
 .pnpm-store/

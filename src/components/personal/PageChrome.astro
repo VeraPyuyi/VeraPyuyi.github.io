@@ -10,16 +10,20 @@ interface Props {
   locale: string;
   title: string;
   description: string;
+  paperFontProfile?: 'latin-modern' | 'computer-modern';
 }
 
-const { locale, title, description } = Astro.props;
+const { locale, title, description, paperFontProfile } = Astro.props;
 ---
 
 <Layout locale={locale} title={`${title} | ${siteConfig.title}`} description={description}>
   <TwoColumnLayout showPostFooter={false}>
     <Cover slot="cover" title={title} compact />
     <HomeSider slot="sider" />
-    <div class={`shadow-box bg-gradient-start flex min-w-0 w-full max-w-full flex-col gap-8 overflow-x-clip ${CONTENT_PADDING.standard}`}>
+    <div
+      class={`shadow-box bg-gradient-start flex min-w-0 w-full max-w-full flex-col gap-8 overflow-x-clip ${CONTENT_PADDING.standard}`}
+      data-paper-font={paperFontProfile}
+    >
       <header class="space-y-3 border-b border-black/5 pb-6 dark:border-white/10">
         <p class="text-primary text-xs font-semibold tracking-[0.24em] uppercase">Pyuyi's log</p>
         <h1 class="font-chill-round text-3xl font-bold tracking-wide">{title}</h1>

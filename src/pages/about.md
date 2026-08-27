@@ -26,4 +26,4 @@ Hi, I am Pyuyi. This is my personal homepage, writing space, and small laborator
 
 ### 联系
 
-可以通过 [GitHub](https://github.com/VeraPyuyi)、[Google Scholar](https://scholar.google.com/citations?user=Id3xCE8AAAAJ&hl=zh-CN) 或站内[留言板](/guestbook/) 找到我。
+可以通过 [GitHub](https://github.com/VeraPyuyi)、[Google Scholar](https://scholar.google.com/citations?user=ld3xCE8AAAAJ&hl=zh-CN&oi=ao) 或站内[留言板](/guestbook/) 找到我。

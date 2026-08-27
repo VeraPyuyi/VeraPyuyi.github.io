@@ -20,7 +20,7 @@ const description = en && paper.abstractEn ? paper.abstractEn : paper.abstract;
 const html = getPaperHtml(paper);
 ---
 
-<PageChrome locale={locale} title={title} description={description}>
+<PageChrome locale={locale} title={title} description={description} paperFontProfile={paper.fontProfile}>
   <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/55 p-4 text-sm dark:border-white/10 dark:bg-white/5">
     <p class="text-muted-foreground">{paper.authors.join(', ')} · <time datetime={paper.date}>{paper.date}</time></p>
     <div class="flex flex-wrap gap-3">
@@ -41,8 +41,26 @@ const html = getPaperHtml(paper);
 </PageChrome>
 
 <style is:global>
+  @font-face { font-family: 'Paper Latin Modern'; src: url('/fonts/papers/latin-modern-regular.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Paper Latin Modern'; src: url('/fonts/papers/latin-modern-italic.woff2') format('woff2'); font-style: italic; font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Paper Latin Modern'; src: url('/fonts/papers/latin-modern-bold.woff2') format('woff2'); font-style: normal; font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'Paper Latin Modern'; src: url('/fonts/papers/latin-modern-bold-italic.woff2') format('woff2'); font-style: italic; font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'Paper Computer Modern'; src: url('/fonts/papers/computer-modern-regular.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Paper Computer Modern'; src: url('/fonts/papers/computer-modern-italic.woff2') format('woff2'); font-style: italic; font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Paper Computer Modern'; src: url('/fonts/papers/computer-modern-bold.woff2') format('woff2'); font-style: normal; font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'Paper Computer Modern'; src: url('/fonts/papers/computer-modern-bold-italic.woff2') format('woff2'); font-style: italic; font-weight: 700; font-display: swap; }
+  @font-face { font-family: 'Paper Latin Modern Math'; src: url('/fonts/papers/latin-modern-math.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Paper Computer Modern Math'; src: url('/fonts/papers/computer-modern-math.woff2') format('woff2'); font-style: normal; font-weight: 400; font-display: swap; }
+  [data-paper-font='latin-modern'] { font-family: 'Paper Latin Modern', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif; }
+  [data-paper-font='computer-modern'] { font-family: 'Paper Computer Modern', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif; }
+  [data-paper-font] :where(h1, h2, h3, h4, h5, h6, p, li, table, blockquote) { font-family: inherit; }
   .paper-content #TOC { margin: 1.5rem 0 2.5rem; border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); border-radius: 1.25rem; padding: 1.25rem 1.5rem; background: color-mix(in srgb, var(--primary) 5%, transparent); }
-  .paper-content math[display="block"] { overflow-x: auto; padding: 1rem 0; font-size: 1.2rem; }
+  [data-paper-font='latin-modern'] .paper-content math { font-family: 'Paper Latin Modern Math', math; }
+  [data-paper-font='computer-modern'] .paper-content math { font-family: 'Paper Computer Modern Math', math; }
+  .paper-content math[display='block'] { overflow-x: auto; padding: 1rem 0; font-size: 1.2rem; }
+  .paper-content .paper-anchor { display: block; position: relative; top: -5rem; visibility: hidden; }
+  .paper-content .paper-reference, .paper-content .paper-citation { color: var(--primary); text-decoration: none; }
+  .paper-content .paper-reference:hover, .paper-content .paper-citation:hover { text-decoration: underline; }
   .paper-content table { display: table; width: 100%; }
   .paper-content figure img { border-radius: 1.25rem; }
 </style>

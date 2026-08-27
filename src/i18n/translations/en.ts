@@ -349,6 +349,8 @@ export const uiStrings: UIStrings = {
   'audio.empty': 'No tracks',
   'audio.listTab': 'List {index}',
   'audio.closePanel': 'Close panel',
+  'audio.autoplayBlocked': 'Click to play music',
+  'audio.turnOff': 'Turn off music and remember',
 
   // ── Table of Contents ───────────────────────────────────────
   'toc.title': 'Table of Contents',

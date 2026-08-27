@@ -23,17 +23,32 @@ import { resolvePlaylist } from '@lib/meting';
 import { useStore } from '@nanostores/react';
 import { $isAnyModalOpen, $isDrawerOpen } from '@store/modal';
 import { AnimatePresence, m } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
-import { $bgmPanelOpen, closeBgmPanel } from '@/store/bgm';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  $bgmAutoplayOptOut,
+  $bgmPanelOpen,
+  closeBgmPanel,
+  disableBgmAutoplay,
+  enableBgmAutoplay,
+  initializeBgmPreference,
+} from '@/store/bgm';
 
 interface GlobalBGMPlayerProps {
   audioGroups: BgmAudioGroup[];
   metingApi?: string;
+  autoplay?: boolean;
+  rememberOptOut?: boolean;
 }
 
-export default function GlobalBGMPlayer({ audioGroups, metingApi }: GlobalBGMPlayerProps) {
+export default function GlobalBGMPlayer({
+  audioGroups,
+  metingApi,
+  autoplay = false,
+  rememberOptOut = true,
+}: GlobalBGMPlayerProps) {
   const { t } = useTranslation();
   const panelOpen = useStore($bgmPanelOpen);
+  const autoplayOptOut = useStore($bgmAutoplayOptOut);
   const isDrawerOpen = useStore($isDrawerOpen);
   const isAnyModalOpen = useStore($isAnyModalOpen);
   const isMobilePlayer = useMediaQuery('(max-width: 600px)');
@@ -44,14 +59,24 @@ export default function GlobalBGMPlayer({ audioGroups, metingApi }: GlobalBGMPla
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
+  const [preferenceReady, setPreferenceReady] = useState(false);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
 
   // Track which retryKey has been resolved to avoid duplicate fetches.
   // Starts at -1 so the first open (retryKey=0) always triggers a load.
   const resolvedRetryRef = useRef(-1);
+  const autoplayAttemptedRef = useRef(false);
 
   useEffect(() => {
-    if (!panelOpen || resolvedRetryRef.current === retryKey) return;
+    initializeBgmPreference(rememberOptOut);
+    setPreferenceReady(true);
+  }, [rememberOptOut]);
+
+  useEffect(() => {
+    const shouldResolve = panelOpen || (autoplay && preferenceReady && !autoplayOptOut);
+    if (!shouldResolve || resolvedRetryRef.current === retryKey) return;
     resolvedRetryRef.current = retryKey;
+    autoplayAttemptedRef.current = false;
 
     let cancelled = false;
     setLoading(true);
@@ -85,11 +110,43 @@ export default function GlobalBGMPlayer({ audioGroups, metingApi }: GlobalBGMPla
     return () => {
       cancelled = true;
     };
-  }, [panelOpen, audioGroups, retryKey, metingApi]);
+  }, [panelOpen, autoplay, preferenceReady, autoplayOptOut, audioGroups, retryKey, metingApi]);
 
   // Audio hook at top level — Audio element persists across panel open/close
   const player = useAudioPlayer(tracks);
   const currentTrack = tracks[player.state.currentIndex] ?? null;
+
+  useEffect(() => {
+    if (!autoplay || !preferenceReady || autoplayOptOut || tracks.length === 0 || autoplayAttemptedRef.current) {
+      return;
+    }
+    autoplayAttemptedRef.current = true;
+    void player.play(0).then((played) => setAutoplayBlocked(!played));
+  }, [autoplay, preferenceReady, autoplayOptOut, tracks.length, player.play]);
+
+  const playWithConsent = useCallback(
+    async (index?: number) => {
+      enableBgmAutoplay(rememberOptOut);
+      const played = await player.play(index);
+      setAutoplayBlocked(!played);
+      return played;
+    },
+    [player.play, rememberOptOut],
+  );
+
+  const togglePlay = useCallback(async () => {
+    if (player.state.playing) {
+      player.pause();
+      return;
+    }
+    await playWithConsent();
+  }, [player.state.playing, player.pause, playWithConsent]);
+
+  const turnOff = useCallback(() => {
+    player.pause();
+    setAutoplayBlocked(false);
+    disableBgmAutoplay(rememberOptOut);
+  }, [player.pause, rememberOptOut]);
 
   // Hide panel when drawer is open
   const isHidden = isDrawerOpen || isAnyModalOpen;
@@ -143,6 +200,16 @@ export default function GlobalBGMPlayer({ audioGroups, metingApi }: GlobalBGMPla
 
     return (
       <div className="audio-player not-prose bgm-panel-player">
+        {autoplayBlocked && (
+          <button
+            type="button"
+            className="mx-3 mt-3 flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 font-medium text-primary text-sm"
+            onClick={() => void playWithConsent()}
+          >
+            <Icon icon="ri:play-circle-line" className="h-5 w-5" />
+            {t('audio.autoplayBlocked')}
+          </button>
+        )}
         <PlayerPreview
           track={currentTrack}
           playing={player.state.playing}
@@ -157,7 +224,7 @@ export default function GlobalBGMPlayer({ audioGroups, metingApi }: GlobalBGMPla
           volume={player.state.volume}
           muted={player.state.muted}
           timeStore={player.timeStore}
-          onTogglePlay={player.togglePlay}
+          onTogglePlay={togglePlay}
           onPrev={player.prevTrack}
           onNext={player.nextTrack}
           onSeek={player.seek}
@@ -172,7 +239,7 @@ export default function GlobalBGMPlayer({ audioGroups, metingApi }: GlobalBGMPla
           timeStore={player.timeStore}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          onTrackSelect={player.play}
+          onTrackSelect={(index) => void playWithConsent(index)}
           onSeek={player.seek}
         />
       </div>
@@ -181,6 +248,21 @@ export default function GlobalBGMPlayer({ audioGroups, metingApi }: GlobalBGMPla
 
   return (
     <LazyMotionProvider>
+      <AnimatePresence>
+        {autoplayBlocked && !panelOpen && !isHidden && (
+          <m.button
+            type="button"
+            className="fixed right-4 bottom-20 z-40 flex items-center gap-2 rounded-full bg-background/90 px-4 py-2 font-medium text-primary text-sm shadow-lg backdrop-blur-sm"
+            onClick={() => void playWithConsent()}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+          >
+            <Icon icon="ri:play-circle-line" className="h-5 w-5" />
+            {t('audio.autoplayBlocked')}
+          </m.button>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {panelOpen && !isHidden && (
           <FloatingFocusManager context={context} modal={false}>
@@ -194,7 +276,15 @@ export default function GlobalBGMPlayer({ audioGroups, metingApi }: GlobalBGMPla
               transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <div className="bgm-panel max-h-[85vh] overflow-y-auto overscroll-none rounded-2xl shadow-xl sm:max-h-[70vh] sm:overflow-hidden">
-                {/* Close button */}
+                <button
+                  type="button"
+                  className="absolute top-2 right-10 z-10 rounded-full bg-background/80 p-1.5 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground"
+                  onClick={turnOff}
+                  aria-label={t('audio.turnOff')}
+                  title={t('audio.turnOff')}
+                >
+                  <Icon icon="ri:shut-down-line" className="h-4 w-4" />
+                </button>
                 <button
                   type="button"
                   className="absolute top-2 right-2 z-10 rounded-full bg-background/80 p-1.5 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground"

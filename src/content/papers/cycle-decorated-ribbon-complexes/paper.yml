@@ -17,6 +17,7 @@ keywords:
 texEntry: main_jca_focused.tex
 htmlEntry: main_jca_focused.tex
 bibliography: references_jca_focused.bib
+fontProfile: latin-modern
 cover: /og.png
 comments: true
 arxivId: '2608.07599'

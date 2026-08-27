@@ -344,6 +344,8 @@ export const uiStrings: UIStrings = {
   'audio.empty': 'トラックが見つかりません',
   'audio.listTab': '{index}の一覧',
   'audio.closePanel': 'パネルを閉じる',
+  'audio.autoplayBlocked': 'クリックして音楽を再生',
+  'audio.turnOff': '音楽をオフにして設定を保存',
 
   // ── 目次のコンテンツ ───────────────────────────────────────
   'toc.title': '目次',

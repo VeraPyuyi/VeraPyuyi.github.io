@@ -607,6 +607,10 @@ export interface BgmAudioGroup {
 
 export interface BgmConfig {
   enabled?: boolean;
+  /** Attempt playback after the first playlist resolves. Browser policy may require a user gesture. */
+  autoplay?: boolean;
+  /** Persist the visitor's choice to turn off automatic background music. */
+  rememberOptOut?: boolean;
   /** Meting API endpoint URL. Defaults to 'https://163.hyc.moe/' */
   metingApi?: string;
   audio?: BgmAudioGroup[];
