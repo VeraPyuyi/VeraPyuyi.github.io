@@ -11,7 +11,6 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 export interface MomentsValidationContext {
   reservedRoutes?: Iterable<string>;
   localeCodes?: Iterable<string>;
-  seriesSlugs?: Iterable<string>;
 }
 
 export interface NormalizedMomentsChannelConfig extends Omit<MomentsChannelConfig, 'aliases'> {
@@ -72,7 +71,7 @@ function validatePrefix(value: unknown, field: string, unavailableRoots: Set<str
   }
 
   if (unavailableRoots.has(segments[0].toLowerCase())) {
-    configError(`"${field}" conflicts with reserved, locale, or featured-series root "${segments[0]}".`);
+    configError(`"${field}" conflicts with a reserved or locale root "${segments[0]}".`);
   }
   return segments.map((segment) => segment.toLowerCase()).join('/');
 }
@@ -83,7 +82,7 @@ function validateChannelSlug(value: unknown, field: string, unavailableSlugs: Se
   }
   const normalized = value.toLowerCase();
   if (unavailableSlugs.has(normalized)) {
-    configError(`"${field}" conflicts with reserved, locale, or featured-series slug "${value}".`);
+    configError(`"${field}" conflicts with a reserved or locale slug "${value}".`);
   }
   if (!SAFE_SEGMENT.test(value)) configError(`"${field}" must be one safe URL segment.`);
   return normalized;
@@ -126,11 +125,7 @@ export function normalizeMomentsConfig(
   }
   if (raw?.enabled !== undefined && typeof raw.enabled !== 'boolean') configError('"enabled" must be a boolean.');
 
-  const unavailableRoots = lowerSet([
-    ...lowerSet(context.reservedRoutes),
-    ...lowerSet(context.localeCodes),
-    ...lowerSet(context.seriesSlugs),
-  ]);
+  const unavailableRoots = lowerSet([...lowerSet(context.reservedRoutes), ...lowerSet(context.localeCodes)]);
   const unavailableChannelSlugs = new Set([...unavailableRoots, ...INTERNAL_CHANNEL_SLUGS]);
   const path = validatePrefix(raw?.path ?? DEFAULT_PATH, 'path', unavailableRoots);
   if (raw?.pathAliases !== undefined && !Array.isArray(raw.pathAliases)) configError('"pathAliases" must be an array.');
@@ -230,7 +225,6 @@ export function resolveMomentsChannels(
     ...config.channelSlugBlocklist,
     ...lowerSet(context.reservedRoutes),
     ...lowerSet(context.localeCodes),
-    ...lowerSet(context.seriesSlugs),
     ...INTERNAL_CHANNEL_SLUGS,
   ]);
   const suiteById = new Map(suiteChannels.map((channel) => [channel.id.toLowerCase(), channel]));
@@ -290,17 +284,17 @@ function replaceMomentsPlaceholders(items: readonly RouterItem[], config: Normal
   });
 }
 
-function insertAfterArchives(items: readonly RouterItem[], momentsItem: RouterItem): [RouterItem[], boolean] {
+function insertAfterPosts(items: readonly RouterItem[], momentsItem: RouterItem): [RouterItem[], boolean] {
   const result: RouterItem[] = [];
   for (const [index, item] of items.entries()) {
     if (item.children) {
-      const [children, inserted] = insertAfterArchives(item.children, momentsItem);
+      const [children, inserted] = insertAfterPosts(item.children, momentsItem);
       result.push({ ...item, children });
       if (inserted) return [[...result, ...items.slice(index + 1)], true];
       continue;
     }
     result.push(item);
-    if (item.path?.replace(/\/+$/, '').toLowerCase() === '/archives') {
+    if (item.path?.replace(/\/+$/, '').toLowerCase() === '/posts') {
       return [[...result, momentsItem, ...items.slice(index + 1)], true];
     }
   }
@@ -321,6 +315,6 @@ export function resolveMomentsNavigation(items: readonly RouterItem[], config: N
     icon: DEFAULT_ICON,
     localeIndependent: true,
   };
-  const [injected, inserted] = insertAfterArchives(replaced, momentsItem);
+  const [injected, inserted] = insertAfterPosts(replaced, momentsItem);
   return inserted ? injected : [...replaced, momentsItem];
 }

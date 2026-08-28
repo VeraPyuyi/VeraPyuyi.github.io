@@ -7,14 +7,7 @@
  */
 
 import { normalizeMomentsConfig, resolveMomentsNavigation } from '@lib/config/moments';
-import {
-  contentConfig,
-  enabledLocaleCodes,
-  enabledSeriesSlugList,
-  featuredSeriesList,
-  i18nConfig,
-  siteConfig,
-} from '@lib/config/site';
+import { contentConfig, enabledLocaleCodes, i18nConfig, siteConfig } from '@lib/config/site';
 import type {
   AnalyticsConfig,
   BangumiConfig,
@@ -130,7 +123,6 @@ export const bangumiConfig: BangumiConfig | null = yamlConfig.bangumi ?? null;
 export const momentsConfig = normalizeMomentsConfig(yamlConfig.moments, {
   reservedRoutes: RESERVED_ROUTES,
   localeCodes: enabledLocaleCodes,
-  seriesSlugs: enabledSeriesSlugList,
 });
 
 const momentsRouters = resolveMomentsNavigation(yamlConfig.navigation ?? DEFAULT_ROUTERS, momentsConfig);
@@ -154,9 +146,3 @@ export const devConfig: DevConfig = {
   contentRelativePath: yamlConfig.dev?.contentRelativePath ?? 'src/content/blog',
   editors: yamlConfig.dev?.editors ?? [],
 };
-
-/** All configured series slugs (lowercase) */
-export const configuredSeriesSlugs = new Set(featuredSeriesList.map((series) => series.slug));
-
-/** Only enabled series slugs (lowercase) */
-export const enabledSeriesSlugs = new Set(enabledSeriesSlugList);

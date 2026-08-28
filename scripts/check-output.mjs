@@ -58,9 +58,49 @@ const paperSlugs = readdirSync(join(root, 'src/content/papers'), { withFileTypes
   .map((entry) => entry.name);
 for (const slug of paperSlugs) {
   required.push(`papers/${slug}/index.html`, `en/papers/${slug}/index.html`);
-  if (process.env.CI) required.push(`papers/${slug}/paper.pdf`);
+  if (process.env.CI) {
+    required.push(
+      `papers/${slug}/paper.pdf`,
+      `papers/${slug}/equations-desktop.svg`,
+      `papers/${slug}/equations-tablet.svg`,
+      `papers/${slug}/equations-mobile.svg`,
+      `papers/${slug}/equations-manifest.json`,
+    );
+    const manifestPath = join(dist, `papers/${slug}/equations-manifest.json`);
+    if (existsSync(manifestPath)) {
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      if (!Number.isInteger(manifest.count) || manifest.count <= 0) {
+        failures.push(`${slug}: invalid equation manifest count`);
+      }
+      for (const variant of ['desktop', 'tablet', 'mobile']) {
+        const spritePath = join(dist, `papers/${slug}/equations-${variant}.svg`);
+        if (!existsSync(spritePath)) continue;
+        const sprite = readFileSync(spritePath, 'utf8');
+        const symbols = (sprite.match(/<symbol\b/g) ?? []).length;
+        if (symbols !== manifest.count) failures.push(`${slug}: ${variant} sprite has ${symbols}/${manifest.count} equations`);
+        if (/<(?:text|script|foreignObject|image)\b/i.test(sprite) || /(?:href|src)=["'](?:https?:|\/\/)/i.test(sprite)) {
+          failures.push(`${slug}: ${variant} sprite contains unsafe or browser-font content`);
+        }
+      }
+    }
+  }
 }
 for (const path of required) if (!existsSync(join(dist, path))) failures.push(`missing required output: ${path}`);
+
+const forbidden = [
+  'categories/index.html',
+  'tags/index.html',
+  'archives/index.html',
+  'en/categories/index.html',
+  'en/tags/index.html',
+  'en/archives/index.html',
+  'papers/berstein-transfers-greedy-records/index.html',
+];
+for (const path of forbidden) if (existsSync(join(dist, path))) failures.push(`removed route was generated: ${path}`);
+
+if (!existsSync(join(dist, 'papers/bernstein-transfers-greedy-records/index.html'))) {
+  failures.push('missing correct Bernstein paper route');
+}
 
 if (failures.length) throw new Error(`Broken output links:\n${[...new Set(failures)].join('\n')}`);
 console.log(`[output] checked ${htmlFiles.length} HTML file(s)`);

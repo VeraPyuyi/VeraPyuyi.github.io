@@ -4,8 +4,6 @@
  * Reusable UI components for the CMS dashboard.
  */
 
-export { CategoryMappingDialog } from './CategoryMappingDialog';
-export { CategoryStats } from './CategoryStats';
 export { CreatePostDialog } from './CreatePostDialog';
 export { DashboardStats } from './DashboardStats';
 export { EditorTOC } from './EditorTOC';

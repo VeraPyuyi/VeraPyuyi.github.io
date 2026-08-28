@@ -8,7 +8,7 @@
 import { defaultLocale } from '@/i18n/config';
 import type { BlogPost } from '@/types/blog';
 import { getPostLocale, getPostSlug } from './locale';
-import { getPostDescriptionWithSummary, getPostLastCategory, getPostReadingTime } from './posts';
+import { getPostDescriptionWithSummary, getPostReadingTime } from './posts';
 
 /**
  * Fields that can be extracted from BlogPost.
@@ -22,11 +22,8 @@ export type PostFieldMap = {
   title: string;
   date: Date;
   cover: string | undefined;
-  tags: string[] | undefined;
-  categories: string[] | string[][] | undefined;
   draft: boolean | undefined;
   // 计算字段
-  categoryName: string | undefined; // from getPostLastCategory()
   description: string; // from getPostDescriptionWithSummary()
   wordCount: number; // from reading-time
   readingTime: string; // from reading-time
@@ -44,11 +41,8 @@ const fieldExtractors: { [K in keyof PostFieldMap]: (post: BlogPost, locale: str
   title: (p) => p.data.title,
   date: (p) => p.data.date,
   cover: (p) => p.data?.cover,
-  tags: (p) => p.data?.tags,
-  categories: (p) => p.data?.categories,
   draft: (p) => p.data?.draft,
   // 计算字段
-  categoryName: (p) => getPostLastCategory(p).name || undefined,
   description: (p, locale) => getPostDescriptionWithSummary(p, locale),
   wordCount: (p) => getPostReadingTime(p).words,
   readingTime: (p) => getPostReadingTime(p).text,
@@ -58,7 +52,6 @@ const fieldExtractors: { [K in keyof PostFieldMap]: (post: BlogPost, locale: str
 /**
  * 从 BlogPost 中选取指定字段
  * @example pickPost(post, ['slug', 'link', 'title'])
- * @example pickPost(post, ['slug', 'link', 'title', 'categoryName'])
  */
 export function pickPost<K extends keyof PostFieldMap>(
   post: BlogPost,
@@ -75,7 +68,6 @@ export function pickPost<K extends keyof PostFieldMap>(
 /**
  * 批量从 BlogPost 数组中选取指定字段
  * @example pickPosts(posts, ['slug', 'link', 'title'])
- * @example pickPosts(posts, ['slug', 'link', 'title', 'categoryName'])
  */
 export function pickPosts<K extends keyof PostFieldMap>(
   posts: BlogPost[],
@@ -90,9 +82,6 @@ export function pickPosts<K extends keyof PostFieldMap>(
 /** PostRef 需要的字段 */
 const POST_REF_KEYS = ['slug', 'link', 'title'] as const;
 
-/** PostRefWithCategory 需要的字段 */
-const POST_REF_WITH_CATEGORY_KEYS = ['slug', 'link', 'title', 'categoryName'] as const;
-
 /** PostCardData 需要的字段 */
 const POST_CARD_DATA_KEYS = [
   'slug',
@@ -101,8 +90,6 @@ const POST_CARD_DATA_KEYS = [
   'description',
   'date',
   'cover',
-  'tags',
-  'categories',
   'draft',
   'wordCount',
   'readingTime',
@@ -115,11 +102,6 @@ const POST_CARD_DATA_KEYS = [
 export const toPostRef = (post: BlogPost) => pickPost(post, POST_REF_KEYS);
 
 /**
- * 转换为带分类引用 (4 字段: slug, link, title, categoryName)
- */
-export const toPostRefWithCategory = (post: BlogPost) => pickPost(post, POST_REF_WITH_CATEGORY_KEYS);
-
-/**
  * 转换为卡片数据（卡片展示所需字段）
  * @deprecated Use `pickPost(post, fields, locale)` to request only the needed fields.
  */
@@ -127,7 +109,5 @@ export const toPostCardData = (post: BlogPost, locale: string = defaultLocale) =
 
 // 批量转换便捷函数
 export const toPostRefs = (posts: BlogPost[]) => pickPosts(posts, POST_REF_KEYS);
-/** @deprecated Use `pickPosts(posts, fields)` to request only the needed fields. */
-export const toPostRefsWithCategory = (posts: BlogPost[]) => pickPosts(posts, POST_REF_WITH_CATEGORY_KEYS);
 export const toPostCardDataList = (posts: BlogPost[], locale: string = defaultLocale) =>
   pickPosts(posts, POST_CARD_DATA_KEYS, locale);

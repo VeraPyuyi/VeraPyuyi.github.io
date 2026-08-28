@@ -8,6 +8,14 @@ const DEFAULT_MATH_MACROS = {
 };
 const FORBIDDEN_LATEX = /\\[A-Za-z@]+/;
 const MOJIBAKE = /\uFFFD|Ã.|Â.|â(?:€|€™|€œ|€œ|€“|€”|€¦)|ï¿½/;
+const EQUATION_VARIANTS = ['desktop', 'tablet', 'mobile'];
+
+function containsForbiddenControlCharacter(value) {
+  return [...value].some((character) => {
+    const codePoint = character.codePointAt(0) ?? 0;
+    return codePoint === 0x7f || (codePoint < 0x20 && codePoint !== 0x09 && codePoint !== 0x0a && codePoint !== 0x0d);
+  });
+}
 
 function readDelimited(source, start, open = '{', close = '}') {
   if (source[start] !== open) throw new Error(`Expected ${open} at offset ${start}`);
@@ -212,6 +220,7 @@ function citationHtml(command, keys, citations, note = '') {
 
 function replaceCommands(source, pattern, markerPrefix, render) {
   const replacements = new Map();
+  const formulaReplacements = new Map();
   let count = 0;
   const output = source.replace(pattern, (match, command, rawKeys) => {
     const keys = rawKeys
@@ -220,14 +229,17 @@ function replaceCommands(source, pattern, markerPrefix, render) {
       .filter(Boolean);
     if (keys.length === 0) throw new Error(`Empty LaTeX command: ${match}`);
     const marker = `${markerPrefix}${String(count++).padStart(6, '0')}END`;
-    replacements.set(marker, render(command, keys));
+    const rendered = render(command, keys);
+    replacements.set(marker, rendered);
+    formulaReplacements.set(marker, htmlAsFormulaText(rendered));
     return marker;
   });
-  return { output, replacements };
+  return { output, replacements, formulaReplacements };
 }
 
 function replaceCitations(source, citations) {
   const replacements = new Map();
+  const formulaReplacements = new Map();
   let count = 0;
   const output = source.replace(/\\(citep|citet|cite)(?:\[([^\]]*)\])?\{([^{}]+)\}/g, (match, command, rawNote, rawKeys) => {
     const keys = rawKeys
@@ -237,10 +249,29 @@ function replaceCitations(source, citations) {
     if (keys.length === 0) throw new Error(`Empty LaTeX command: ${match}`);
     const marker = `${CITATION_MARKER}${String(count++).padStart(6, '0')}END`;
     const note = latexText((rawNote ?? '').replace(/\\S\s*/g, '§'));
-    replacements.set(marker, citationHtml(command, keys, citations, note));
+    const rendered = citationHtml(command, keys, citations, note);
+    replacements.set(marker, rendered);
+    formulaReplacements.set(marker, htmlAsFormulaText(rendered));
     return marker;
   });
-  return { output, replacements };
+  return { output, replacements, formulaReplacements };
+}
+
+function htmlAsFormulaText(html) {
+  const escapes = {
+    '\\': '\\textbackslash{}',
+    '{': '\\{',
+    '}': '\\}',
+    '#': '\\#',
+    $: '\\$',
+    '%': '\\%',
+    '&': '\\&',
+    _: '\\_',
+    '^': '\\textasciicircum{}',
+    '~': '\\textasciitilde{}',
+  };
+  const value = [...textContent(parseFragment(html))].map((character) => escapes[character] ?? character).join('');
+  return `\\textup{${value}}`;
 }
 
 function parseBibliographyItems(block) {
@@ -305,7 +336,7 @@ export function prepareWebTex(source, aux, { pandocCitations = false } = {}) {
   );
 
   let output = refs.output;
-  let citations = { replacements: new Map() };
+  let citations = { replacements: new Map(), formulaReplacements: new Map() };
   if (!pandocCitations) {
     citations = replaceCitations(output, aux.citations);
     output = convertInlineBibliography(citations.output);
@@ -315,6 +346,7 @@ export function prepareWebTex(source, aux, { pandocCitations = false } = {}) {
   return {
     source: output,
     replacements: new Map([...refs.replacements, ...citations.replacements]),
+    formulaReplacements: new Map([...refs.formulaReplacements, ...citations.formulaReplacements]),
   };
 }
 
@@ -340,7 +372,53 @@ function mathTex(node) {
   return content;
 }
 
-function renderMath(tex, displayMode, labels, macros) {
+function collectMathNodes(node, output) {
+  const classes = attribute(node, 'class')?.split(/\s+/) ?? [];
+  if (node.tagName === 'span' && classes.includes('math') && classes.includes('display')) {
+    output.push(mathTex(node).normalize('NFC'));
+  }
+  for (const child of node.childNodes ?? []) collectMathNodes(child, output);
+}
+
+export function collectDisplayEquations(slug, standaloneHtml, formulaReplacements = new Map()) {
+  const document = parse(standaloneHtml.normalize('NFC'));
+  const htmlNode = document.childNodes.find((node) => node.tagName === 'html');
+  const body = htmlNode?.childNodes?.find((node) => node.tagName === 'body');
+  if (!body) throw new Error(`${slug}: Pandoc output has no body`);
+  const equations = [];
+  collectMathNodes(body, equations);
+  return equations.map((equation) => {
+    const restored = replaceMarkers(equation, formulaReplacements);
+    if (restored.includes(REFERENCE_MARKER) || restored.includes(CITATION_MARKER)) {
+      throw new Error(`${slug}: unresolved build marker remains in a display equation`);
+    }
+    return restored;
+  });
+}
+
+function displaySvgHtml(asset) {
+  if (!asset) return '';
+  return EQUATION_VARIANTS.map((variant) => {
+    const value = asset.variants?.[variant];
+    if (!value) throw new Error(`Missing ${variant} SVG for ${asset.id}`);
+    if (!/^-?\d+(?:\.\d+)?(?:\s+-?\d+(?:\.\d+)?){3}$/.test(value.viewBox)) {
+      throw new Error(`Invalid ${variant} SVG viewBox for ${asset.id}`);
+    }
+    if (!Number.isFinite(value.widthEm) || value.widthEm <= 0) {
+      throw new Error(`Invalid ${variant} SVG width for ${asset.id}`);
+    }
+    return [
+      `<svg class="paper-equation-svg paper-equation-svg--${variant}"`,
+      ` viewBox="${escapeHtml(value.viewBox)}"`,
+      ` style="--paper-equation-svg-width:${value.widthEm.toFixed(4)}em"`,
+      ' preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">',
+      `<use href="${escapeHtml(value.href)}" width="100%" height="100%"></use>`,
+      '</svg>',
+    ].join('');
+  }).join('');
+}
+
+function renderMath(tex, displayMode, labels, macros, displayAsset) {
   const anchors = [];
   const compatibleTex = tex.replaceAll('\\lhook\\joinrel\\longrightarrow', '\\hookrightarrow');
   const hasExplicitTag = /\\tag\*?\s*\{/.test(compatibleTex);
@@ -358,32 +436,36 @@ function renderMath(tex, displayMode, labels, macros) {
   });
   const anchorHtml = anchors.join('');
   if (!displayMode) return `${anchorHtml}${mathml}`;
+  const svg = displaySvgHtml(displayAsset);
 
   return [
     '<span class="paper-equation">',
     anchorHtml,
     '<span class="paper-equation-scroll">',
-    mathml,
+    svg,
+    displayAsset ? `<span class="paper-equation-semantic">${mathml}</span>` : mathml,
     '</span>',
     '<span class="paper-equation-hint" aria-hidden="true"></span>',
     '</span>',
   ].join('');
 }
 
-function replaceMathNodes(parent, aux, macros) {
+function replaceMathNodes(parent, aux, macros, displayAssets, state) {
   const children = parent.childNodes ?? [];
   for (let index = 0; index < children.length; index++) {
     const node = children[index];
     const classes = attribute(node, 'class')?.split(/\s+/) ?? [];
     if (node.tagName === 'span' && classes.includes('math')) {
-      const rendered = renderMath(mathTex(node), classes.includes('display'), aux.labels, macros);
+      const displayMode = classes.includes('display');
+      const asset = displayMode ? displayAssets[state.displayIndex++] : undefined;
+      const rendered = renderMath(mathTex(node), displayMode, aux.labels, macros, asset);
       const replacements = parseFragment(rendered).childNodes;
       for (const replacement of replacements) replacement.parentNode = parent;
       children.splice(index, 1, ...replacements);
       index += replacements.length - 1;
       continue;
     }
-    replaceMathNodes(node, aux, macros);
+    replaceMathNodes(node, aux, macros, displayAssets, state);
   }
 }
 
@@ -391,7 +473,12 @@ function wrapDisplayMathNodes(parent) {
   const children = parent.childNodes ?? [];
   for (let index = 0; index < children.length; index++) {
     const node = children[index];
-    if (node.tagName === 'math' && attribute(node, 'display') === 'block' && !hasClass(parent, 'paper-equation-scroll')) {
+    if (
+      node.tagName === 'math' &&
+      attribute(node, 'display') === 'block' &&
+      !hasClass(parent, 'paper-equation-scroll') &&
+      !hasAncestorClass(node, 'paper-equation')
+    ) {
       let start = index;
       while (start > 0 && hasClass(children[start - 1], 'paper-anchor')) start--;
 
@@ -433,21 +520,42 @@ function hasClass(node, name) {
   return (attribute(node, 'class')?.split(/\s+/) ?? []).includes(name);
 }
 
+function hasAncestorClass(node, name) {
+  let current = node.parentNode;
+  while (current) {
+    if (hasClass(current, name)) return true;
+    current = current.parentNode;
+  }
+  return false;
+}
+
+function closestAncestorWithClass(node, name) {
+  let current = node.parentNode;
+  while (current) {
+    if (hasClass(current, name)) return current;
+    current = current.parentNode;
+  }
+  return undefined;
+}
+
 function collectEquationFacts(node, facts) {
   if (node.tagName === 'math' && attribute(node, 'display') === 'block') facts.displayMath.push(node);
   if (hasClass(node, 'paper-equation')) facts.equations.push(node);
   if (hasClass(node, 'paper-equation-scroll')) facts.scrollers.push(node);
+  if (hasClass(node, 'paper-equation-semantic')) facts.semantic.push(node);
+  if (hasClass(node, 'paper-equation-svg')) facts.svgs.push(node);
+  if (node.tagName === 'use' && hasClass(node.parentNode, 'paper-equation-svg')) facts.uses.push(node);
   if (hasClass(node, 'paper-anchor')) facts.anchors.push(node);
   for (const child of node.childNodes ?? []) collectEquationFacts(child, facts);
 }
 
 function displayMathDescendants(node) {
-  const facts = { displayMath: [], equations: [], scrollers: [], anchors: [] };
+  const facts = { displayMath: [], equations: [], scrollers: [], semantic: [], svgs: [], uses: [], anchors: [] };
   collectEquationFacts(node, facts);
   return facts.displayMath;
 }
 
-export function validateGeneratedHtml(slug, html) {
+export function validateGeneratedHtml(slug, html, { requireSvg = false, expectedDisplayCount } = {}) {
   if (!/<h[1-6][\s>]/i.test(html)) throw new Error(`${slug}: generated HTML has no headings`);
   if (!/<math[\s>]/i.test(html)) throw new Error(`${slug}: generated HTML has no MathML`);
   if (/<span[^>]+class="[^"]*\bmath\b/i.test(html)) throw new Error(`${slug}: unconverted math span remains`);
@@ -458,6 +566,9 @@ export function validateGeneratedHtml(slug, html) {
   const visibleText = visibleTextContent(document);
   if (FORBIDDEN_LATEX.test(visibleText)) throw new Error(`${slug}: raw LaTeX command leaked into the page`);
   if (MOJIBAKE.test(visibleText)) throw new Error(`${slug}: suspected mojibake or replacement character`);
+  if (containsForbiddenControlCharacter(visibleText)) throw new Error(`${slug}: forbidden control character in page text`);
+  if (visibleText !== visibleText.normalize('NFC')) throw new Error(`${slug}: page text is not Unicode NFC`);
+  if (/<merror[\s>]/i.test(html)) throw new Error(`${slug}: MathML contains a rendering error`);
   if (/<span[^>]+class="[^"]*citation[^"]*"[^>]*>\s*<\/span>/i.test(html)) {
     throw new Error(`${slug}: empty citation remained after conversion`);
   }
@@ -467,7 +578,7 @@ export function validateGeneratedHtml(slug, html) {
   const missing = [...facts.links].filter((target) => !facts.ids.has(target));
   if (missing.length > 0) throw new Error(`${slug}: missing internal link targets: ${missing.slice(0, 8).join(', ')}`);
 
-  const equations = { displayMath: [], equations: [], scrollers: [], anchors: [] };
+  const equations = { displayMath: [], equations: [], scrollers: [], semantic: [], svgs: [], uses: [], anchors: [] };
   collectEquationFacts(document, equations);
   if (
     equations.displayMath.length !== equations.equations.length ||
@@ -478,7 +589,7 @@ export function validateGeneratedHtml(slug, html) {
     );
   }
   for (const math of equations.displayMath) {
-    const scroller = math.parentNode;
+    const scroller = closestAncestorWithClass(math, 'paper-equation-scroll');
     const shell = scroller?.parentNode;
     if (!hasClass(scroller, 'paper-equation-scroll') || !hasClass(shell, 'paper-equation')) {
       throw new Error(`${slug}: display MathML is not inside the required equation container`);
@@ -489,6 +600,47 @@ export function validateGeneratedHtml(slug, html) {
       throw new Error(`${slug}: each equation container must contain exactly one display MathML node`);
     }
   }
+  if (expectedDisplayCount !== undefined && equations.displayMath.length !== expectedDisplayCount) {
+    throw new Error(`${slug}: expected ${expectedDisplayCount} display equations, received ${equations.displayMath.length}`);
+  }
+  if (requireSvg) {
+    if (equations.semantic.length !== equations.displayMath.length) {
+      throw new Error(`${slug}: each display equation must retain one semantic MathML fallback`);
+    }
+    if (equations.svgs.length !== equations.displayMath.length * EQUATION_VARIANTS.length) {
+      throw new Error(
+        `${slug}: expected ${equations.displayMath.length * EQUATION_VARIANTS.length} responsive SVG uses, received ${equations.svgs.length}`,
+      );
+    }
+    if (equations.uses.length !== equations.svgs.length) {
+      throw new Error(`${slug}: each responsive equation SVG must contain one external sprite use`);
+    }
+    for (const svg of equations.svgs) {
+      const variantCount = EQUATION_VARIANTS.filter((variant) => hasClass(svg, `paper-equation-svg--${variant}`)).length;
+      const viewBox = attribute(svg, 'viewBox')?.trim().split(/\s+/).map(Number);
+      if (
+        variantCount !== 1 ||
+        viewBox?.length !== 4 ||
+        viewBox.some((value) => !Number.isFinite(value)) ||
+        viewBox[0] !== 0 ||
+        viewBox[1] !== 0 ||
+        !attribute(svg, 'style')
+      ) {
+        throw new Error(`${slug}: malformed responsive equation SVG`);
+      }
+    }
+    for (const use of equations.uses) {
+      const href = attribute(use, 'href');
+      if (
+        !href?.startsWith(`/papers/${slug}/equations-`) ||
+        !href.includes('.svg#eq-') ||
+        attribute(use, 'width') !== '100%' ||
+        attribute(use, 'height') !== '100%'
+      ) {
+        throw new Error(`${slug}: invalid equation sprite reference: ${href ?? 'missing'}`);
+      }
+    }
+  }
   for (const anchor of equations.anchors) {
     if (!hasClass(anchor.parentNode, 'paper-equation')) {
       throw new Error(`${slug}: equation anchor is outside its container`);
@@ -497,19 +649,38 @@ export function validateGeneratedHtml(slug, html) {
 }
 
 export function normalizeGeneratedHtml(slug, html) {
-  const document = parseFragment(html);
+  const document = parseFragment(html.normalize('NFC'));
   wrapDisplayMathNodes(document);
-  const normalized = serialize(document).trim();
+  const normalized = serialize(document).trim().normalize('NFC');
   validateGeneratedHtml(slug, normalized);
   return normalized;
 }
 
-export function convertPandocHtml({ slug, standaloneHtml, aux, replacements, macros = {} }) {
-  const document = parse(standaloneHtml);
+export function convertPandocHtml({
+  slug,
+  standaloneHtml,
+  aux,
+  replacements,
+  macros = {},
+  displayAssets = /** @type {Array<{ id: string, variants: Record<string, { href: string, viewBox: string, widthEm: number }> }>} */ ([]),
+}) {
+  const document = parse(standaloneHtml.normalize('NFC'));
   const htmlNode = document.childNodes.find((node) => node.tagName === 'html');
   const body = htmlNode?.childNodes?.find((node) => node.tagName === 'body');
   if (!body) throw new Error(`${slug}: Pandoc output has no body`);
-  replaceMathNodes(body, aux, macros);
-  const converted = replaceMarkers(serialize(body), replacements).replaceAll('../../../../public/og.png', '/og.png').trim();
-  return normalizeGeneratedHtml(slug, converted);
+  const state = { displayIndex: 0 };
+  replaceMathNodes(body, aux, macros, displayAssets, state);
+  if (displayAssets.length > 0 && state.displayIndex !== displayAssets.length) {
+    throw new Error(`${slug}: display equation asset mismatch (${state.displayIndex} HTML, ${displayAssets.length} SVG)`);
+  }
+  const converted = replaceMarkers(serialize(body), replacements)
+    .replaceAll('../../../../public/og.png', '/og.png')
+    .trim()
+    .normalize('NFC');
+  const normalized = normalizeGeneratedHtml(slug, converted);
+  validateGeneratedHtml(slug, normalized, {
+    requireSvg: displayAssets.length > 0,
+    expectedDisplayCount: state.displayIndex,
+  });
+  return normalized;
 }

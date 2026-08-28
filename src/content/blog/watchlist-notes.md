@@ -4,10 +4,8 @@ title: 追番页的打开方式
 description: 配置 Bangumi 用户 ID 后，导航中会自动出现追番入口。
 date: 2026-08-23 20:00:00
 cover: /og.png
-tags:
+keywords:
   - Bangumi
-  - ACG
-categories:
   - ACG
 ---
 

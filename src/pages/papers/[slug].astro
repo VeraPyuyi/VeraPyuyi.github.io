@@ -63,8 +63,8 @@ const html = getPaperHtml(paper);
   html [data-paper-font] .paper-content,
   html [data-paper-font] .paper-content :where(h1, h2, h3, h4, h5, h6, p, li, table, blockquote) { font-family: inherit; }
   .paper-content {
-    width: min(100%, 86ch);
-    max-width: 86ch;
+    width: min(100%, 74ch);
+    max-width: 74ch;
     margin-inline: auto;
     overflow-wrap: break-word;
     line-height: var(--reader-line-height, 1.82);
@@ -101,27 +101,30 @@ const html = getPaperHtml(paper);
   .paper-content .paper-equation {
     position: relative;
     display: block;
-    max-width: 100%;
-    margin: clamp(1.2rem, 3vw, 1.8rem) 0;
+    width: min(56em, calc(100vw - 22rem));
+    max-width: none;
+    margin: clamp(1.35rem, 3vw, 2rem) 0;
+    margin-left: 50%;
     border: 1px solid hsl(var(--primary) / 0.16);
     border-radius: 1rem;
     background: linear-gradient(135deg, hsl(var(--primary) / 0.055), hsl(var(--shoka-info) / 0.035));
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.38);
     font-style: normal;
     isolation: isolate;
+    transform: translateX(-50%);
   }
   .paper-content .paper-equation-scroll {
     display: block;
     max-width: 100%;
     overflow-x: auto;
     overscroll-behavior-inline: contain;
-    padding: clamp(1rem, 3vw, 1.35rem) clamp(0.75rem, 3vw, 1.5rem) clamp(1.25rem, 3vw, 1.55rem);
+    padding: clamp(1rem, 3vw, 1.4rem) 0 clamp(1.25rem, 3vw, 1.55rem);
     scrollbar-color: hsl(var(--primary) / 0.42) transparent;
     scrollbar-width: thin;
     -webkit-overflow-scrolling: touch;
   }
   .paper-content .paper-equation-scroll:focus-visible { outline: 2px solid hsl(var(--primary) / 0.65); outline-offset: 3px; }
-  .paper-content .paper-equation math[display='block'] {
+  .paper-content .paper-equation-scroll > math[display='block'] {
     display: block;
     width: max-content;
     min-width: 100%;
@@ -131,6 +134,27 @@ const html = getPaperHtml(paper);
     font-size: clamp(1rem, 0.92rem + 0.36vw, 1.22rem);
     font-style: normal;
     text-align: center;
+  }
+  .paper-content .paper-equation-svg {
+    display: block;
+    width: var(--paper-equation-svg-width);
+    max-width: none;
+    height: auto;
+    margin-inline: auto;
+    overflow: visible;
+    color: currentColor;
+    font-style: normal;
+  }
+  .paper-content .paper-equation-svg--tablet,
+  .paper-content .paper-equation-svg--mobile { display: none; }
+  .paper-content .paper-equation-semantic {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .paper-content .paper-equation .tml-tag { padding-inline-start: 1.35rem; color: hsl(var(--muted-foreground)); font-size: 0.82em; white-space: nowrap; }
   .paper-content .paper-equation::before,
@@ -182,13 +206,24 @@ const html = getPaperHtml(paper);
   .paper-content .proof > :last-child { margin-bottom: 0; }
   .paper-content :is(.remark, .example) { margin: 1.35rem 0; border-radius: 0.85rem; padding: 0.8rem 1rem; background: hsl(var(--muted) / 0.32); }
   .paper-content table { display: block; width: 100%; max-width: 100%; overflow-x: auto; border-radius: 0.75rem; }
+  .paper-content figure {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
   .paper-content figure img { border-radius: 1.25rem; }
   .paper-content #refs { border-top: 1px solid hsl(var(--border)); padding-top: 1.5rem; }
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .paper-content .paper-equation { width: min(40em, calc(100vw - 3rem)); }
+    .paper-content .paper-equation-svg--desktop { display: none; }
+    .paper-content .paper-equation-svg--tablet { display: block; }
+  }
   @media (max-width: 639px) {
     .paper-content { width: 100%; font-size: 0.98rem; }
-    .paper-content .paper-equation { margin-inline: -0.4rem; max-width: calc(100% + 0.8rem); border-radius: 0.8rem; }
-    .paper-content .paper-equation-scroll { padding-inline: 0.65rem; }
-    .paper-content .paper-equation math[display='block'] { font-size: 0.98rem; }
+    .paper-content .paper-equation { width: min(22em, calc(100vw - 1rem)); border-radius: 0.8rem; }
+    .paper-content .paper-equation-svg--desktop { display: none; }
+    .paper-content .paper-equation-svg--mobile { display: block; }
+    .paper-content .paper-equation-scroll > math[display='block'] { font-size: 0.98rem; }
   }
   @media (prefers-reduced-motion: reduce) {
     .paper-content .paper-equation::before,
@@ -259,8 +294,10 @@ const html = getPaperHtml(paper);
         });
       }
       equationObserver.observe(scroller);
-      const math = scroller.querySelector<HTMLElement>('math[display="block"]');
-      if (math) equationObserver.observe(math);
+      const renderedEquations = scroller.querySelectorAll<SVGElement>('.paper-equation-svg');
+      for (const rendered of renderedEquations) equationObserver.observe(rendered);
+      const fallbackMath = scroller.querySelector<HTMLElement>(':scope > math[display="block"]');
+      if (fallbackMath) equationObserver.observe(fallbackMath);
       updatePaperEquation(scroller);
     }
 

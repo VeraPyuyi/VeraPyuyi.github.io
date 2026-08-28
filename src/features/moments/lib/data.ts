@@ -1,6 +1,6 @@
 import { getLiveCollection } from 'astro:content';
 import { RESERVED_ROUTES } from '@constants/router';
-import { configuredSeriesSlugs, i18nConfig, momentsConfig } from '@constants/site-config';
+import { i18nConfig, momentsConfig } from '@constants/site-config';
 import type { MessageContext, MessagePage, PublicChannel, SearchMessagePage, SearchMessageSort } from '@coszone/koharu-astro';
 import { type ResolvedMomentsChannel, resolveMomentsChannels } from '@lib/config/moments';
 import { getKoharuClient, requestKoharu } from './runtime';
@@ -24,7 +24,6 @@ export async function getMomentsChannels(): Promise<MomentsChannels> {
   const all = resolveMomentsChannels(momentsConfig, suiteChannels, {
     localeCodes: i18nConfig.locales.flatMap((locale) => (locale.enabled === false ? [] : [locale.code])),
     reservedRoutes: RESERVED_ROUTES,
-    seriesSlugs: configuredSeriesSlugs,
   });
   const visible = all.filter((channel) => !channel.hidden);
   return { all, visible, primary: visible.find((channel) => channel.primary) ?? visible[0] };

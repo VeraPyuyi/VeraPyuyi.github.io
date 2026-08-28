@@ -1,13 +1,12 @@
 import { useTranslation } from '@hooks/useTranslation';
-import { translateCategoryName } from '@lib/content/category-translate';
 import { encodeSlug } from '@lib/route';
 import { localizedPath } from '@/i18n';
 import { cn, shuffleArray } from '@/lib/utils';
-import type { PostRefWithCategory } from '@/types/blog';
+import type { PostRef } from '@/types/blog';
 
 interface Props {
-  posts: PostRefWithCategory[];
-  fallbackPool: PostRefWithCategory[]; // Pool to randomly select from when no related posts
+  posts: PostRef[];
+  fallbackPool: PostRef[]; // Pool to randomly select from when no related posts
   fallbackCount: number; // Number of fallback posts to display
   startIndex?: number; // Starting index for fallback post numbering
   locale?: string;
@@ -40,11 +39,6 @@ export default function RelatedPostList({ posts, fallbackPool, fallbackCount, st
           >
             <span className="shrink-0 font-mono text-foreground/30">{index + (hasRelatedPosts ? 1 : startIndex)}</span>
             <div className="flex min-w-0 flex-col gap-0.5">
-              {post.categoryName && (
-                <div className="truncate text-foreground/50 text-xs">
-                  {locale ? translateCategoryName(post.categoryName, locale) : post.categoryName}
-                </div>
-              )}
               <div className="line-clamp-2 text-foreground/80 transition-colors group-hover:text-primary">{post.title}</div>
             </div>
           </a>

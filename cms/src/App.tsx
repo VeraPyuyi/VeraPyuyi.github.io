@@ -7,18 +7,10 @@
 import { Icon } from '@iconify/react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Toaster } from 'sonner';
-import {
-  CategoryStats,
-  CreatePostDialog,
-  DashboardStats,
-  ErrorFallback,
-  PostEditor,
-  PostTable,
-  RecentUpdates,
-} from '@/components';
+import { CreatePostDialog, DashboardStats, ErrorFallback, PostEditor, PostTable, RecentUpdates } from '@/components';
 import { Button } from '@/components/ui/button';
 import { type StatusFilter, useDashboardState } from '@/hooks';
-import { MAX_CATEGORY_DISPLAY, MAX_RECENT_POSTS_DISPLAY } from '@/lib/paths';
+import { MAX_RECENT_POSTS_DISPLAY } from '@/lib/paths';
 import { cn } from '@/lib/utils';
 
 // Main App Content
@@ -34,8 +26,6 @@ function AppContent() {
     editingPostId,
     search,
     setSearch,
-    category,
-    setCategory,
     status,
     setStatus,
     sortField,
@@ -129,9 +119,7 @@ function AppContent() {
                   <div className="space-y-6">
                     <DashboardStats total={data.stats.total} published={data.stats.published} draft={data.stats.draft} />
 
-                    {/* Two-column layout for Categories and Recent Updates */}
-                    <div className="grid gap-6 md:grid-cols-2">
-                      <CategoryStats categories={data.stats.categoryStats} maxDisplay={MAX_CATEGORY_DISPLAY} />
+                    <div className="grid gap-6">
                       <RecentUpdates
                         posts={data.stats.recentPosts}
                         maxDisplay={MAX_RECENT_POSTS_DISPLAY}
@@ -156,29 +144,6 @@ function AppContent() {
                           value={search}
                           onChange={(e) => setSearch(e.target.value)}
                           className="rounded-lg border border-input bg-background py-2 pr-3 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                      <div className="relative">
-                        <Icon
-                          icon="ri:folder-line"
-                          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                        />
-                        <select
-                          aria-label="Filter by category"
-                          value={category}
-                          onChange={(e) => setCategory(e.target.value)}
-                          className="appearance-none rounded-lg border border-input bg-background py-2 pr-8 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          <option value="">All Categories</option>
-                          {data.categories.map((cat) => (
-                            <option key={cat} value={cat}>
-                              {cat}
-                            </option>
-                          ))}
-                        </select>
-                        <Icon
-                          icon="ri:arrow-down-s-line"
-                          className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground"
                         />
                       </div>
                       <div className="relative">
@@ -228,12 +193,7 @@ function AppContent() {
       </div>
 
       {/* Create Post Dialog */}
-      <CreatePostDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        existingCategories={data?.categories || []}
-        onSuccess={handleCreatePostSuccess}
-      />
+      <CreatePostDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} onSuccess={handleCreatePostSuccess} />
     </>
   );
 }

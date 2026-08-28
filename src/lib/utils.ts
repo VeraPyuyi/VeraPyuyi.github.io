@@ -44,31 +44,13 @@ export function normalizeNavSlug(path: string): string | null {
 }
 
 /**
- * Filter navigation items based on enabled series slugs
- * Removes items that point to disabled series routes
- *
- * @param items - Navigation items to filter
- * @param configuredSlugs - Set of all configured series slugs (lowercase)
- * @param enabledSlugs - Set of enabled series slugs (lowercase)
- * @param reservedSlugs - Set of reserved static route slugs (lowercase)
+ * Recursively remove navigation groups that have neither a path nor visible children.
  * @returns Filtered navigation items
  */
-export function filterNavItems(
-  items: Router[],
-  configuredSlugs: Set<string>,
-  enabledSlugs: Set<string>,
-  reservedSlugs: Set<string>,
-): Router[] {
+export function filterNavItems(items: Router[]): Router[] {
   return items
     .map((item) => {
-      // Recursively filter children first
-      const children = item.children ? filterNavItems(item.children, configuredSlugs, enabledSlugs, reservedSlugs) : undefined;
-      const slug = item.path ? normalizeNavSlug(item.path) : null;
-
-      // Filter out disabled series routes
-      if (slug && configuredSlugs.has(slug) && !enabledSlugs.has(slug)) {
-        return null;
-      }
+      const children = item.children ? filterNavItems(item.children) : undefined;
 
       // Filter out empty parent items (no path and no children)
       if (!item.path && (!children || children.length === 0)) {

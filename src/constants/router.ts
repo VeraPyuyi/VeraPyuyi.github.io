@@ -8,21 +8,9 @@ export type Router = RouterItem;
 export enum Routes {
   Home = '/',
   About = '/about',
-  Categories = '/categories',
-  Tags = '/tags',
   Friends = '/friends',
   Post = '/post',
-  Archives = '/archives',
   Bangumi = '/bangumi',
-}
-
-/**
- * Get the URL path for a featured series
- * @param slug - The series slug (e.g., 'weekly')
- * @returns The full path (e.g., '/weekly')
- */
-export function getSeriesPath(slug: string): string {
-  return `/${slug}`;
 }
 
 /** Fallback navigation used when `config/site.yaml` does not define `navigation`. */

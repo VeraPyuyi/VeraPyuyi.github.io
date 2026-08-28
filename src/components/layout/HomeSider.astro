@@ -1,14 +1,8 @@
 ---
-import { SeriesNavigation } from '@components/post/SeriesNavigation';
-import { SeriesPostList } from '@components/post/SeriesPostList';
 import HomeSiderSegmented from '@components/ui/segmented/HomeSiderSegmented';
 import { HomeSiderSegmentType, HomeSiderType } from '@constants/enum';
-import { getPostSlug } from '@lib/content/locale';
-import { getAdjacentSeriesPosts, getSeriesPosts } from '@lib/content/posts';
-import { toPostRef, toPostRefs } from '@lib/content/transforms';
 import { cn } from '@lib/utils';
 import type { BlogPost } from 'types/blog';
-import { getLocaleFromUrl } from '@/i18n';
 import HomeInfo from './HomeInfo.astro';
 import { ScrollProgress } from './ScrollProgress';
 import { TableOfContents } from './TableOfContents/index';
@@ -21,17 +15,7 @@ interface Props {
 }
 
 const { type = HomeSiderType.HOME, className, isDrawer = false, post } = Astro.props;
-const locale = getLocaleFromUrl(Astro.url.pathname);
 const defaultSegmentType = type === HomeSiderType.POST ? HomeSiderSegmentType.DIRECTORY : HomeSiderSegmentType.INFO;
-
-// 获取系列文章（转换为轻量级引用）
-const seriesPosts = post && type === HomeSiderType.POST ? toPostRefs(await getSeriesPosts(post, locale)) : [];
-
-// 获取上一篇和下一篇（转换为轻量级引用）
-const adjacentPosts =
-  post && type === HomeSiderType.POST ? await getAdjacentSeriesPosts(post, locale) : { prevPost: null, nextPost: null };
-const prevPost = adjacentPosts.prevPost ? toPostRef(adjacentPosts.prevPost) : null;
-const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : null;
 ---
 
 <div
@@ -63,9 +47,6 @@ const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : nu
     <div slot="directory" class="sider-slot overflow-hidden h-full" data-slot-type="directory">
       {type === HomeSiderType.POST && <TableOfContents client:only="react" enableNumbering={post?.data.tocNumbering ?? true} />}
     </div>
-    <div slot="series" class="sider-slot" data-slot-type="series">
-      {type === HomeSiderType.POST && <SeriesPostList client:idle posts={seriesPosts} currentPostSlug={post ? getPostSlug(post) : undefined} locale={locale} />}
-    </div>
   </sider-content>
 
   <!-- 内联脚本：在 DOM 解析后立即隐藏不需要的内容，避免闪烁 -->
@@ -86,12 +67,6 @@ const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : nu
     })();
   </script>
 
-  {
-    type === HomeSiderType.POST && (
-      <SeriesNavigation client:load prevPost={prevPost} nextPost={nextPost} className="w-full px-2" locale={locale} />
-    )
-  }
-
   <ScrollProgress client:only="react" className="mt-auto w-full rounded-full pt-4" />
 </div>
 
@@ -104,7 +79,6 @@ const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : nu
     // 私有属性定义
     private infoContent: HTMLElement | null = null;
     private directoryContent: HTMLElement | null = null;
-    private seriesContent: HTMLElement | null = null;
     private pageType: string | null = null;
     private defaultType: string | null = null;
     private unsubscribe: (() => void) | null = null;
@@ -113,7 +87,6 @@ const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : nu
     connectedCallback() {
       this.infoContent = this.querySelector('[slot="info"]');
       this.directoryContent = this.querySelector('[slot="directory"]');
-      this.seriesContent = this.querySelector('[slot="series"]');
       this.pageType = this.getAttribute('data-type');
       this.defaultType = this.getAttribute('data-default-type');
       this.initContent();
@@ -138,14 +111,12 @@ const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : nu
     }
 
     showContent(type: HomeSiderSegmentType, skipAnimation = false) {
-      const contentPanels = [this.infoContent, this.directoryContent, this.seriesContent];
+      const contentPanels = [this.infoContent, this.directoryContent];
 
       // 确定目标内容
       let targetContent: HTMLElement | null = null;
       if (type === HomeSiderSegmentType.DIRECTORY) {
         targetContent = this.directoryContent;
-      } else if (type === HomeSiderSegmentType.SERIES) {
-        targetContent = this.seriesContent;
       } else {
         targetContent = this.infoContent;
       }

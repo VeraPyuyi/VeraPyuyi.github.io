@@ -11,7 +11,6 @@ import matter from 'gray-matter';
 import type { Context } from 'hono';
 import yaml from 'js-yaml';
 import { z } from 'zod';
-import { addCategoryMappings } from '@/lib/config';
 import { serializeFrontmatter } from '@/lib/frontmatter';
 import { CONTENT_DIR } from '@/lib/paths';
 import { hasValidMarkdownExtension, isPathSafe } from '@/lib/validation';
@@ -22,7 +21,6 @@ const writePostRequestSchema = z.object({
   postId: z.string().min(1, 'postId is required'),
   frontmatter: z.record(z.unknown()),
   content: z.string(),
-  categoryMappings: z.record(z.string(), z.string()).optional(),
 });
 
 /**
@@ -42,7 +40,7 @@ export async function writeHandler(c: Context) {
       return c.json({ error: errorMessage }, 400);
     }
 
-    const { postId, frontmatter, content, categoryMappings } = parseResult.data;
+    const { postId, frontmatter, content } = parseResult.data;
 
     // Validate path safety
     if (!isPathSafe(postId)) {
@@ -115,11 +113,6 @@ export async function writeHandler(c: Context) {
         },
       },
     });
-
-    // Add new category mappings if provided
-    if (categoryMappings && Object.keys(categoryMappings).length > 0) {
-      await addCategoryMappings(projectRoot, categoryMappings);
-    }
 
     // Ensure the directory exists
     const dirPath = path.dirname(filePath);

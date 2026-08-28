@@ -36,14 +36,9 @@ const blogCollection = defineCollection({
     date: dateInSiteTimezone,
     updated: dateInSiteTimezone.optional(),
     cover: z.string().optional(),
-    tags: z.array(z.string()).optional(),
     // Preserve compatibility with posts migrated from Hexo.
     subtitle: z.string().optional(),
     catalog: z.boolean().optional().default(true),
-    categories: z
-      .array(z.string())
-      .or(z.array(z.array(z.string())))
-      .optional(),
     sticky: z.boolean().optional(),
     draft: z.boolean().optional(),
     comments: z.boolean().optional().default(true),

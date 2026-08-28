@@ -10,21 +10,7 @@
 import yamlConfig from '../../../config/site.yaml';
 import { DEFAULT_TIMEZONE, isValidTimezone } from '../timezone';
 import { normalizeContentConfig } from './content';
-import { enabledFeaturedSeriesSlugs, normalizeFeaturedSeries } from './featured-series';
-import { RESERVED_ROUTES } from './reserved-routes';
 import type { I18nConfig, ResolvedContentConfig, ResolvedSiteConfig } from './types';
-
-/** Category name → URL slug map, e.g. `{ '随笔': 'life' }`. */
-export const categoryMap: Record<string, string> = yamlConfig.categoryMap ?? {};
-
-/** Validated featured series, always an array with lowercase slugs. */
-export const featuredSeriesList = normalizeFeaturedSeries(yamlConfig.featuredSeries, {
-  categoryMap: yamlConfig.categoryMap,
-  reservedRoutes: RESERVED_ROUTES,
-});
-
-/** Slugs of the series that are enabled — used to reserve their routes. */
-export const enabledSeriesSlugList = enabledFeaturedSeriesSlugs(featuredSeriesList);
 
 export const i18nConfig: I18nConfig = yamlConfig.i18n ?? {
   defaultLocale: 'zh',
@@ -64,7 +50,5 @@ export const siteConfig: ResolvedSiteConfig = {
   defaultOgImage: yamlConfig.site.defaultOgImage,
   keywords: yamlConfig.site.keywords,
   breadcrumbHome: yamlConfig.site.breadcrumbHome,
-  featuredCategories: yamlConfig.featuredCategories,
-  featuredSeries: featuredSeriesList,
   enableSlugTransliteration: yamlConfig.site.enableSlugTransliteration,
 };

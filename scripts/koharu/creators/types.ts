@@ -25,30 +25,13 @@ export interface ContentCreator {
 }
 
 /**
- * Category tree item for display
- */
-export interface CategoryTreeItem {
-  /** Category name (Chinese) */
-  name: string;
-  /** URL-friendly slug */
-  slug: string;
-  /** Full path for nested categories */
-  path: string[];
-  /** Indentation level for display */
-  level: number;
-  /** Children categories */
-  children?: CategoryTreeItem[];
-}
-
-/**
  * Post frontmatter data
  */
 export interface PostData {
   title: string;
   link?: string;
   description?: string;
-  categories: string | string[];
-  tags: string[];
+  keywords: string[];
   draft: boolean;
 }
 

@@ -2,7 +2,7 @@
  * Post Editor
  *
  * Full-screen editor for blog posts with BlockNote editor and frontmatter panel.
- * Supports Cmd+S save, new category detection, and unsaved changes warning.
+ * Supports Cmd+S save and unsaved changes warning.
  */
 
 import { useCreateBlockNote } from '@blocknote/react';
@@ -10,7 +10,6 @@ import '@blocknote/shadcn/style.css';
 import { Icon } from '@iconify/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { CategoryMappingDialog } from '@/components/CategoryMappingDialog';
 import type { FrontmatterEditorRef } from '@/components/FrontmatterEditor';
 import { blocksToMarkdown, markdownToBlocks, postEditorSchema } from '@/components/post-editor/editor';
 import { PostEditorCanvas } from '@/components/post-editor/PostEditorCanvas';
@@ -21,7 +20,6 @@ import { useSidebarResize } from '@/components/post-editor/useSidebarResize';
 import { Button } from '@/components/ui/button';
 import { useEditorHeadings } from '@/hooks';
 import { readPost, writePost } from '@/lib/api';
-import { detectNewCategories, getCategoryMap, setCategoryMap } from '@/lib/category';
 import { DEV_SERVER_URL } from '@/lib/config';
 import type { BlogSchema } from '@/types';
 
@@ -45,10 +43,6 @@ export function PostEditor({ postId, onClose, onSaved }: PostEditorProps) {
   const frontmatterRef = useRef<FrontmatterEditorRef>(null);
 
   const [previewContent, setPreviewContent] = useState('');
-
-  const [currentCategories, setCurrentCategories] = useState<string[]>([]);
-  const [pendingCategoryMappings, setPendingCategoryMappings] = useState<Record<string, string>>({});
-  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
 
   // BlockNote editor with code block language support
   const editor = useCreateBlockNote({ schema: postEditorSchema });
@@ -106,73 +100,34 @@ export function PostEditor({ postId, onClose, onSaved }: PostEditorProps) {
     }
   }, []);
 
-  // Handle categories change for new category detection
-  const handleCategoriesChange = useCallback((categories: string[]) => {
-    setCurrentCategories(categories);
-  }, []);
-
-  // Actual save operation (defined first so handleSave can reference it)
-  const performSave = useCallback(
-    async (categoryMappings?: Record<string, string>) => {
-      if (!editor) return;
-
-      setIsSaving(true);
-      try {
-        // Get markdown content
-        const content = await blocksToMarkdown(editor);
-
-        // Update the updated date
-        const now = new Date();
-        const updatedFrontmatter = {
-          ...frontmatter,
-          updated: now,
-          // Set date if not present (new post)
-          date: frontmatter.date || now,
-        };
-
-        await writePost(postId, updatedFrontmatter, content, categoryMappings);
-
-        // Update category map if we added new mappings
-        if (categoryMappings) {
-          const currentMap = getCategoryMap();
-          setCategoryMap({ ...currentMap, ...categoryMappings });
-        }
-
-        setHasUnsavedChanges(false);
-        toast.success('Post saved successfully');
-        onSaved?.();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to save post');
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [editor, frontmatter, postId, onSaved],
-  );
-
-  // Save post with new category detection
   const handleSave = useCallback(async () => {
     if (!editor) return;
 
-    // Check for new categories
-    const newCats = detectNewCategories(currentCategories);
-    if (Object.keys(newCats).length > 0) {
-      setPendingCategoryMappings(newCats);
-      setShowCategoryDialog(true);
-      return;
+    setIsSaving(true);
+    try {
+      // Get markdown content
+      const content = await blocksToMarkdown(editor);
+
+      // Update the updated date
+      const now = new Date();
+      const updatedFrontmatter = {
+        ...frontmatter,
+        updated: now,
+        // Set date if not present (new post)
+        date: frontmatter.date || now,
+      };
+
+      await writePost(postId, updatedFrontmatter, content);
+
+      setHasUnsavedChanges(false);
+      toast.success('Post saved successfully');
+      onSaved?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save post');
+    } finally {
+      setIsSaving(false);
     }
-
-    await performSave();
-  }, [editor, currentCategories, performSave]);
-
-  // Handle category mapping confirmation
-  const handleCategoryMappingConfirm = useCallback(
-    (mappings: Record<string, string>) => {
-      setShowCategoryDialog(false);
-      performSave(mappings);
-    },
-    [performSave],
-  );
+  }, [editor, frontmatter, postId, onSaved]);
 
   // Keyboard shortcut for save
   useEffect(() => {
@@ -312,20 +267,10 @@ export function PostEditor({ postId, onClose, onSaved }: PostEditorProps) {
             previewContent={previewContent}
             onTabChange={handleTabChange}
             onFrontmatterChange={handleFrontmatterChange}
-            onCategoriesChange={handleCategoriesChange}
             onTOCNavigate={handleTOCNavigate}
           />
         )}
       </div>
-
-      {/* Category Mapping Dialog */}
-      <CategoryMappingDialog
-        open={showCategoryDialog}
-        onOpenChange={setShowCategoryDialog}
-        newCategories={pendingCategoryMappings}
-        onConfirm={handleCategoryMappingConfirm}
-        onCancel={() => setShowCategoryDialog(false)}
-      />
     </div>
   );
 }

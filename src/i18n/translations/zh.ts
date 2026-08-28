@@ -9,9 +9,6 @@ export const uiStrings = {
   // ── Navigation ──────────────────────────────────────────────
   'nav.home': '首页',
   'nav.posts': '文章',
-  'nav.categories': '分类',
-  'nav.tags': '标签',
-  'nav.archives': '归档',
   'nav.friends': '友链',
   'nav.about': '关于',
   'nav.music': '歌单',
@@ -47,7 +44,6 @@ export const uiStrings = {
   'post.totalPosts': '共 {count} 篇文章',
   'post.stickyPosts': '置顶文章',
   'post.postList': '文章列表',
-  'post.featuredCategories': '精选分类',
   'post.yearPosts': '{count} 篇文章',
   'post.readingTime': '{time} 分钟阅读',
   'post.wordCount': '{count} 字',
@@ -56,28 +52,14 @@ export const uiStrings = {
   'post.prevPost': '上一篇',
   'post.nextPost': '下一篇',
   'post.relatedPosts': '相关文章',
-  'post.seriesNavigation': '系列导航',
-  'post.seriesPrev': '上一篇',
-  'post.seriesNext': '下一篇',
   'post.fallbackNotice': '本文暂无{lang}翻译，显示原文内容',
   'post.draft': '草稿',
   'post.pinned': '置顶',
   'post.noPostsFound': '暂无文章',
 
   // ── Categories & Tags ───────────────────────────────────────
-  'category.allCategories': '所有分类',
-  'category.postsInCategory': '{name} 分类下的文章',
-  'category.totalCategories': '共 {count} 个分类',
-  'category.categoryLabel': '分类',
-  'tag.allTags': '所有标签',
-  'tag.postsWithTag': '标签「{name}」下的文章',
-  'tag.totalTags': '共 {count} 个标签',
-  'tag.all': '全部',
-  'tag.postCount': '{count} 篇文章',
 
   // ── Archives ────────────────────────────────────────────────
-  'archives.title': '归档',
-  'archives.totalPosts': '共 {count} 篇',
 
   // ── Search ──────────────────────────────────────────────────
   'search.placeholder': '请输入关键词搜索',
@@ -196,7 +178,6 @@ export const uiStrings = {
 
   // ── Breadcrumb ──────────────────────────────────────────────
   'breadcrumb.home': '首页',
-  'breadcrumb.goToCategory': '前往{name}分类',
 
   // ── Floating Group ──────────────────────────────────────────
   'floating.backToTop': '回到顶部',
@@ -299,29 +280,20 @@ export const uiStrings = {
   'notFound.title': '页面未找到',
   'notFound.description': '你访问的页面不存在',
   'notFound.backHome': '返回首页',
-  'notFound.browseArchives': '浏览归档',
+  'notFound.browsePosts': '查看全部文章',
   'notFound.message': '喵？页面被吃掉了~',
 
   // ── Category Stats ────────────────────────────────────────
-  'category.subCategoryCount': '{count} 个子分类',
-  'category.postCount': '{count} 篇文章',
 
   // ── Post Card ─────────────────────────────────────────────
   'post.readingTimeTooltip': '预计阅读时长: {time}',
 
   // ── Featured Series ─────────────────────────────────────────
-  'series.latestPost': '最新文章',
-  'series.viewAll': '查看全部',
-  'series.postCount': '{count} 篇',
-  'series.noPosts': '暂无系列文章',
-  'series.rss': 'RSS 订阅',
-  'series.chromeExtension': 'Chrome 插件',
-  'series.docs': '文档',
 
   // ── Home Info ───────────────────────────────────────────────
   'homeInfo.articles': '文章',
-  'homeInfo.categories': '分类',
-  'homeInfo.tags': '标签',
+  'homeInfo.papers': '论文',
+  'homeInfo.blogs': '博客',
 
   // ── Drawer ──────────────────────────────────────────────────
   'drawer.navMenu': '导航菜单',
@@ -337,8 +309,6 @@ export const uiStrings = {
   'post.randomPosts': '随机文章',
 
   // ── Tag Component ───────────────────────────────────────────
-  'tag.expandAll': '展开全部',
-  'tag.viewTagPosts': '查看标签「{tag}」的 {count} 篇文章',
 
   // ── Audio Player ────────────────────────────────────────────
   'audio.loading': '加载播放列表…',
@@ -367,7 +337,6 @@ export const uiStrings = {
   // ── Sider Segmented ─────────────────────────────────────────
   'sider.overview': '站点概览',
   'sider.toc': '文章目录',
-  'sider.series': '系列文章',
 
   // ── Copy Link ───────────────────────────────────────────────
   'cover.copyLink': '复制链接',

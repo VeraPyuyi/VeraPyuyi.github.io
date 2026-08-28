@@ -22,7 +22,6 @@ import svgr from 'vite-plugin-svgr';
 import YAML from 'yaml';
 import { momentsRoutes } from './src/features/moments/integration/momentsRoutes.ts';
 import { normalizeContentConfig } from './src/lib/config/content.ts';
-import { enabledFeaturedSeriesSlugs, normalizeFeaturedSeries } from './src/lib/config/featured-series.ts';
 import { normalizeMomentsConfig } from './src/lib/config/moments.ts';
 import { RESERVED_ROUTES } from './src/lib/config/reserved-routes.ts';
 import { rehypeEncryptedBlock } from './src/lib/markdown/rehype-encrypted-block.ts';
@@ -65,14 +64,9 @@ const enabledI18nLocales = (i18nYaml?.locales ?? [{ code: 'zh' }])
   .filter((locale) => locale.enabled !== false)
   .map((locale) => locale.code);
 
-const featuredSeries = normalizeFeaturedSeries(yamlConfig.featuredSeries, {
-  categoryMap: yamlConfig.categoryMap,
-  reservedRoutes: RESERVED_ROUTES,
-});
 const momentsConfig = normalizeMomentsConfig(yamlConfig.moments, {
   reservedRoutes: RESERVED_ROUTES,
   localeCodes: enabledI18nLocales,
-  seriesSlugs: enabledFeaturedSeriesSlugs(featuredSeries),
 });
 
 function assertMomentsOgImage(image, field) {

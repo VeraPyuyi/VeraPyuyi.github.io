@@ -57,7 +57,6 @@ function getLeftClip(index: number): boolean {
           <PostItemCard
             key={post.slug}
             data={post}
-            showTags={!isSimple}
             leftClip={getLeftClip(index)}
             randomCover={covers[index % covers.length]}
             hideCover={isSimple}

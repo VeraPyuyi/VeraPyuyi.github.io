@@ -24,7 +24,6 @@ interface PostEditorSidebarProps {
   previewContent: string;
   onTabChange: (tab: SidebarTab) => void;
   onFrontmatterChange: (frontmatter: BlogSchema) => void;
-  onCategoriesChange: (categories: string[]) => void;
   onTOCNavigate: (blockId: string) => void;
 }
 
@@ -37,7 +36,6 @@ export function PostEditorSidebar({
   previewContent,
   onTabChange,
   onFrontmatterChange,
-  onCategoriesChange,
   onTOCNavigate,
 }: PostEditorSidebarProps) {
   return (
@@ -63,12 +61,7 @@ export function PostEditorSidebar({
 
       <div className="flex-1 overflow-auto">
         {activeTab === 'frontmatter' && (
-          <FrontmatterEditor
-            ref={frontmatterRef}
-            frontmatter={frontmatter}
-            onChange={onFrontmatterChange}
-            onCategoriesChange={onCategoriesChange}
-          />
+          <FrontmatterEditor ref={frontmatterRef} frontmatter={frontmatter} onChange={onFrontmatterChange} />
         )}
         {activeTab === 'toc' && (
           <div className="p-4">

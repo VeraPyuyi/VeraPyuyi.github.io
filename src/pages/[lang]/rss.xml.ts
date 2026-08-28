@@ -1,6 +1,6 @@
 import rss from '@astrojs/rss';
 import { siteConfig } from '@constants/site-config';
-import { getCategoryArr, getPostSlug, getSortedPosts } from '@lib/content';
+import { getPostSlug, getSortedPosts } from '@lib/content';
 import { encodeSlug } from '@lib/route';
 import { buildRssItemFields } from '@lib/rss-utils';
 import type { APIContext } from 'astro';
@@ -27,12 +27,6 @@ export async function GET(context: APIContext) {
     customData: `<language>${getHtmlLang(lang)}</language>`,
     stylesheet: '/rss/feed.xsl',
     items: posts.slice(0, 20).map((post: BlogPost) => {
-      const categoryArr = getCategoryArr(post.data.categories?.[0]);
-      const categories = [
-        ...(categoryArr || []).map((cat) => `category:${cat}`),
-        ...(post.data.tags || []).map((tag) => `tag:${tag}`),
-      ];
-
       const postSlug = getPostSlug(post);
       const postLink = localizedPath(`/post/${encodeSlug(postSlug)}`, lang);
       const { title, description, content } = buildRssItemFields(post, lang);
@@ -43,7 +37,6 @@ export async function GET(context: APIContext) {
         description,
         link: postLink,
         content,
-        categories,
         customData: `<guid isPermaLink="false">${lang}:${postSlug}</guid>`,
       };
     }),

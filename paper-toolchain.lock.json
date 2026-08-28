@@ -1,0 +1,22 @@
+{
+  "tectonic": "0.17.0",
+  "pandoc": "3.10.2",
+  "dvisvgm": "3.6.1",
+  "texlive": "2026",
+  "sources": {
+    "dvisvgm": {
+      "url": "https://api.github.com/repos/mgieseki/dvisvgm/releases/assets/501052592",
+      "sha256": "d6aab13136de758e91530a009ace194c84d909dbdb8efa8fa5721de71ff298d8"
+    },
+    "freetype": {
+      "version": "2.14.3",
+      "url": "https://download.savannah.gnu.org/releases/freetype/freetype-2.14.3.tar.xz",
+      "sha256": "36bc4f1cc413335368ee656c42afca65c5a3987e8768cc28cf11ba775e785a5f"
+    },
+    "darwinKpathsea": {
+      "version": "6.4.2",
+      "url": "https://kmq.jp.packages.macports.org/texlive-bin/texlive-bin-2026.78235_5%2Bx11.darwin_25.arm64.tbz2",
+      "sha256": "bfe3f4384741a7eeb1f51ea2d36af85f6ab14749751cf331e8274eabf36a4c96"
+    }
+  }
+}

@@ -74,11 +74,8 @@ export function PostTable({
               <th className="px-4 py-3 text-left">
                 <SortableHeader label="Title" field="title" sortField={sortField} sortOrder={sortOrder} onSort={onSort} />
               </th>
-              <th className="hidden px-4 py-3 text-left md:table-cell">
-                <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">Category</span>
-              </th>
               <th className="hidden px-4 py-3 text-left lg:table-cell">
-                <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">Tags</span>
+                <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">SEO Keywords</span>
               </th>
               <th className="px-4 py-3 text-left">
                 <SortableHeader label="Date" field="date" sortField={sortField} sortOrder={sortOrder} onSort={onSort} />
@@ -104,22 +101,19 @@ export function PostTable({
                     <span className="line-clamp-1 font-medium text-sm">{post.title}</span>
                   </div>
                 </td>
-                <td className="hidden px-4 py-3 md:table-cell">
-                  <span className="text-muted-foreground text-sm">{post.categories.join(' > ') || '-'}</span>
-                </td>
                 <td className="hidden px-4 py-3 lg:table-cell">
                   <div className="flex flex-wrap gap-1">
-                    {post.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="rounded-md bg-muted px-2 py-0.5 text-xs">
-                        {tag}
+                    {post.keywords.slice(0, 3).map((keyword) => (
+                      <span key={keyword} className="rounded-md bg-muted px-2 py-0.5 text-xs">
+                        {keyword}
                       </span>
                     ))}
-                    {post.tags.length > 3 && (
+                    {post.keywords.length > 3 && (
                       <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground text-xs">
-                        +{post.tags.length - 3}
+                        +{post.keywords.length - 3}
                       </span>
                     )}
-                    {post.tags.length === 0 && <span className="text-muted-foreground text-xs">-</span>}
+                    {post.keywords.length === 0 && <span className="text-muted-foreground text-xs">-</span>}
                   </div>
                 </td>
                 <td className="px-4 py-3">

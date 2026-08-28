@@ -5,7 +5,6 @@ import { Button } from '@components/ui/button';
 import { ScrollableRow } from '@components/ui/ScrollableRow';
 import { Routes } from '@constants/router';
 import { createArticleStatsConfig, defaultCoverList } from '@constants/site-config';
-import { buildCategoryPath, buildTagPath, getCategoryArr, translateCategoryName } from '@lib/content';
 import { displayDate } from '@lib/date';
 import { getLqipProps } from '@lib/lqip';
 import { routeBuilder } from '@lib/route';
@@ -19,7 +18,6 @@ export interface PostItemCardProps {
   data: PostCardData;
   leftClip?: boolean;
   randomCover: string;
-  showTags?: boolean;
   hideCover?: boolean; // 隐藏图片，让内容铺满
   isSimple?: boolean; // 是否简单模式
   isUniformPosition?: boolean; // 是否统一图片位置（非交替模式）
@@ -30,25 +28,19 @@ const {
   data,
   leftClip = true,
   hideCover: hideCoverProp,
-  showTags: showTagsProp,
   isSimple = false,
   isUniformPosition = false,
 } = Astro.props as PostItemCardProps;
 
-const showTags = showTagsProp ?? !isSimple;
 const hideCover = hideCoverProp ?? isSimple;
 
-const { cover, date, categories, title, draft, description, slug, link, tags, wordCount, readingTime, postLocale } = data ?? {};
+const { cover, date, title, draft, description, slug, link, wordCount, readingTime, postLocale } = data ?? {};
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const finalCover = cover ?? randomCover ?? defaultCoverList[0];
 const href = localizedPath(routeBuilder(Routes.Post, { slug, link, title }), locale);
 const isDraft = import.meta.env.DEV && draft === true;
 const isFallback = postLocale != null && locale !== defaultLocale && postLocale !== locale;
-
-const categoryArr = getCategoryArr(categories?.[0]);
-const categoryLink = localizedPath(buildCategoryPath(categoryArr), locale);
-const categoryStr = categoryArr?.length ? translateCategoryName(categoryArr[categoryArr.length - 1], locale) : '';
 
 // 直接使用 description（已在 PostCardData 中计算好）
 const postDescription = description ?? '';
@@ -119,15 +111,7 @@ const pageStatsConfig = createArticleStatsConfig(href);
       innerClassName="items-center justify-between gap-4 w-full"
       fadeWidth={20}
     >
-      {
-        categoryStr && (
-          <a href={categoryLink} class="flex-center hover:text-blue text-muted-foreground shrink-0 text-xs whitespace-nowrap transition duration-300">
-            <Icon name="gg:flag" />
-            {categoryStr}
-          </a>
-        )
-      }
-      <div class="text-muted-foreground flex shrink-0 items-center gap-3 text-xs">
+      <div class="text-muted-foreground ml-auto flex shrink-0 items-center gap-3 text-xs">
         {
           date ? (
             <p class="flex-center gap-1 whitespace-nowrap">
@@ -194,33 +178,6 @@ const pageStatsConfig = createArticleStatsConfig(href);
     >
       {postDescription}
     </p>
-    {
-      showTags && tags?.length && (
-        <ScrollableRow
-          client:visible
-          className={cn(
-            'pt-1 pb-1',
-            leftClip ? 'mr-18' : 'ml-18',
-            'md:mx-0',
-            getStaggerPadding(3),
-            'md:pl-0 md:pr-0',
-          )}
-          innerClassName="gap-2"
-          fadeWidth={16}
-        >
-          {tags.map((tag: string) => (
-            <a href={localizedPath(buildTagPath(tag), locale)}>
-              <Badge
-                className='hover:text-badge-primary/80 shrink-0 cursor-pointer gap-0.5 border-none px-1 text-xs font-bold whitespace-nowrap transition-colors duration-300 flex'
-                variant="outline"
-              >
-                <Icon name="fa6-solid:tags" /> {tag}
-              </Badge>
-            </a>
-          ))}
-        </ScrollableRow>
-      )
-    }
     <a
       href={href}
       aria-label="more info"

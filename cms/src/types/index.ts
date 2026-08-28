@@ -38,8 +38,7 @@ export interface BlogSchema {
   date?: Date;
   updated?: Date;
   description?: string;
-  categories?: string | string[] | string[][];
-  tags?: string[];
+  keywords?: string[];
   cover?: string;
   link?: string;
   subtitle?: string;
@@ -68,8 +67,7 @@ export interface PostListItem {
   title: string;
   date: string;
   updated?: string;
-  categories: string[];
-  tags: string[];
+  keywords: string[];
   draft: boolean;
   sticky: boolean;
 }
@@ -81,8 +79,6 @@ export interface DashboardStats {
   total: number;
   published: number;
   draft: number;
-  categoryStats: { name: string; count: number }[];
-  tagStats: { name: string; count: number }[];
   recentPosts: PostListItem[];
 }
 
@@ -93,16 +89,12 @@ export interface ListPostsResponse {
   posts: PostListItem[];
   total: number;
   stats: DashboardStats;
-  categories: string[];
-  tags: string[];
 }
 
 /**
  * Parameters for listing posts
  */
 export interface ListPostsParams {
-  category?: string;
-  tag?: string;
   status?: 'all' | 'draft' | 'published';
   search?: string;
   sort?: 'date' | 'title' | 'updated';
@@ -114,10 +106,8 @@ export interface ListPostsParams {
  */
 export interface CreatePostParams {
   title: string;
-  categories?: string[];
-  tags?: string[];
+  keywords?: string[];
   draft?: boolean;
-  categoryMappings?: Record<string, string>;
 }
 
 /**

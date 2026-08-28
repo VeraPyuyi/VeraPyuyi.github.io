@@ -8,6 +8,8 @@ dist/
 # paper artifacts are recreated by the pinned Pandoc/Tectonic workflow
 src/content/papers/*/generated.html
 public/papers/*/paper.pdf
+public/papers/*/equations-*.svg
+public/papers/*/equations-manifest.json
 
 # dependencies
 node_modules

@@ -10,9 +10,6 @@ export const uiStrings: UIStrings = {
   // ── Navigation ──────────────────────────────────────────────
   'nav.home': 'Home',
   'nav.posts': 'Posts',
-  'nav.categories': 'Categories',
-  'nav.tags': 'Tags',
-  'nav.archives': 'Archives',
   'nav.friends': 'Friends',
   'nav.about': 'About',
   'nav.music': 'Music',
@@ -48,7 +45,6 @@ export const uiStrings: UIStrings = {
   'post.totalPosts': '{count} posts',
   'post.stickyPosts': 'Pinned Posts',
   'post.postList': 'Posts',
-  'post.featuredCategories': 'Featured Categories',
   'post.yearPosts': '{count} posts',
   'post.readingTime': '{time} min read',
   'post.wordCount': '{count} words',
@@ -57,28 +53,14 @@ export const uiStrings: UIStrings = {
   'post.prevPost': 'Previous',
   'post.nextPost': 'Next',
   'post.relatedPosts': 'Related Posts',
-  'post.seriesNavigation': 'Series Navigation',
-  'post.seriesPrev': 'Previous',
-  'post.seriesNext': 'Next',
   'post.fallbackNotice': 'This post is not yet available in {lang}. Showing the original.',
   'post.draft': 'Draft',
   'post.pinned': 'Pinned',
   'post.noPostsFound': 'No posts found',
 
   // ── Categories & Tags ───────────────────────────────────────
-  'category.allCategories': 'All Categories',
-  'category.postsInCategory': 'Posts in {name}',
-  'category.totalCategories': '{count} categories',
-  'category.categoryLabel': 'Category',
-  'tag.allTags': 'All Tags',
-  'tag.postsWithTag': 'Posts tagged "{name}"',
-  'tag.totalTags': '{count} tags',
-  'tag.all': 'All',
-  'tag.postCount': '{count} posts',
 
   // ── Archives ────────────────────────────────────────────────
-  'archives.title': 'Archives',
-  'archives.totalPosts': '{count} posts',
 
   // ── Search ──────────────────────────────────────────────────
   'search.placeholder': 'Search by keyword',
@@ -197,7 +179,6 @@ export const uiStrings: UIStrings = {
 
   // ── Breadcrumb ──────────────────────────────────────────────
   'breadcrumb.home': 'Home',
-  'breadcrumb.goToCategory': 'Go to {name} category',
 
   // ── Floating Group ──────────────────────────────────────────
   'floating.backToTop': 'Back Top',
@@ -301,29 +282,20 @@ export const uiStrings: UIStrings = {
   'notFound.title': 'Page Not Found',
   'notFound.description': 'The page you are looking for does not exist',
   'notFound.backHome': 'Back to Home',
-  'notFound.browseArchives': 'Browse Archives',
+  'notFound.browsePosts': 'View All Articles',
   'notFound.message': 'Meow? The page was eaten~',
 
   // ── Category Stats ────────────────────────────────────────
-  'category.subCategoryCount': '{count} subcategories',
-  'category.postCount': '{count} posts',
 
   // ── Post Card ─────────────────────────────────────────────
   'post.readingTimeTooltip': 'Estimated reading time: {time}',
 
   // ── Featured Series ─────────────────────────────────────────
-  'series.latestPost': 'Latest',
-  'series.viewAll': 'View all',
-  'series.postCount': '{count} posts',
-  'series.noPosts': 'No posts in this series',
-  'series.rss': 'RSS Feed',
-  'series.chromeExtension': 'Chrome Extension',
-  'series.docs': 'Documentation',
 
   // ── Home Info ───────────────────────────────────────────────
   'homeInfo.articles': 'Articles',
-  'homeInfo.categories': 'Categories',
-  'homeInfo.tags': 'Tags',
+  'homeInfo.papers': 'Papers',
+  'homeInfo.blogs': 'Blogs',
 
   // ── Drawer ──────────────────────────────────────────────────
   'drawer.navMenu': 'Navigation menu',
@@ -339,8 +311,6 @@ export const uiStrings: UIStrings = {
   'post.randomPosts': 'Random Posts',
 
   // ── Tag Component ───────────────────────────────────────────
-  'tag.expandAll': 'Show all',
-  'tag.viewTagPosts': 'View {count} posts tagged "{tag}"',
 
   // ── Audio Player ────────────────────────────────────────────
   'audio.loading': 'Loading playlist...',
@@ -369,7 +339,6 @@ export const uiStrings: UIStrings = {
   // ── Sider Segmented ─────────────────────────────────────────
   'sider.overview': 'Overview',
   'sider.toc': 'Contents',
-  'sider.series': 'Series',
 
   // ── Copy Link ───────────────────────────────────────────────
   'cover.copyLink': 'Copy link',

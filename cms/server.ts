@@ -4,7 +4,6 @@
  * Hono-based server that provides both API routes and serves the Vite dev frontend.
  */
 
-import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { Readable } from 'node:stream';
@@ -12,7 +11,6 @@ import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import yaml from 'js-yaml';
 import { createServer as createViteServer } from 'vite';
 
 import {
@@ -25,7 +23,6 @@ import {
   toggleStickyHandler,
   writeHandler,
 } from './src/api';
-import { setCategoryMap } from './src/lib/category';
 import { CMS_PORT } from './src/lib/config';
 
 // Type for Hono context variables
@@ -37,24 +34,7 @@ type AppVariables = {
 const CMS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(CMS_DIR, '..');
 
-// Load site config for category map
-function loadSiteConfig() {
-  const configPath = path.join(PROJECT_ROOT, 'config', 'site.yaml');
-  if (!fs.existsSync(configPath)) {
-    console.warn('[CMS] config/site.yaml not found');
-    return {};
-  }
-  const content = fs.readFileSync(configPath, 'utf-8');
-  return yaml.load(content) as Record<string, unknown>;
-}
-
 async function main() {
-  const siteConfig = loadSiteConfig();
-
-  // Set category map from config
-  const categoryMap = (siteConfig.categoryMap as Record<string, string>) || {};
-  setCategoryMap(categoryMap);
-
   // Create Hono app for API routes
   const app = new Hono<{ Variables: AppVariables }>();
 
@@ -105,7 +85,6 @@ async function main() {
     return c.json({
       projectRoot: PROJECT_ROOT,
       contentDir: 'src/content/blog',
-      categoryMap,
     });
   });
 

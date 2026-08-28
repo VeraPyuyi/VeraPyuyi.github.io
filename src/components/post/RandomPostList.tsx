@@ -1,13 +1,12 @@
 import { useTranslation } from '@hooks/useTranslation';
-import { translateCategoryName } from '@lib/content/category-translate';
 import { encodeSlug } from '@lib/route';
 import { shuffleArray } from '@lib/utils';
 import { useMemo } from 'react';
 import { localizedPath } from '@/i18n';
-import type { PostRefWithCategory } from '@/types/blog';
+import type { PostRef } from '@/types/blog';
 
 interface Props {
-  postsPool: PostRefWithCategory[]; // Pool to randomly select from
+  postsPool: PostRef[]; // Pool to randomly select from
   count: number; // Number of posts to display
   locale?: string;
 }
@@ -33,11 +32,6 @@ export default function RandomPostList({ postsPool, count, locale }: Props) {
           >
             <span className="shrink-0 font-mono text-foreground/30">{index + 1}</span>
             <div className="flex min-w-0 flex-col gap-0.5">
-              {post.categoryName && (
-                <div className="truncate text-foreground/50 text-xs">
-                  {locale ? translateCategoryName(post.categoryName, locale) : post.categoryName}
-                </div>
-              )}
               <div className="line-clamp-2 text-foreground/80 transition-colors group-hover:text-primary">{post.title}</div>
             </div>
           </a>

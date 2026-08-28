@@ -57,64 +57,6 @@ i18n:
       # enabled: false  # 内容存在但暂时禁用（保留内容但不生成路由）
 
 # =============================================================================
-# Category Map
-# Maps Chinese category names to URL-friendly English slugs
-# Example: '随笔' category URL becomes /categories/life
-# =============================================================================
-categoryMap:
-  技术: tech
-  研究: research
-  生活: life
-  ACG: acg
-
-# =============================================================================
-# Featured Categories (Homepage)
-# 首页精选分类 - 在首页以卡片形式展示的分类入口
-# =============================================================================
-# 字段说明：
-#   link: 分类链接路径，对应 categoryMap 中的英文 slug
-#   label: 卡片上显示的分类名称
-#   image: 封面图片路径（相对于 public 目录）
-#   description: 分类描述文字，显示在卡片上
-# -----------------------------------------------------------------------------
-featuredCategories:
-  - link: tech
-    label: 技术
-    image: /og.png
-    description: 编程实践、工具与思考
-  - link: research
-    label: 研究
-    image: /og.png
-    description: 一些研究论文
-  - link: life
-    label: 生活
-    image: /og.png
-    description: 照片、日常与沿途灵感
-  - link: acg
-    label: ACG
-    image: /og.png
-    description: 动画、游戏与收藏记录
-
-# =============================================================================
-# Featured Series
-# 精选系列功能 - 用于展示定期更新的系列内容（支持多个系列）
-# =============================================================================
-# 字段说明：
-#   slug: URL 路径（必填），如 'weekly' 对应 /weekly 路径
-#         注意：不能与保留路由冲突，包括：about, categories, tags, friends, posts, archives, api, _astro, rss.xml, sitemap.xml, robots.txt, favicon.ico 等
-#   categoryName: 对应的分类名称（必填，需在 categoryMap 中存在）
-#   label: 侧边栏/导航中显示的简短名称（可选）
-#   fullName: 系列页面标题显示的完整名称（可选）
-#   description: 系列介绍文字，支持多行 Markdown（可选）
-#   cover: 系列页面头图路径，相对于 public 目录（可选）
-#   enabled: 是否启用此系列，设为 false 可关闭（可选，默认 true）
-#   icon: 导航图标，Iconify 格式如 'ri:newspaper-line'（可选）
-#   highlightOnHome: 是否在首页高亮显示最新文章（可选，默认 true，显式设为 false 可禁用）
-#   links: 相关链接配置（可选）
-# -----------------------------------------------------------------------------
-featuredSeries: []
-
-# =============================================================================
 # Social Links
 # 社交链接 - 显示在页脚和个人信息区域
 # =============================================================================
@@ -348,26 +290,14 @@ navigation:
         nameKey: nav.allPosts
         path: /posts
         icon: ri:article-fill
-      - name: 分类
-        nameKey: nav.categories
-        path: /categories
-        icon: ri:grid-fill
-      - name: 标签
-        nameKey: nav.tags
-        path: /tags
-        icon: fa6-solid:tags
-      - name: 归档
-        nameKey: nav.archives
-        path: /archives
-        icon: ri:archive-2-fill
-  - name: 论文
-    nameKey: nav.papers
-    path: /papers
-    icon: ri:book-open-fill
-  - name: 博客
-    nameKey: nav.blogs
-    path: /blogs
-    icon: ri:global-line
+      - name: 论文
+        nameKey: nav.papers
+        path: /papers
+        icon: ri:book-open-fill
+      - name: 博客
+        nameKey: nav.blogs
+        path: /blogs
+        icon: ri:global-line
   - name: 生活
     nameKey: nav.life
     icon: ri:sparkling-fill

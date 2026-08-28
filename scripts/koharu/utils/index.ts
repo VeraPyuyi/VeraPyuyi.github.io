@@ -33,10 +33,7 @@ export {
   formatDate,
   generatePostFrontmatter,
   generateSlug,
-  getCategoryMap,
-  getCategoryTree,
   isValidUrl,
-  loadSiteConfig,
   postExists,
 } from './new-operations';
 // Release feed

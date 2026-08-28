@@ -10,9 +10,8 @@ import {
 const FIRST_ID = '550e8400-e29b-41d4-a716-446655440000';
 const SECOND_ID = '018f3f7a-2b1c-7def-8abc-1234567890ab';
 const context: MomentsValidationContext = {
-  reservedRoutes: ['about', 'archives', 'api', 'music', 'rss', 'rss.xml'],
+  reservedRoutes: ['about', 'api', 'music', 'posts', 'rss', 'rss.xml'],
   localeCodes: ['zh', 'en', 'ja'],
-  seriesSlugs: ['weekly'],
 };
 
 test('normalizes an absent config to a disabled, safe default', () => {
@@ -24,7 +23,7 @@ test('normalizes an absent config to a disabled, safe default', () => {
     ogImage: undefined,
     pathAliases: [],
     channels: [],
-    channelSlugBlocklist: ['about', 'archives', 'api', 'music', 'rss', 'rss.xml', 'zh', 'en', 'ja', 'weekly', 'search'],
+    channelSlugBlocklist: ['about', 'api', 'music', 'posts', 'rss', 'rss.xml', 'zh', 'en', 'ja', 'search'],
   });
 });
 
@@ -79,9 +78,9 @@ for (const [label, path] of [
   });
 }
 
-for (const path of ['about', 'about/moments', 'en/moments', 'weekly/moments']) {
+for (const path of ['about', 'about/moments', 'en/moments', 'posts/moments']) {
   test(`rejects unavailable root ${path}`, () => {
-    assert.throws(() => normalizeMomentsConfig({ path }, context), /conflicts with reserved, locale, or featured-series/);
+    assert.throws(() => normalizeMomentsConfig({ path }, context), /conflicts with a reserved or locale root/);
   });
 }
 
@@ -110,10 +109,10 @@ test('validates channel ids, primary count, and all configured URL names', () =>
     /At most one channel/,
   );
 
-  for (const slug of ['search', 'rss.xml', 'about', 'en', 'weekly']) {
+  for (const slug of ['search', 'rss.xml', 'about', 'en', 'posts']) {
     assert.throws(
       () => normalizeMomentsConfig({ channels: [{ id: FIRST_ID, slug }] }, context),
-      /conflicts with reserved, locale, or featured-series/,
+      /conflicts with a reserved or locale slug/,
     );
   }
   assert.throws(
@@ -212,15 +211,15 @@ test('replaces an enabled placeholder in place with a canonical-only link', () =
   });
 });
 
-test('injects enabled moments immediately after a nested archives item', () => {
+test('injects enabled moments immediately after a nested posts item', () => {
   const result = resolveMomentsNavigation(
     [
       { name: 'Home', path: '/' },
       {
         name: 'Posts',
         children: [
-          { name: 'Tags', path: '/tags' },
-          { name: 'Archives', path: '/archives' },
+          { name: 'All Posts', path: '/posts' },
+          { name: 'Papers', path: '/papers' },
         ],
       },
       { name: 'About', path: '/about' },
@@ -229,12 +228,12 @@ test('injects enabled moments immediately after a nested archives item', () => {
   );
   assert.deepEqual(
     result[1].children?.map((item) => item.path),
-    ['/tags', '/archives', '/moments'],
+    ['/posts', '/moments', '/papers'],
   );
   assert.equal(result[2].path, '/about');
 });
 
-test('appends enabled moments when navigation has no archives or placeholder', () => {
+test('appends enabled moments when navigation has no posts item or placeholder', () => {
   const result = resolveMomentsNavigation([{ name: 'Home', path: '/' }], normalizeMomentsConfig({ enabled: true }));
   assert.equal(result.at(-1)?.path, '/moments');
 });

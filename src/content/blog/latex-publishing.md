@@ -4,11 +4,10 @@ title: 从 LaTeX 到 HTML 与 PDF
 description: 论文源文件如何经过 Tectonic 与 Pandoc 发布。
 date: 2026-08-24 20:00:00
 cover: /og.png
-tags:
+keywords:
   - LaTeX
   - Pandoc
   - Tectonic
-categories:
   - 研究
 math: true
 ---

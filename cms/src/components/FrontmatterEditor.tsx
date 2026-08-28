@@ -22,7 +22,6 @@ export interface FrontmatterEditorRef {
 interface FrontmatterEditorProps {
   frontmatter: BlogSchema;
   onChange: (frontmatter: BlogSchema) => void;
-  onCategoriesChange?: (categories: string[]) => void;
 }
 
 /**
@@ -49,41 +48,11 @@ function parseDate(dateStr: string): Date | undefined {
   return undefined;
 }
 
-/**
- * Formats categories array to string
- */
-function categoriesToString(categories?: string | string[] | string[][]): string {
-  if (!categories) return '';
-  if (typeof categories === 'string') return categories;
-
-  // Handle nested array like [['笔记', '前端']]
-  const flat = categories.flatMap((c) => (Array.isArray(c) ? c : [c]));
-  return flat.join(' > ');
+function keywordsToString(keywords?: string[]): string {
+  return keywords?.join(', ') ?? '';
 }
 
-/**
- * Parses categories string to array
- */
-function stringToCategories(str: string): string[] | undefined {
-  if (!str.trim()) return undefined;
-  return str
-    .split('>')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-/**
- * Formats tags array to string
- */
-function tagsToString(tags?: string[]): string {
-  if (!tags || tags.length === 0) return '';
-  return tags.join(', ');
-}
-
-/**
- * Parses tags string to array
- */
-function stringToTags(str: string): string[] | undefined {
+function stringToKeywords(str: string): string[] | undefined {
   if (!str.trim()) return undefined;
   return str
     .split(',')
@@ -113,18 +82,8 @@ function formDataToFrontmatter(data: FrontmatterFormData): BlogSchema {
     result.updated = parseDate(data.updated);
   }
 
-  // Parse categories
-  const categories = stringToCategories(data.categories || '');
-  if (categories && categories.length > 0) {
-    // Store as nested array for proper YAML format
-    result.categories = [categories];
-  }
-
-  // Parse tags
-  const tags = stringToTags(data.tags || '');
-  if (tags) {
-    result.tags = tags;
-  }
+  const keywords = stringToKeywords(data.keywords || '');
+  if (keywords) result.keywords = keywords;
 
   // Optional string fields
   if (data.description?.trim()) result.description = data.description.trim();
@@ -239,7 +198,7 @@ function FormCheckbox({
 }
 
 export const FrontmatterEditor = forwardRef<FrontmatterEditorRef, FrontmatterEditorProps>(function FrontmatterEditor(
-  { frontmatter, onChange, onCategoriesChange },
+  { frontmatter, onChange },
   ref,
 ) {
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -251,8 +210,7 @@ export const FrontmatterEditor = forwardRef<FrontmatterEditorRef, FrontmatterEdi
       date: formatDate(frontmatter.date),
       updated: formatDate(frontmatter.updated),
       description: frontmatter.description || '',
-      categories: categoriesToString(frontmatter.categories),
-      tags: tagsToString(frontmatter.tags),
+      keywords: keywordsToString(frontmatter.keywords),
       cover: frontmatter.cover || '',
       link: frontmatter.link || '',
       subtitle: frontmatter.subtitle || '',
@@ -282,15 +240,9 @@ export const FrontmatterEditor = forwardRef<FrontmatterEditorRef, FrontmatterEdi
     const subscription = watch((values) => {
       const fm = formDataToFrontmatter(values as FrontmatterFormData);
       onChange(fm);
-
-      // Notify about categories change for new category detection
-      if (onCategoriesChange) {
-        const cats = stringToCategories(values.categories || '');
-        onCategoriesChange(cats || []);
-      }
     });
     return () => subscription.unsubscribe();
-  }, [watch, onChange, onCategoriesChange]);
+  }, [watch, onChange]);
 
   return (
     <div className="space-y-4 p-4">
@@ -327,14 +279,12 @@ export const FrontmatterEditor = forwardRef<FrontmatterEditorRef, FrontmatterEdi
         />
 
         <FormField
-          label="Categories"
-          id="categories"
-          placeholder="笔记 > 前端 > React"
-          error={errors.categories?.message}
-          {...register('categories')}
+          label="SEO Keywords"
+          id="keywords"
+          placeholder="keyword1, keyword2"
+          error={errors.keywords?.message}
+          {...register('keywords')}
         />
-
-        <FormField label="Tags" id="tags" placeholder="tag1, tag2, tag3" error={errors.tags?.message} {...register('tags')} />
 
         <FormField
           label="Cover Image"

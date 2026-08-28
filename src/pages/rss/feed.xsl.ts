@@ -98,15 +98,6 @@ export async function GET(_context: APIContext) {
                                             </a>
                                         </h3>
                                         <div class="post-meta">
-                                            <!-- Category display -->
-                                            <xsl:for-each select="category[starts-with(., 'category:')]">
-                                                <xsl:if test="position() = last()">
-                                                    <span class="meta-item category">
-                                                        <i class="ri-flag-line"></i>
-                                                        <xsl:value-of select="substring-after(., 'category:')" />
-                                                    </span>
-                                                </xsl:if>
-                                            </xsl:for-each>
                                             <!-- Date -->
                                             <span class="meta-item date">
                                                 <i class="ri-calendar-2-line"></i>
@@ -116,17 +107,6 @@ export async function GET(_context: APIContext) {
                                         <p class="post-summary">
                                             <xsl:value-of select="description" />
                                         </p>
-                                        <!-- Tag list -->
-                                        <xsl:if test="category[starts-with(., 'tag:')]">
-                                            <div class="post-tags">
-                                                <xsl:for-each select="category[starts-with(., 'tag:')]">
-                                                    <span class="tag-badge">
-                                                        <i class="ri-price-tag-3-line"></i>
-                                                        <xsl:value-of select="substring-after(., 'tag:')" />
-                                                    </span>
-                                                </xsl:for-each>
-                                            </div>
-                                        </xsl:if>
                                     </div>
                                     <div class="post-footer">
                                         <a class="read-more" target="_blank">

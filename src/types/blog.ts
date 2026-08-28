@@ -11,10 +11,8 @@ export interface BlogSchema {
   date: Date;
   updated?: Date;
   cover?: string;
-  tags?: string[];
   subtitle?: string;
   catalog?: boolean;
-  categories?: string[] | string[][];
   sticky?: boolean;
   draft?: boolean;
   /** Enable the GitHub Discussions comment thread for this post */
@@ -56,13 +54,6 @@ export interface PostRef {
 }
 
 /**
- * 带分类的文章引用 - 用于列表展示（4 字段）
- */
-export interface PostRefWithCategory extends PostRef {
-  categoryName?: string;
-}
-
-/**
  * 文章卡片数据 - 用于卡片展示
  */
 export interface PostCardData {
@@ -72,8 +63,6 @@ export interface PostCardData {
   description?: string;
   date: Date;
   cover?: string;
-  tags?: string[];
-  categories?: string[] | string[][];
   draft?: boolean;
   wordCount: number; // 预计算的字数
   readingTime: string; // 预计算的阅读时间

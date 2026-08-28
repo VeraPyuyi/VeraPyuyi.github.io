@@ -21,9 +21,9 @@ const localeCopy = Object.fromEntries(
       title: `404 - ${t(loc, 'notFound.title')}`,
       message: t(loc, 'notFound.message'),
       backHome: t(loc, 'notFound.backHome'),
-      browseArchives: t(loc, 'notFound.browseArchives'),
+      browsePosts: t(loc, 'notFound.browsePosts'),
       homeHref: localizedPath('/', loc),
-      archivesHref: localizedPath('/archives', loc),
+      postsHref: localizedPath('/posts', loc),
     },
   ]),
 );
@@ -119,9 +119,9 @@ const DEBUG_CAT_STATE = false;
             <Icon name="fa6-solid:house-chimney" />
             <span data-nf-text="backHome">{t(locale, 'notFound.backHome')}</span>
           </a>
-          <a href={localizedPath('/archives', locale)} class="action-btn archive-btn" data-nf-link="archives">
-            <Icon name="ri:archive-2-fill" />
-            <span data-nf-text="browseArchives">{t(locale, 'notFound.browseArchives')}</span>
+          <a href={localizedPath('/posts', locale)} class="action-btn archive-btn" data-nf-link="posts">
+            <Icon name="ri:article-fill" />
+            <span data-nf-text="browsePosts">{t(locale, 'notFound.browsePosts')}</span>
           </a>
         </div>
       </div>

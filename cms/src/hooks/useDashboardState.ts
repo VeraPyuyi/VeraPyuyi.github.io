@@ -33,8 +33,6 @@ export interface UseDashboardStateResult {
   // Filter state
   search: string;
   setSearch: (search: string) => void;
-  category: string;
-  setCategory: (category: string) => void;
   status: StatusFilter;
   setStatus: (status: StatusFilter) => void;
   sortField: SortField;
@@ -67,7 +65,6 @@ export function useDashboardState(): UseDashboardStateResult {
 
   // Filter state
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -75,12 +72,11 @@ export function useDashboardState(): UseDashboardStateResult {
   const params = useMemo(
     () => ({
       search: search || undefined,
-      category: category || undefined,
       status: status === 'all' ? undefined : status,
       sort: sortField,
       order: sortOrder,
     }),
-    [search, category, status, sortField, sortOrder],
+    [search, status, sortField, sortOrder],
   );
 
   const fetchData = useCallback(async () => {
@@ -192,8 +188,6 @@ export function useDashboardState(): UseDashboardStateResult {
     editingPostId,
     search,
     setSearch,
-    category,
-    setCategory,
     status,
     setStatus,
     sortField,

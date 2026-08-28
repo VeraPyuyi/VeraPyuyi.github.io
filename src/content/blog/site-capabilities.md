@@ -4,11 +4,10 @@ title: 这个站点能做什么？
 description: 用一篇文章测试 Markdown、代码、Mermaid、目录与数学公式。
 date: 2026-08-25 20:00:00
 cover: /og.png
-tags:
+keywords:
   - Astro
   - Markdown
   - Mermaid
-categories:
   - 技术
 math: true
 catalog: true

@@ -4,16 +4,14 @@ title: 欢迎来到我的小宇宙
 description: 这里会记录技术、研究、ACG 与生活里值得珍藏的瞬间。
 date: 2026-08-26 17:00:00
 cover: /og.png
-tags:
-  - 随想
-  - 建站
-categories:
-  - 生活
 sticky: true
 math: true
 keywords:
   - 个人主页
   - GitHub Pages
+  - 随想
+  - 建站
+  - 生活
 ---
 
 你好，这里是 **Pyuyi 的小宇宙**。
@@ -24,7 +22,7 @@ keywords:
 
 - 技术文章、代码与 Mermaid 图表
 - LaTeX 数学公式，以及论文的 HTML / PDF 双版本
-- 博客档案、照片墙、追番与生活动态
+- 独立博客、照片墙、追番与生活动态
 - 需要 GitHub 登录的留言区
 
 公式已经准备好了：

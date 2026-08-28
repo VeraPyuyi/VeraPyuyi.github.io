@@ -19,7 +19,7 @@ content:
       fields: [title, date, draft, sticky]
       primary: title
       sort: [date, title]
-      search: [title, description, tags]
+      search: [title, description, keywords]
       default:
         sort: date
         order: desc
@@ -33,8 +33,7 @@ content:
         label: 封面
         type: image
         options: { media: images, path: blog, rename: safe }
-      - { name: tags, label: 标签, type: string, list: true }
-      - { name: categories, label: 分类, type: string, list: true }
+      - { name: keywords, label: SEO 关键词, type: string, list: true }
       - { name: draft, label: 草稿, type: boolean }
       - { name: sticky, label: 置顶, type: boolean }
       - { name: comments, label: 允许 GitHub 留言, type: boolean }

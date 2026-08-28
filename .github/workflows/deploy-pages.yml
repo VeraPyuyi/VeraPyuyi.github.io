@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       ASTRO_TELEMETRY_DISABLED: '1'
+      DVISVGM_BIN: ${{ github.workspace }}/.cache/paper-toolchain/bin/dvisvgm
       PUBLIC_GISCUS_REPO: ${{ vars.PUBLIC_GISCUS_REPO }}
       PUBLIC_GISCUS_REPO_ID: ${{ vars.PUBLIC_GISCUS_REPO_ID }}
       PUBLIC_GISCUS_CATEGORY_ID: ${{ vars.PUBLIC_GISCUS_CATEGORY_ID }}
@@ -45,18 +46,33 @@ jobs:
       - name: Validate content and types
         run: pnpm check
 
-      - name: Run unit tests
-        run: pnpm test
-
-      - name: Set up Pandoc 3.8.3
+      - name: Set up Pandoc 3.10.2
         uses: pandoc/actions/setup@86321b6dd4675f5014c611e05088e10d4939e09e # v1.1.1
         with:
-          version: 3.8.3
+          version: 3.10.2
 
-      - name: Set up Tectonic 0.16.9
+      - name: Set up Tectonic 0.17.0
         uses: wtfjoke/setup-tectonic@eb29fd68b7d3f76011906b6e45ea4320c8de5d2f # v4
         with:
-          tectonic-version: 0.16.9
+          tectonic-version: 0.17.0
+
+      - name: Set up TeX Live 2026
+        uses: zauguin/install-texlive@f5e7d0b117035fff797d4392ea94131747e03d60 # v4
+        with:
+          package_file: texlive-packages.txt
+          texlive_version: 2026
+
+      - name: Install dvisvgm build dependency
+        run: sudo apt-get update && sudo apt-get install --yes libkpathsea-dev
+
+      - name: Build locked dvisvgm 3.6.1
+        run: sh scripts/setup-dvisvgm-3.6.1.sh
+
+      - name: Verify locked paper toolchain
+        run: pnpm papers:toolchain
+
+      - name: Run unit tests
+        run: pnpm test
 
       - name: Compile LaTeX to PDF and HTML
         run: node scripts/build-papers.mjs --strict

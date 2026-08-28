@@ -15,7 +15,6 @@ import type {
   ToggleDraftResponse,
   ToggleStickyResponse,
 } from '@/types';
-import { setCategoryMap } from './category';
 
 /**
  * Encode a slug for URL usage
@@ -125,15 +124,9 @@ export async function readPost(postId: string): Promise<ReadPostResult> {
  * @param postId - The post ID (e.g., 'note/front-end/theme.md')
  * @param frontmatter - The post frontmatter
  * @param content - The post content (markdown)
- * @param categoryMappings - Optional new category mappings to add to config/site.yaml
  * @throws Error if the request fails
  */
-export async function writePost(
-  postId: string,
-  frontmatter: BlogSchema,
-  content: string,
-  categoryMappings?: Record<string, string>,
-): Promise<void> {
+export async function writePost(postId: string, frontmatter: BlogSchema, content: string): Promise<void> {
   const response = await fetch('/api/cms/write', {
     method: 'POST',
     headers: {
@@ -143,7 +136,6 @@ export async function writePost(
       postId,
       frontmatter: prepareFrontmatterForApi(frontmatter),
       content,
-      categoryMappings,
     }),
   });
 
@@ -162,8 +154,6 @@ export async function writePost(
 export async function listPosts(params?: ListPostsParams): Promise<ListPostsResponse> {
   const searchParams = new URLSearchParams();
 
-  if (params?.category) searchParams.set('category', params.category);
-  if (params?.tag) searchParams.set('tag', params.tag);
   if (params?.status && params.status !== 'all') searchParams.set('status', params.status);
   if (params?.search) searchParams.set('search', params.search);
   if (params?.sort) searchParams.set('sort', params.sort);
@@ -257,7 +247,6 @@ export async function toggleSticky(postId: string): Promise<ToggleStickyResponse
 export interface CMSConfigResponse {
   projectRoot: string;
   contentDir: string;
-  categoryMap: Record<string, string>;
 }
 
 // Cache for CMS config
@@ -282,9 +271,6 @@ export async function getCMSConfig(): Promise<CMSConfigResponse> {
 
   const config: CMSConfigResponse = await response.json();
   cachedConfig = config;
-
-  // Initialize category map for client-side detection
-  setCategoryMap(config.categoryMap);
 
   return config;
 }

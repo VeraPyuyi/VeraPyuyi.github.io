@@ -10,9 +10,6 @@ export const uiStrings: UIStrings = {
   // ── ナビゲーション ──────────────────────────────────────────────
   'nav.home': 'ホーム',
   'nav.posts': '投稿',
-  'nav.categories': 'カテゴリー',
-  'nav.tags': 'タグ',
-  'nav.archives': 'アーカイブ',
   'nav.friends': '友達',
   'nav.about': 'ブログについて',
   'nav.music': '音楽',
@@ -42,7 +39,6 @@ export const uiStrings: UIStrings = {
   'post.totalPosts': '{count}件の投稿',
   'post.stickyPosts': '固定された投稿',
   'post.postList': '投稿',
-  'post.featuredCategories': 'おすすめのカテゴリー',
   'post.yearPosts': '{count}件の投稿',
   'post.readingTime': '{time}分で読み終えます',
   'post.wordCount': '{count}文字',
@@ -51,28 +47,14 @@ export const uiStrings: UIStrings = {
   'post.prevPost': '前へ',
   'post.nextPost': '次へ',
   'post.relatedPosts': '関連した記事',
-  'post.seriesNavigation': 'シリーズナビゲーション',
-  'post.seriesPrev': '前へ',
-  'post.seriesNext': '次へ',
   'post.fallbackNotice': 'この投稿は「{lang}」では表示できません。元の投稿を表示しています。',
   'post.draft': '下書き',
   'post.pinned': '固定済み',
   'post.noPostsFound': '投稿が見つかりません',
 
   // ── カテゴリーとタグ ───────────────────────────────────────
-  'category.allCategories': 'すべてのカテゴリー',
-  'category.postsInCategory': '{name}の投稿',
-  'category.totalCategories': '{count}件のカテゴリー',
-  'category.categoryLabel': 'カテゴリー',
-  'tag.allTags': 'すべてのタグ',
-  'tag.postsWithTag': '「{name}」のタグが付けられた投稿',
-  'tag.totalTags': '{count}個のタグ',
-  'tag.all': 'すべて',
-  'tag.postCount': '{count}件の投稿',
 
   // ── アーカイブ ────────────────────────────────────────────────
-  'archives.title': 'アーカイブ',
-  'archives.totalPosts': '{count}件の投稿',
 
   // ── 検索 ──────────────────────────────────────────────────
   'search.placeholder': 'キーワードで検索',
@@ -191,7 +173,6 @@ export const uiStrings: UIStrings = {
 
   // ── パンくず ──────────────────────────────────────────────
   'breadcrumb.home': 'ホーム',
-  'breadcrumb.goToCategory': '{name}のカテゴリーに移動',
 
   // ── フローティンググループ ──────────────────────────────────────────
   'floating.backToTop': 'トップに戻る',
@@ -296,29 +277,20 @@ export const uiStrings: UIStrings = {
   'notFound.title': 'ページは見つかりません',
   'notFound.description': 'お探しのページは見つかりません',
   'notFound.backHome': 'ホームに戻る',
-  'notFound.browseArchives': 'アーカイブを参照',
+  'notFound.browsePosts': 'すべての記事を見る',
   'notFound.message': 'んにゃー? ページは食べられちゃったよ〜',
 
   // ── カテゴリーの統計 ────────────────────────────────────────
-  'category.subCategoryCount': '{count}件のサブカテゴリー',
-  'category.postCount': '{count}件の投稿',
 
   // ── 投稿カード ─────────────────────────────────────────────
   'post.readingTimeTooltip': '読み終える推定時間: {time}',
 
   // ── おすすめのシリーズ ─────────────────────────────────────────
-  'series.latestPost': '最新',
-  'series.viewAll': 'すべて表示',
-  'series.postCount': '{count}件の投稿',
-  'series.noPosts': 'このシリーズには投稿がありません',
-  'series.rss': 'RSSフィード',
-  'series.chromeExtension': 'Chrome拡張機能',
-  'series.docs': 'ドキュメント',
 
   // ── ホーム情報 ───────────────────────────────────────────────
   'homeInfo.articles': '記事',
-  'homeInfo.categories': 'カテゴリー',
-  'homeInfo.tags': 'タグ',
+  'homeInfo.papers': '論文',
+  'homeInfo.blogs': 'ブログ',
 
   // ── ドロワー ──────────────────────────────────────────────────
   'drawer.navMenu': 'ナビゲーションメニュー',
@@ -334,8 +306,6 @@ export const uiStrings: UIStrings = {
   'post.randomPosts': '投稿をランダムに表示',
 
   // ── タグコンポーネント ───────────────────────────────────────────
-  'tag.expandAll': 'すべて表示',
-  'tag.viewTagPosts': '「{tag}」のタグの付いた投稿を{count}件表示',
 
   // ── オーディオプレーヤー ────────────────────────────────────────────
   'audio.loading': 'プレイリストを読み込み中...',
@@ -364,7 +334,6 @@ export const uiStrings: UIStrings = {
   // ── Sider のセグメント ─────────────────────────────────────────
   'sider.overview': '概要',
   'sider.toc': 'コンテンツ',
-  'sider.series': 'シリーズ',
 
   // ── リンクをコピー ───────────────────────────────────────────────
   'cover.copyLink': 'リンクをコピー',

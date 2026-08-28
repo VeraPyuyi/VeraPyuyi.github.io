@@ -31,63 +31,11 @@ export interface SiteBasicConfig {
   enableSlugTransliteration?: boolean;
 }
 
-// =============================================================================
-// Featured Content
-// =============================================================================
-
-export interface FeaturedCategory {
-  link: string;
-  image: string;
-  label?: string;
-  description?: string;
-}
-
-export interface FeaturedSeriesLinks {
-  github?: string;
-  rss?: string;
-  chrome?: string;
-  docs?: string;
-}
-
 /**
- * Single featured series configuration
- */
-export interface FeaturedSeriesItem {
-  /** URL path for this series (e.g., 'weekly' → /weekly) */
-  slug: string;
-  /** Category name this series is based on */
-  categoryName: string;
-  /** Short label for sidebar/navigation */
-  label?: string;
-  /** Whether this series is enabled */
-  enabled?: boolean;
-  /** Full name for page title */
-  fullName?: string;
-  /** Series description (supports markdown) */
-  description?: string;
-  /** Cover image path */
-  cover?: string;
-  /** Navigation icon (Iconify format) */
-  icon?: string;
-  /** Whether to highlight latest post on home page */
-  highlightOnHome?: boolean;
-  /** Related links */
-  links?: FeaturedSeriesLinks;
-}
-
-/**
- * @deprecated Use FeaturedSeriesItem instead
- */
-export type FeaturedSeries = FeaturedSeriesItem;
-
-/**
- * Runtime site configuration: {@link SiteBasicConfig} with `url` renamed to
- * `site` and featured content normalized.
+ * Runtime site configuration: {@link SiteBasicConfig} with `url` renamed to `site`.
  */
 export type ResolvedSiteConfig = Omit<SiteBasicConfig, 'url'> & {
   site: string;
-  featuredCategories?: FeaturedCategory[];
-  featuredSeries: FeaturedSeriesItem[];
 };
 
 // =============================================================================
@@ -655,9 +603,6 @@ export interface I18nConfig {
 
 export interface SiteYamlConfig {
   site: SiteBasicConfig;
-  featuredCategories?: FeaturedCategory[];
-  /** Featured series configuration - supports array (multiple series) or single object (legacy) */
-  featuredSeries?: FeaturedSeriesItem[] | FeaturedSeriesItem;
   social?: SocialConfig;
   friends?: FriendsConfig;
   announcements?: AnnouncementConfig[];
@@ -670,7 +615,6 @@ export interface SiteYamlConfig {
   analytics?: AnalyticsConfig;
   /** SEO configuration for robots.txt and meta tags */
   seo?: SeoConfig;
-  categoryMap?: Record<string, string>; // TODO: i18n, now use eg: { '随笔': 'life' }
   /** Background music player configuration */
   bgm?: BgmConfig;
   /** Bangumi media tracking page — comment out to disable */
