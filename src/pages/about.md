@@ -9,7 +9,7 @@ comments: false
 
 ## 你好，这里是 Pyuyi
 
-这是一个把技术、研究、ACG 和生活放在一起的个人站。我会在这里写文章、发布 LaTeX 论文、整理博客站点，也会留下照片和日常瞬间。
+这是一个把技术、研究、ACG 和生活放在一起的个人站。我会在这里发布 LaTeX 论文、整理博客站点，也会留下照片和日常瞬间。
 
 > 把好奇心写进星光里。
 
@@ -22,7 +22,7 @@ comments: false
 
 ### English
 
-Hi, I am Pyuyi. This is my personal homepage, writing space, and small laboratory for technology, research, ACG culture, and everyday life. Posts stay in their original language; when a translation is unavailable, the English route shows the original with a notice.
+Hi, I am Pyuyi. This is my personal homepage and a small laboratory for technology, research, ACG culture, and everyday life. Papers stay in their original language; when a translation is unavailable, the English route shows the original with a notice.
 
 ### 联系
 

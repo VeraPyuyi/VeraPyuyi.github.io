@@ -12,7 +12,7 @@ interface Props {
 const { title, className } = Astro.props;
 ---
 
-<TwoColumnLayout showPostFooter={false}>
+<TwoColumnLayout>
   <Cover slot="cover" title={title} compact />
   <HomeSider slot="sider" />
   <section

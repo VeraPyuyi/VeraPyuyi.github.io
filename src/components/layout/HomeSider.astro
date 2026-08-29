@@ -2,7 +2,6 @@
 import HomeSiderSegmented from '@components/ui/segmented/HomeSiderSegmented';
 import { HomeSiderSegmentType, HomeSiderType } from '@constants/enum';
 import { cn } from '@lib/utils';
-import type { BlogPost } from 'types/blog';
 import HomeInfo from './HomeInfo.astro';
 import { ScrollProgress } from './ScrollProgress';
 import { TableOfContents } from './TableOfContents/index';
@@ -11,10 +10,9 @@ interface Props {
   type?: HomeSiderType;
   className?: string;
   isDrawer?: boolean;
-  post?: BlogPost;
 }
 
-const { type = HomeSiderType.HOME, className, isDrawer = false, post } = Astro.props;
+const { type = HomeSiderType.HOME, className, isDrawer = false } = Astro.props;
 const defaultSegmentType = type === HomeSiderType.POST ? HomeSiderSegmentType.DIRECTORY : HomeSiderSegmentType.INFO;
 ---
 
@@ -45,7 +43,7 @@ const defaultSegmentType = type === HomeSiderType.POST ? HomeSiderSegmentType.DI
       <HomeInfo className={type === HomeSiderType.HOME ? 'pt-18 md:pt-0' : ''} />
     </div>
     <div slot="directory" class="sider-slot overflow-hidden h-full" data-slot-type="directory">
-      {type === HomeSiderType.POST && <TableOfContents client:only="react" enableNumbering={post?.data.tocNumbering ?? true} />}
+      {type === HomeSiderType.POST && <TableOfContents client:only="react" enableNumbering />}
     </div>
   </sider-content>
 

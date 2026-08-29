@@ -1,9 +1,7 @@
 import { defineCollection } from 'astro:content';
-import { BLOG_CONTENT_GLOB_PATTERN } from '@lib/content/glob';
 import { parseDateInSiteTimezone, reinterpretUtcAsTimezone } from '@lib/date';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
-import type { BlogSchema, BlogSchemaInput } from 'types/blog';
 
 /**
  * Custom date schema that parses date strings in the site's configured timezone.
@@ -26,34 +24,6 @@ const dateInSiteTimezone = z
     }
     return parseDateInSiteTimezone(val);
   });
-
-const blogCollection = defineCollection({
-  loader: glob({ pattern: BLOG_CONTENT_GLOB_PATTERN, base: './src/content/blog' }),
-  schema: z.object({
-    title: z.string(),
-    description: z.string().optional(),
-    link: z.string().optional(),
-    date: dateInSiteTimezone,
-    updated: dateInSiteTimezone.optional(),
-    cover: z.string().optional(),
-    // Preserve compatibility with posts migrated from Hexo.
-    subtitle: z.string().optional(),
-    catalog: z.boolean().optional().default(true),
-    sticky: z.boolean().optional(),
-    draft: z.boolean().optional(),
-    comments: z.boolean().optional().default(true),
-    // Allow posts to opt out of numbered table-of-contents headings.
-    tocNumbering: z.boolean().optional().default(true),
-    // Allow posts to opt out of AI-generated summaries.
-    excludeFromSummary: z.boolean().optional(),
-    // Shoka features per-post toggle
-    math: z.boolean().optional(),
-    quiz: z.boolean().optional(),
-    password: z.string().optional(),
-    /** Keywords for SEO */
-    keywords: z.array(z.string()).optional(),
-  }) satisfies z.ZodType<BlogSchema, BlogSchemaInput>,
-});
 
 const blogDirectoryCollection = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blogs' }),
@@ -107,7 +77,6 @@ const albumCollection = defineCollection({
 });
 
 export const collections = {
-  blog: blogCollection,
   blogs: blogDirectoryCollection,
   moments: momentCollection,
   albums: albumCollection,

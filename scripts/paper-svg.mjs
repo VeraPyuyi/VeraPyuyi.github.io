@@ -2,15 +2,35 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 export const EQUATION_VARIANTS = Object.freeze([
-  { name: 'desktop', widthEm: 56 },
-  { name: 'tablet', widthEm: 40 },
-  { name: 'mobile', widthEm: 22 },
+  { name: 'desktop', widthEm: 56, containedWidthEm: 46 },
+  { name: 'tablet', widthEm: 40, containedWidthEm: 34 },
+  { name: 'mobile', widthEm: 22, containedWidthEm: 20 },
 ]);
 
 const NUMBERED_ENVIRONMENTS = new Set(['equation', 'align', 'gather', 'multline']);
 const MULTIROW_ENVIRONMENTS = new Set(['align', 'gather']);
 const DISPLAY_ENVIRONMENTS = new Set(['align', 'alignat', 'displaymath', 'equation', 'flalign', 'gather', 'multline']);
+const LINEARIZABLE_OUTER_ENVIRONMENTS = new Set(['align', 'gather', 'multline']);
+const LINEARIZABLE_NESTED_ENVIRONMENTS = new Set(['aligned', 'gathered', 'split']);
+const INTRINSIC_MULTILINE_ENVIRONMENT =
+  /\\begin\{(?:array|cases|matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|smallmatrix|subarray)\}/;
+const UNSAFE_LINEARIZATION_COMMAND = /\\(?:intertext|shortintertext|displaybreak)\b|\\tag\*?(?=\s*\{)/;
+const FIT_TOLERANCE_EM = 0.03;
+const SINGLE_LINE_GUTTER_EM = 1;
 const BUILD_MARKER = /PYUYIPAPER(?:REF|CITE)\d+END/;
+
+/** @typedef {'standalone' | 'contained'} EquationContext */
+/** @typedef {'original' | 'single-line'} EquationLayout */
+/** @typedef {{ tex: string, context?: EquationContext }} EquationRecord */
+/**
+ * @typedef {object} EquationRenderPage
+ * @property {number} equationIndex
+ * @property {EquationContext} context
+ * @property {EquationLayout} layout
+ * @property {number} targetWidthEm
+ * @property {number} renderWidthEm
+ * @property {string} tex
+ */
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -60,6 +80,149 @@ function splitTopLevelRows(body) {
   if (braceDepth !== 0) throw new Error('Unclosed brace group in display environment');
   rows.push(body.slice(start));
   return rows;
+}
+
+function stripTopLevelAlignmentMarkers(source) {
+  const output = [];
+  const stack = [];
+  let braceDepth = 0;
+  for (let index = 0; index < source.length; index++) {
+    const tail = source.slice(index);
+    const begin = tail.match(/^\\begin\{([^{}]+)\}/);
+    if (begin) {
+      stack.push(begin[1]);
+      output.push(begin[0]);
+      index += begin[0].length - 1;
+      continue;
+    }
+    const end = tail.match(/^\\end\{([^{}]+)\}/);
+    if (end) {
+      if (stack.at(-1) !== end[1]) throw new Error(`Unbalanced nested ${end[1]} display environment`);
+      stack.pop();
+      output.push(end[0]);
+      index += end[0].length - 1;
+      continue;
+    }
+
+    const character = source[index];
+    const escaped = source[index - 1] === '\\';
+    if (!escaped && character === '{') braceDepth++;
+    if (!escaped && character === '}') braceDepth--;
+    if (!escaped && character === '&' && stack.length === 0 && braceDepth === 0) continue;
+    output.push(character);
+  }
+  if (stack.length > 0 || braceDepth !== 0) throw new Error('Unbalanced formula while removing alignment markers');
+  return output.join('');
+}
+
+function joinLinearizedRows(rows) {
+  return rows
+    .map((row) =>
+      stripTopLevelAlignmentMarkers(row)
+        .replace(/\\(?:notag|nonumber)\b/g, '')
+        .trim(),
+    )
+    .filter(Boolean)
+    .map((row, index) => {
+      if (index === 0) return row;
+      return /^(?:[=<>]|\\(?:le|leq|ge|geq|sim|simeq|approx|equiv|to|rightarrow|leftarrow|iff|implies)\b)/.test(row)
+        ? `\\;${row}`
+        : `\\qquad ${row}`;
+    })
+    .join(' ');
+}
+
+function formulaLabels(tex) {
+  return [...tex.matchAll(/\\label(?:\[[^\]]*\])?\{([^{}]+)\}/g)].map((match) => match[1]);
+}
+
+function linearizeNestedEnvironment(body) {
+  const pattern = /\\begin\{(aligned|gathered|split)\}([\s\S]*?)\\end\{\1\}/g;
+  const matches = [...body.matchAll(pattern)];
+  if (matches.length !== 1 || !LINEARIZABLE_NESTED_ENVIRONMENTS.has(matches[0][1])) return undefined;
+  const rows = splitTopLevelRows(matches[0][2]);
+  if (rows.length < 2) return undefined;
+  const flattened = joinLinearizedRows(rows);
+  if (!flattened) return undefined;
+  return `${body.slice(0, matches[0].index)}${flattened}${body.slice((matches[0].index ?? 0) + matches[0][0].length)}`;
+}
+
+export function linearizeDisplayEquation(tex) {
+  const normalized = tex.trim().normalize('NFC');
+  if (
+    BUILD_MARKER.test(normalized) ||
+    INTRINSIC_MULTILINE_ENVIRONMENT.test(normalized) ||
+    UNSAFE_LINEARIZATION_COMMAND.test(normalized)
+  ) {
+    return undefined;
+  }
+  const labels = formulaLabels(normalized);
+  if (labels.length > 1) return undefined;
+
+  const environment = outerEnvironment(normalized);
+  if (environment && LINEARIZABLE_OUTER_ENVIRONMENTS.has(environment.name)) {
+    const body = outerEnvironmentBody(normalized, environment);
+    const rows = splitTopLevelRows(body);
+    if (rows.length < 2) return undefined;
+    if (!environment.starred && environment.name !== 'multline') {
+      const numberedRows = rows.filter((row) => !/\\(?:notag|nonumber)\b/.test(row)).length;
+      if (numberedRows > 1) return undefined;
+    }
+    if (!environment.starred && labels.length !== 1) return undefined;
+    const flattened = joinLinearizedRows(rows);
+    if (!flattened) return undefined;
+    return environment.starred ? `\\[\n${flattened}\n\\]` : `\\begin{equation}\n${flattened}\n\\end{equation}`;
+  }
+
+  const body = environment ? outerEnvironmentBody(normalized, environment) : normalized;
+  const flattenedBody = linearizeNestedEnvironment(body)?.trim();
+  if (!flattenedBody) return undefined;
+  if (environment && !environment.starred && NUMBERED_ENVIRONMENTS.has(environment.name) && labels.length !== 1) {
+    return undefined;
+  }
+  if (!environment) return `\\[\n${flattenedBody}\n\\]`;
+  const endToken = `\\end{${environment.name}${environment.starred ? '*' : ''}}`;
+  return `${environment.token}\n${flattenedBody}\n${endToken}`;
+}
+
+/** @param {string | EquationRecord} equation */
+function normalizeEquationRecord(equation) {
+  if (typeof equation === 'string') return { tex: equation, context: 'standalone' };
+  return {
+    tex: equation.tex,
+    context: equation.context === 'contained' ? 'contained' : 'standalone',
+  };
+}
+
+/**
+ * @param {Array<string | EquationRecord>} equations
+ * @param {{ name: string, widthEm: number, containedWidthEm: number }} variant
+ * @returns {EquationRenderPage[]}
+ */
+export function createEquationRenderPlan(equations, variant) {
+  return equations.flatMap((value, equationIndex) => {
+    const equation = normalizeEquationRecord(value);
+    const targetWidthEm = equation.context === 'contained' ? variant.containedWidthEm : variant.widthEm;
+    const original = {
+      equationIndex,
+      context: equation.context,
+      layout: 'original',
+      targetWidthEm,
+      renderWidthEm: targetWidthEm,
+      tex: equation.tex,
+    };
+    const candidate = linearizeDisplayEquation(equation.tex);
+    if (!candidate) return [original];
+    return [
+      original,
+      {
+        ...original,
+        layout: 'single-line',
+        renderWidthEm: Math.max(1, targetWidthEm - SINGLE_LINE_GUTTER_EM),
+        tex: candidate,
+      },
+    ];
+  });
 }
 
 function parseEquationNumber(value) {
@@ -119,21 +282,37 @@ function equationCounterDirectives(tex, labels) {
 function formulaForDocument(tex) {
   const normalized = tex.trim().normalize('NFC');
   if (BUILD_MARKER.test(normalized)) throw new Error('An unresolved paper build marker leaked into a display equation');
+  if (normalized.startsWith('\\[') && normalized.endsWith('\\]')) return normalized;
   const environment = outerEnvironment(normalized);
   return environment && DISPLAY_ENVIRONMENTS.has(environment.name) ? normalized : `\\[\n${normalized}\n\\]`;
 }
 
-export function buildEquationBatchTex({ slug, source, equations, labels, widthEm }) {
+/**
+ * @param {{ slug: string, source: string, equations?: Array<string | EquationRecord>, labels: Map<string, string>, widthEm?: number, renderPlan?: EquationRenderPage[] }} options
+ */
+export function buildEquationBatchTex({ slug, source, equations = [], labels, widthEm = 0, renderPlan = undefined }) {
   const documentStart = source.indexOf('\\begin{document}');
   if (documentStart === -1) throw new Error(`${slug}: TeX source has no document body`);
   const preamble = source.slice(0, documentStart).trimEnd();
-  const pages = equations.map((tex, index) => {
-    const formula = formulaForDocument(tex);
+  const plan =
+    renderPlan ??
+    createEquationRenderPlan(equations, {
+      name: 'legacy',
+      widthEm,
+      containedWidthEm: widthEm,
+    }).filter((page) => page.layout === 'original');
+  const pages = plan.map((page, index) => {
+    const formula = formulaForDocument(page.tex);
     const directives = equationCounterDirectives(formula, labels);
     return [
       index === 0 ? '' : '\\clearpage',
       '\\thispagestyle{empty}',
       ...directives,
+      `\\setlength{\\PyuyiEquationWidth}{${page.renderWidthEm}em}`,
+      '\\setlength{\\textwidth}{\\PyuyiEquationWidth}',
+      '\\setlength{\\columnwidth}{\\PyuyiEquationWidth}',
+      '\\setlength{\\linewidth}{\\PyuyiEquationWidth}',
+      '\\setlength{\\hsize}{\\PyuyiEquationWidth}',
       '\\noindent',
       '\\special{dvisvgm:currentcolor on}%',
       '\\special{dvisvgm:bbox \\the\\PyuyiEquationWidth\\space 0pt 0pt}%',
@@ -148,15 +327,10 @@ export function buildEquationBatchTex({ slug, source, equations, labels, widthEm
     preamble,
     '\\makeatletter',
     '\\newlength{\\PyuyiEquationWidth}',
-    `\\setlength{\\PyuyiEquationWidth}{${widthEm}em}`,
     '\\makeatother',
     '\\begin{document}',
     '\\onecolumn',
     '\\pagestyle{empty}',
-    '\\setlength{\\textwidth}{\\PyuyiEquationWidth}',
-    '\\setlength{\\columnwidth}{\\PyuyiEquationWidth}',
-    '\\setlength{\\linewidth}{\\PyuyiEquationWidth}',
-    '\\setlength{\\hsize}{\\PyuyiEquationWidth}',
     '\\setlength{\\displayindent}{0pt}',
     '\\setlength{\\abovedisplayskip}{0pt}',
     '\\setlength{\\belowdisplayskip}{0pt}',
@@ -196,7 +370,7 @@ function prefixSvgIds(inner, prefix) {
   return output;
 }
 
-function parseSvgPage(path, symbolId) {
+function parseSvgPage(path) {
   const source = readFileSync(path, 'utf8').normalize('NFC');
   if (/<(?:text|script|foreignObject|image)[\s>]/i.test(source)) {
     throw new Error(`${basename(path)}: SVG contains forbidden text, script, foreign content, or image nodes`);
@@ -209,7 +383,7 @@ function parseSvgPage(path, symbolId) {
   const viewBoxMatch = root[1].match(/\bviewBox=(['"])([^'"]+)\1/i);
   if (!viewBoxMatch) throw new Error(`${basename(path)}: SVG has no viewBox`);
   const viewBox = parseViewBox(viewBoxMatch[2], basename(path));
-  const inner = prefixSvgIds(root[2].trim(), `${symbolId}-`);
+  const inner = root[2].trim();
   if (/#000(?:000)?\b/i.test(inner)) throw new Error(`${basename(path)}: black glyph color was not converted to currentColor`);
   return { viewBox, inner };
 }
@@ -220,20 +394,45 @@ function median(values) {
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
 
-export function createEquationSprite({ slug, variant, svgDirectory, outputPath, equationCount }) {
+/**
+ * @param {{ slug: string, variant: { name: string, widthEm: number, containedWidthEm: number }, svgDirectory: string, outputPath: string, equationCount: number, renderPlan?: EquationRenderPage[] }} options
+ */
+export function createEquationSprite({ slug, variant, svgDirectory, outputPath, equationCount, renderPlan = undefined }) {
   const files = readdirSync(svgDirectory)
     .filter((filename) => /^equation-\d+\.svg$/.test(filename))
     .toSorted((left, right) => left.localeCompare(right));
-  if (files.length !== equationCount) {
-    throw new Error(`${slug}/${variant.name}: expected ${equationCount} SVG pages, received ${files.length}`);
+  const plan =
+    renderPlan ??
+    Array.from({ length: equationCount }, (_, equationIndex) => ({
+      equationIndex,
+      context: 'standalone',
+      layout: 'original',
+      targetWidthEm: variant.widthEm,
+      renderWidthEm: variant.widthEm,
+    }));
+  if (files.length !== plan.length) {
+    throw new Error(`${slug}/${variant.name}: expected ${plan.length} SVG pages, received ${files.length}`);
   }
 
-  const pages = files.map((filename, index) => {
-    const id = `eq-${String(index + 1).padStart(6, '0')}`;
-    return { id, ...parseSvgPage(join(svgDirectory, filename), id) };
+  const pages = files.map((filename, index) => ({ ...plan[index], ...parseSvgPage(join(svgDirectory, filename)) }));
+  const unitWidth = median(pages.map((page) => page.viewBox[2] / page.renderWidthEm));
+  const selected = Array.from({ length: equationCount }, (_, equationIndex) => {
+    const candidates = pages.filter((page) => page.equationIndex === equationIndex);
+    const original = candidates.find((page) => page.layout === 'original');
+    if (!original) throw new Error(`${slug}/${variant.name}: equation ${equationIndex + 1} has no original SVG`);
+    const candidate = candidates.find((page) => page.layout === 'single-line');
+    const candidateFits = candidate && candidate.viewBox[2] <= (candidate.renderWidthEm + FIT_TOLERANCE_EM) * unitWidth;
+    const page = candidateFits ? candidate : original;
+    const id = `eq-${String(equationIndex + 1).padStart(6, '0')}`;
+    return {
+      ...page,
+      id,
+      inner: prefixSvgIds(page.inner, `${id}-`),
+      widthEm: page.viewBox[2] / unitWidth,
+      overflow: page.viewBox[2] > (page.targetWidthEm + FIT_TOLERANCE_EM) * unitWidth,
+    };
   });
-  const baseWidth = median(pages.map((page) => page.viewBox[2]));
-  const symbols = pages.map((page) => `<symbol id="${page.id}" viewBox="${page.viewBox.join(' ')}">${page.inner}</symbol>`);
+  const symbols = selected.map((page) => `<symbol id="${page.id}" viewBox="${page.viewBox.join(' ')}">${page.inner}</symbol>`);
   const sprite = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">',
@@ -243,14 +442,18 @@ export function createEquationSprite({ slug, variant, svgDirectory, outputPath, 
   ].join('\n');
   writeFileSync(outputPath, sprite, 'utf8');
 
-  return pages.map((page) => ({
+  return selected.map((page) => ({
     // The sprite symbol keeps dvisvgm's original viewBox.  The referencing
     // document must use a zero-origin viewport, otherwise the symbol viewBox
     // is applied a second time and clips formulas whose source page starts at
     // a non-zero x/y coordinate.
     viewBox: `0 0 ${page.viewBox[2]} ${page.viewBox[3]}`,
-    widthEm: variant.widthEm * (page.viewBox[2] / baseWidth),
+    widthEm: page.widthEm,
     href: `/papers/${slug}/equations-${variant.name}.svg#${page.id}`,
+    context: page.context,
+    layout: page.layout,
+    targetWidthEm: page.targetWidthEm,
+    overflow: page.overflow,
   }));
 }
 
@@ -261,8 +464,17 @@ export function equationAssetsFromVariants(slug, byVariant) {
       throw new Error(`${slug}: responsive equation variant count mismatch`);
     }
   }
-  return Array.from({ length: equationCount }, (_, index) => ({
-    id: `eq-${String(index + 1).padStart(6, '0')}`,
-    variants: Object.fromEntries(EQUATION_VARIANTS.map((variant) => [variant.name, byVariant[variant.name][index]])),
-  }));
+  return Array.from({ length: equationCount }, (_, index) => {
+    const context = byVariant[EQUATION_VARIANTS[0].name][index].context;
+    for (const variant of EQUATION_VARIANTS) {
+      if (byVariant[variant.name][index].context !== context) {
+        throw new Error(`${slug}: equation ${index + 1} context differs across responsive variants`);
+      }
+    }
+    return {
+      id: `eq-${String(index + 1).padStart(6, '0')}`,
+      context,
+      variants: Object.fromEntries(EQUATION_VARIANTS.map((variant) => [variant.name, byVariant[variant.name][index]])),
+    };
+  });
 }

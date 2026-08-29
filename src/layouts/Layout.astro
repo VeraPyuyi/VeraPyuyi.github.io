@@ -1,6 +1,5 @@
 ---
 import type { HomeSiderType } from '@constants/enum';
-import type { BlogPost } from 'types/blog';
 import type { PageMeta, PageMetaProps } from './page-meta';
 
 interface Props extends PageMetaProps {
@@ -13,7 +12,6 @@ interface Props extends PageMetaProps {
   locale?: string;
   // TODO: siderType should be custom in router file, not in layout
   siderType?: HomeSiderType;
-  post?: BlogPost;
 }
 
 import { ClientRouter } from 'astro:transitions';
@@ -22,7 +20,7 @@ import UmamiAnalytics from '@components/analytics/UmamiAnalytics.astro';
 import { seoConfig } from '@constants/site-config';
 import LoadingIndicator from 'astro-loading-indicator/component';
 import { Tooltips } from 'astro-tooltips';
-import { getHtmlLang, getLocaleFromUrl, stripLocaleFromPath } from '@/i18n';
+import { getHtmlLang, getLocaleFromUrl } from '@/i18n';
 import AppShell from './AppShell.astro';
 import BootScripts from './BootScripts.astro';
 import HeadMeta from './HeadMeta.astro';
@@ -34,14 +32,10 @@ const {
   description = seoConfig.description,
   locale = getLocaleFromUrl(Astro.url.pathname),
   siderType,
-  post,
   ...metaProps
 } = Astro.props;
 
-const meta: PageMeta = { ...metaProps, locale, title, description, coverImage: post?.data.cover };
-
-// Detect if current page is a post page for mobile header (locale-prefix safe)
-const isPostPage = stripLocaleFromPath(Astro.url.pathname).startsWith('/post/');
+const meta: PageMeta = { ...metaProps, locale, title, description };
 ---
 
 <!doctype html>
@@ -61,7 +55,7 @@ const isPostPage = stripLocaleFromPath(Astro.url.pathname).startsWith('/post/');
     <slot name="head" />
   </head>
   <body>
-    <AppShell post={post} siderType={siderType} isPostPage={isPostPage}>
+    <AppShell siderType={siderType}>
       <slot />
     </AppShell>
   </body>

@@ -9,6 +9,16 @@ const DEFAULT_MATH_MACROS = {
 const FORBIDDEN_LATEX = /\\[A-Za-z@]+/;
 const MOJIBAKE = /\uFFFD|Ã.|Â.|â(?:€|€™|€œ|€œ|€“|€”|€¦)|ï¿½/;
 const EQUATION_VARIANTS = ['desktop', 'tablet', 'mobile'];
+const CONTAINED_EQUATION_CLASSES = new Set([
+  'theorem',
+  'lemma',
+  'proposition',
+  'corollary',
+  'definition',
+  'proof',
+  'remark',
+  'example',
+]);
 
 function containsForbiddenControlCharacter(value) {
   return [...value].some((character) => {
@@ -372,12 +382,13 @@ function mathTex(node) {
   return content;
 }
 
-function collectMathNodes(node, output) {
+function collectMathNodes(node, output, insideContainedEnvironment = false) {
   const classes = attribute(node, 'class')?.split(/\s+/) ?? [];
+  const contained = insideContainedEnvironment || classes.some((name) => CONTAINED_EQUATION_CLASSES.has(name));
   if (node.tagName === 'span' && classes.includes('math') && classes.includes('display')) {
-    output.push(mathTex(node).normalize('NFC'));
+    output.push({ tex: mathTex(node).normalize('NFC'), context: contained ? 'contained' : 'standalone' });
   }
-  for (const child of node.childNodes ?? []) collectMathNodes(child, output);
+  for (const child of node.childNodes ?? []) collectMathNodes(child, output, contained);
 }
 
 export function collectDisplayEquations(slug, standaloneHtml, formulaReplacements = new Map()) {
@@ -388,11 +399,11 @@ export function collectDisplayEquations(slug, standaloneHtml, formulaReplacement
   const equations = [];
   collectMathNodes(body, equations);
   return equations.map((equation) => {
-    const restored = replaceMarkers(equation, formulaReplacements);
+    const restored = replaceMarkers(equation.tex, formulaReplacements);
     if (restored.includes(REFERENCE_MARKER) || restored.includes(CITATION_MARKER)) {
       throw new Error(`${slug}: unresolved build marker remains in a display equation`);
     }
-    return restored;
+    return { tex: restored, context: equation.context };
   });
 }
 
@@ -411,6 +422,8 @@ function displaySvgHtml(asset) {
       `<svg class="paper-equation-svg paper-equation-svg--${variant}"`,
       ` viewBox="${escapeHtml(value.viewBox)}"`,
       ` style="--paper-equation-svg-width:${value.widthEm.toFixed(4)}em"`,
+      ` data-equation-layout="${value.layout === 'single-line' ? 'single-line' : 'original'}"`,
+      ` data-equation-overflow="${value.overflow ? 'true' : 'false'}"`,
       ' preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">',
       `<use href="${escapeHtml(value.href)}" width="100%" height="100%"></use>`,
       '</svg>',
@@ -437,9 +450,11 @@ function renderMath(tex, displayMode, labels, macros, displayAsset) {
   const anchorHtml = anchors.join('');
   if (!displayMode) return `${anchorHtml}${mathml}`;
   const svg = displaySvgHtml(displayAsset);
+  const context = displayAsset?.context === 'contained' ? 'contained' : 'standalone';
+  const shellClass = context === 'contained' ? 'paper-equation paper-equation--contained' : 'paper-equation';
 
   return [
-    '<span class="paper-equation">',
+    `<span class="${shellClass}" data-equation-context="${context}">`,
     anchorHtml,
     '<span class="paper-equation-scroll">',
     svg,
@@ -518,6 +533,35 @@ function collectHtmlFacts(node, facts) {
 
 function hasClass(node, name) {
   return (attribute(node, 'class')?.split(/\s+/) ?? []).includes(name);
+}
+
+function setAttribute(node, name, value) {
+  node.attrs ??= [];
+  const existing = node.attrs.find((item) => item.name === name);
+  if (existing) existing.value = value;
+  else node.attrs.push({ name, value });
+}
+
+function hasContainedEnvironmentAncestor(node) {
+  let current = node.parentNode;
+  while (current) {
+    const classes = attribute(current, 'class')?.split(/\s+/) ?? [];
+    if (classes.some((name) => CONTAINED_EQUATION_CLASSES.has(name))) return true;
+    current = current.parentNode;
+  }
+  return false;
+}
+
+function markEquationContexts(node) {
+  if (hasClass(node, 'paper-equation')) {
+    const contained = hasContainedEnvironmentAncestor(node);
+    const classes = new Set(attribute(node, 'class')?.split(/\s+/).filter(Boolean) ?? []);
+    if (contained) classes.add('paper-equation--contained');
+    else classes.delete('paper-equation--contained');
+    setAttribute(node, 'class', [...classes].join(' '));
+    setAttribute(node, 'data-equation-context', contained ? 'contained' : 'standalone');
+  }
+  for (const child of node.childNodes ?? []) markEquationContexts(child);
 }
 
 function hasAncestorClass(node, name) {
@@ -599,6 +643,13 @@ export function validateGeneratedHtml(slug, html, { requireSvg = false, expected
     if (displayMathDescendants(shell).length !== 1) {
       throw new Error(`${slug}: each equation container must contain exactly one display MathML node`);
     }
+    const contained = hasContainedEnvironmentAncestor(shell);
+    if (contained !== hasClass(shell, 'paper-equation--contained')) {
+      throw new Error(`${slug}: equation context class does not match its surrounding environment`);
+    }
+    if (attribute(shell, 'data-equation-context') !== (contained ? 'contained' : 'standalone')) {
+      throw new Error(`${slug}: equation context metadata does not match its surrounding environment`);
+    }
   }
   if (expectedDisplayCount !== undefined && equations.displayMath.length !== expectedDisplayCount) {
     throw new Error(`${slug}: expected ${expectedDisplayCount} display equations, received ${equations.displayMath.length}`);
@@ -624,7 +675,9 @@ export function validateGeneratedHtml(slug, html, { requireSvg = false, expected
         viewBox.some((value) => !Number.isFinite(value)) ||
         viewBox[0] !== 0 ||
         viewBox[1] !== 0 ||
-        !attribute(svg, 'style')
+        !attribute(svg, 'style') ||
+        !['original', 'single-line'].includes(attribute(svg, 'data-equation-layout')) ||
+        !['true', 'false'].includes(attribute(svg, 'data-equation-overflow'))
       ) {
         throw new Error(`${slug}: malformed responsive equation SVG`);
       }
@@ -651,6 +704,7 @@ export function validateGeneratedHtml(slug, html, { requireSvg = false, expected
 export function normalizeGeneratedHtml(slug, html) {
   const document = parseFragment(html.normalize('NFC'));
   wrapDisplayMathNodes(document);
+  markEquationContexts(document);
   const normalized = serialize(document).trim().normalize('NFC');
   validateGeneratedHtml(slug, normalized);
   return normalized;
@@ -662,7 +716,7 @@ export function convertPandocHtml({
   aux,
   replacements,
   macros = {},
-  displayAssets = /** @type {Array<{ id: string, variants: Record<string, { href: string, viewBox: string, widthEm: number }> }>} */ ([]),
+  displayAssets = /** @type {Array<{ id: string, context: 'standalone' | 'contained', variants: Record<string, { href: string, viewBox: string, widthEm: number, layout: 'original' | 'single-line', overflow: boolean }> }>} */ ([]),
 }) {
   const document = parse(standaloneHtml.normalize('NFC'));
   const htmlNode = document.childNodes.find((node) => node.tagName === 'html');

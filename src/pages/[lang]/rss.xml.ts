@@ -1,18 +1,14 @@
 import rss from '@astrojs/rss';
 import { siteConfig } from '@constants/site-config';
-import { getPostSlug, getSortedPosts } from '@lib/content';
-import { encodeSlug } from '@lib/route';
-import { buildRssItemFields } from '@lib/rss-utils';
 import type { APIContext } from 'astro';
-import type { BlogPost } from 'types/blog';
-import { getHtmlLang, localizedPath } from '@/i18n';
+import { getHtmlLang } from '@/i18n';
+import { getAggregateRssItems } from '@/lib/rss-items';
 import { getLocaleStaticPaths } from '../_shared/utils';
 
 export const getStaticPaths = getLocaleStaticPaths;
 
 export async function GET(context: APIContext) {
   const lang = context.params.lang as string;
-  const posts = await getSortedPosts(lang);
   const { site } = context;
 
   if (!site) {
@@ -26,20 +22,7 @@ export async function GET(context: APIContext) {
     trailingSlash: false,
     customData: `<language>${getHtmlLang(lang)}</language>`,
     stylesheet: '/rss/feed.xsl',
-    items: posts.slice(0, 20).map((post: BlogPost) => {
-      const postSlug = getPostSlug(post);
-      const postLink = localizedPath(`/post/${encodeSlug(postSlug)}`, lang);
-      const { title, description, content } = buildRssItemFields(post, lang);
-
-      return {
-        title,
-        pubDate: post.data.date,
-        description,
-        link: postLink,
-        content,
-        customData: `<guid isPermaLink="false">${lang}:${postSlug}</guid>`,
-      };
-    }),
+    items: await getAggregateRssItems(lang),
   });
 
   const headers = new Headers(response.headers);

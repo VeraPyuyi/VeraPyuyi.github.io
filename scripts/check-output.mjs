@@ -48,14 +48,19 @@ const required = [
   'moments/index.html',
   'guestbook/index.html',
   'en/index.html',
+  'en/posts/index.html',
+  'en/papers/index.html',
   'en/blogs/index.html',
   'en/projects/index.html',
+  'rss.xml',
+  'en/rss.xml',
   '404.html',
 ];
 
 const paperSlugs = readdirSync(join(root, 'src/content/papers'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name);
+let equationTotal = 0;
 for (const slug of paperSlugs) {
   required.push(`papers/${slug}/index.html`, `en/papers/${slug}/index.html`);
   if (process.env.CI) {
@@ -72,6 +77,34 @@ for (const slug of paperSlugs) {
       if (!Number.isInteger(manifest.count) || manifest.count <= 0) {
         failures.push(`${slug}: invalid equation manifest count`);
       }
+      if (!Array.isArray(manifest.equations) || manifest.equations.length !== manifest.count) {
+        failures.push(`${slug}: equation manifest entries do not match count`);
+      } else {
+        equationTotal += manifest.count;
+        for (const [index, equation] of manifest.equations.entries()) {
+          const expectedId = `eq-${String(index + 1).padStart(6, '0')}`;
+          if (equation.id !== expectedId) failures.push(`${slug}: equation ${index + 1} has unstable id ${equation.id}`);
+          if (!['standalone', 'contained'].includes(equation.context)) {
+            failures.push(`${slug}: ${expectedId} has invalid context`);
+          }
+          for (const variant of ['desktop', 'tablet', 'mobile']) {
+            const asset = equation.variants?.[variant];
+            if (!asset) {
+              failures.push(`${slug}: ${expectedId} is missing ${variant} metadata`);
+              continue;
+            }
+            if (asset.context !== equation.context) failures.push(`${slug}: ${expectedId} changed context in ${variant}`);
+            if (!['original', 'single-line'].includes(asset.layout)) {
+              failures.push(`${slug}: ${expectedId} has invalid ${variant} layout`);
+            }
+            if (typeof asset.overflow !== 'boolean' || !(asset.targetWidthEm > 0)) {
+              failures.push(`${slug}: ${expectedId} has invalid ${variant} measurements`);
+            }
+            const expectedHref = `/papers/${slug}/equations-${variant}.svg#${expectedId}`;
+            if (asset.href !== expectedHref) failures.push(`${slug}: ${expectedId} has invalid ${variant} href`);
+          }
+        }
+      }
       for (const variant of ['desktop', 'tablet', 'mobile']) {
         const spritePath = join(dist, `papers/${slug}/equations-${variant}.svg`);
         if (!existsSync(spritePath)) continue;
@@ -85,6 +118,7 @@ for (const slug of paperSlugs) {
     }
   }
 }
+if (process.env.CI && equationTotal !== 494) failures.push(`paper equation total changed: ${equationTotal}/494`);
 for (const path of required) if (!existsSync(join(dist, path))) failures.push(`missing required output: ${path}`);
 
 const forbidden = [
@@ -95,11 +129,50 @@ const forbidden = [
   'en/tags/index.html',
   'en/archives/index.html',
   'papers/berstein-transfers-greedy-records/index.html',
+  'posts/2/index.html',
+  'en/posts/2/index.html',
+  'post/life/welcome/index.html',
+  'post/tech/site-capabilities/index.html',
+  'post/research/latex-publishing/index.html',
+  'post/acg/watchlist-notes/index.html',
+  'en/post/life/welcome/index.html',
+  'en/post/tech/site-capabilities/index.html',
+  'en/post/research/latex-publishing/index.html',
+  'en/post/acg/watchlist-notes/index.html',
 ];
 for (const path of forbidden) if (existsSync(join(dist, path))) failures.push(`removed route was generated: ${path}`);
 
 if (!existsSync(join(dist, 'papers/bernstein-transfers-greedy-records/index.html'))) {
   failures.push('missing correct Bernstein paper route');
+}
+
+for (const localePrefix of ['', 'en/']) {
+  const postsPath = join(dist, `${localePrefix}posts/index.html`);
+  if (!existsSync(postsPath)) continue;
+  const postsHtml = readFileSync(postsPath, 'utf8');
+  for (const slug of paperSlugs) {
+    const href = `/${localePrefix}papers/${slug}`;
+    if (!postsHtml.includes(href)) failures.push(`${localePrefix}posts: missing paper ${slug}`);
+  }
+  if (!postsHtml.includes('id="blog-personal-site"')) failures.push(`${localePrefix}posts: missing personal-site blog`);
+  if (!postsHtml.includes('data-pagefind-ignore="all"'))
+    failures.push(`${localePrefix}posts: aggregate content is indexed twice`);
+  if (/href=["']\/(?:en\/)?post\//.test(postsHtml)) failures.push(`${localePrefix}posts: contains removed post route`);
+}
+
+for (const localePrefix of ['', 'en/']) {
+  const rssPath = join(dist, `${localePrefix}rss.xml`);
+  if (!existsSync(rssPath)) continue;
+  const rss = readFileSync(rssPath, 'utf8');
+  const itemBlocks = [...rss.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((match) => match[1]);
+  const expectedGuids = [...paperSlugs.map((slug) => `paper:${slug}`), 'blog:personal-site'];
+  for (const guid of expectedGuids) {
+    if (!rss.includes(`<guid isPermaLink="false">${guid}</guid>`)) failures.push(`${localePrefix}rss.xml: missing ${guid}`);
+  }
+  if (itemBlocks.length !== expectedGuids.length)
+    failures.push(`${localePrefix}rss.xml: expected ${expectedGuids.length} items`);
+  const blogItem = itemBlocks.find((item) => item.includes('blog:personal-site'));
+  if (!blogItem || /<pubDate>/.test(blogItem)) failures.push(`${localePrefix}rss.xml: blog has a fabricated publication date`);
 }
 
 if (failures.length) throw new Error(`Broken output links:\n${[...new Set(failures)].join('\n')}`);

@@ -5,7 +5,13 @@ import { basename, extname, join } from 'node:path';
 import { parse } from 'yaml';
 import { verifyPaperToolchain } from './check-paper-toolchain.mjs';
 import { collectDisplayEquations, convertPandocHtml, normalizeGeneratedHtml, parseAux, prepareWebTex } from './paper-html.mjs';
-import { buildEquationBatchTex, createEquationSprite, EQUATION_VARIANTS, equationAssetsFromVariants } from './paper-svg.mjs';
+import {
+  buildEquationBatchTex,
+  createEquationRenderPlan,
+  createEquationSprite,
+  EQUATION_VARIANTS,
+  equationAssetsFromVariants,
+} from './paper-svg.mjs';
 
 const strict = process.argv.includes('--strict');
 const requestedSlug = process.argv.find((argument) => argument.startsWith('--paper='))?.slice('--paper='.length);
@@ -196,6 +202,7 @@ for (const entry of paperEntries) {
     }
     const variantAssets = {};
     for (const variant of EQUATION_VARIANTS) {
+      const renderPlan = createEquationRenderPlan(equations, variant);
       const variantWorkDir = join(workDir, `equations-${variant.name}`);
       const svgDirectory = join(variantWorkDir, 'svg');
       mkdirSync(svgDirectory, { recursive: true });
@@ -206,7 +213,7 @@ for (const entry of paperEntries) {
         source,
         equations,
         labels: aux.labels,
-        widthEm: variant.widthEm,
+        renderPlan,
       });
       writeFileSync(batchPath, batchSource, 'utf8');
       compileEquationBatch({ cwd: workDir, input: batchPath, outputDirectory: variantWorkDir });
@@ -233,12 +240,13 @@ for (const entry of paperEntries) {
         svgDirectory,
         outputPath: join(publicDir, `equations-${variant.name}.svg`),
         equationCount: equations.length,
+        renderPlan,
       });
     }
     const displayAssets = equationAssetsFromVariants(slug, variantAssets);
     writeFileSync(
       join(publicDir, 'equations-manifest.json'),
-      `${JSON.stringify({ slug, count: equations.length, variants: variantAssets }, null, 2)}\n`,
+      `${JSON.stringify({ slug, count: equations.length, equations: displayAssets }, null, 2)}\n`,
       'utf8',
     );
 

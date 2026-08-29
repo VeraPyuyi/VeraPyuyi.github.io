@@ -2,7 +2,7 @@
 
 ![站点原创主视觉](public/og.png)
 
-这是 `VeraPyuyi.github.io` 的站点源码：一个默认中文、支持英文界面的 Astro 个人主页、文章、博客与论文站。主题基于 astro-koharu，上游版本与许可说明见 [UPSTREAM.md](./UPSTREAM.md)。
+这是 `VeraPyuyi.github.io` 的站点源码：一个默认中文、支持英文界面的 Astro 个人主页、论文与博客站。主题基于 astro-koharu，上游版本与许可说明见 [UPSTREAM.md](./UPSTREAM.md)。
 
 ## 已实现的功能
 
@@ -10,7 +10,7 @@
 - `src/content/papers/<slug>/` 论文流程：Pandoc 转 HTML/MathML，Tectonic 编译 PDF，任一严格构建失败即中止发布。
 - 独立博客目录、照片墙、相册灯箱、生活动态、留言板、友链和可选 Bangumi 页。
 - Giscus 的 GitHub 登录留言与稳定内容 ID 映射；GoatCounter 的每页公开访问次数。
-- Pages CMS 可视化编辑文章、博客、动态、相册、照片和站点配置。
+- Pages CMS 可视化编辑博客、动态、相册、照片和站点配置。
 - GitHub Actions 按“校验 → 论文编译 → 图片优化 → Astro/Pagefind 构建 → 输出链接检查 → Pages 发布”执行。
 
 ## 本地开发
@@ -152,7 +152,7 @@ pnpm dev
 - 无后端站点公告系统：可通过配置文件管理公告，支持时间控制、多条公告堆叠、自定义颜色、hover 已读
 - 有样式的 [RSS](https://blog.cosine.ren/rss.xml) 订阅源链接
 - **Koharu CLI**：交互式命令行工具，支持备份/还原、内容生成、备份管理
-- **本地轻 CMS 应用**：运行 `pnpm cms` 启动独立的 CMS 管理界面，支持文章管理、浏览器内编辑、Markdown 预览等功能。文章页的编辑按钮支持一键跳转到本地编辑器（VS Code / Cursor / Zed），配置见 `config/site.yaml` 的 `dev` 部分。(后期会考虑做个有后端的版本，这期先静态)
+- **Pages CMS**：通过仓库根目录的 `.pages.yml` 管理博客、动态、相册、公开图片和站点配置；不再提供第三种普通文章集合。
 
 ## Koharu CLI
 
@@ -290,8 +290,6 @@ pnpm koharu generate all          # 生成全部
 - 站点基本信息（标题、副标题、作者等）
 - 社交媒体链接
 - 导航菜单
-- 特色分类和周刊配置
-- 分类映射（中文分类名 → URL slug）
 - 友链列表
 - 公告系统
 - **评论系统**（Waline / Giscus / Remark42 / Twikoo，推荐使用 Waline）
@@ -318,37 +316,13 @@ i18n:
       label: English
 ```
 
-**内容翻译**：在 `config/i18n-content.yaml` 中配置分类名、系列名等内容级字符串的翻译：
-
-```yaml
-en:
-  categories:
-    life: Life
-    note: Notes
-    tools: Tools
-  series:
-    weekly:
-      label: My Weekly
-      fullName: My Tech Weekly
-```
-
-**添加翻译文章**：将翻译文章放在 `src/content/blog/<locale>/` 目录下，保持与默认语言相同的路径结构：
-
-```plain
-src/content/blog/
-├── tools/getting-started.md        # 默认语言 (zh)
-├── en/tools/getting-started.md     # 英文翻译
-└── en/life/hello-world.md          # 英文翻译
-```
-
-没有对应翻译的文章会自动回退显示默认语言内容，并标注提示。
+论文可在 `paper.yml` 中提供 `titleEn`、`abstractEn` 等英文元数据；没有译文时英文路由保留原始论文正文。独立博客通过 `src/content/blogs/` 中的 `language` 字段声明语言，没有英文版本时英文汇总页显示中文原文。
 
 **添加新语言**：
 
 1. 在 `config/site.yaml` 的 `i18n.locales` 中添加新语言
 2. 创建 `src/i18n/translations/<code>.ts`，按需翻译 UI 字符串（未翻译的 key 会回退到默认语言）
 3. 在 `src/i18n/translations/index.ts` 中注册新语言
-4. 在 `config/i18n-content.yaml` 中添加内容翻译（可选）
 
 ### 评论系统切换
 

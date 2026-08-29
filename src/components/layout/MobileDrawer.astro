@@ -1,16 +1,14 @@
 ---
 import { HomeSiderType } from '@constants/enum';
 import { Icon } from 'astro-icon/components';
-import type { BlogPost } from 'types/blog';
 import { getAlternateUrl, getLocaleFromUrl, getLocaleLabel, localeEntries, t } from '@/i18n';
 import HomeSider from './HomeSider.astro';
 
 interface Props {
   type?: HomeSiderType;
-  post?: BlogPost;
 }
 
-const { type = HomeSiderType.HOME, post } = Astro.props;
+const { type = HomeSiderType.HOME } = Astro.props;
 const locale = getLocaleFromUrl(Astro.url.pathname);
 ---
 
@@ -62,7 +60,7 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
         </details>
       )}
     </div>
-    <HomeSider className="tablet:flex tablet:mt-0 mt-4 hidden w-full min-w-full p-0" isDrawer type={type} post={post} />
+    <HomeSider className="tablet:flex tablet:mt-0 mt-4 hidden w-full min-w-full p-0" isDrawer type={type} />
   </div>
 </div>
 

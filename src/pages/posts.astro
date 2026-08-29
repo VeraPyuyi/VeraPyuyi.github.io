@@ -1,0 +1,56 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import BlogList from '@/components/personal/BlogList.astro';
+import PageChrome from '@/components/personal/PageChrome.astro';
+import PaperList from '@/components/personal/PaperList.astro';
+import { defaultLocale, localizedPath } from '@/i18n';
+import { getPapers } from '@/lib/papers';
+
+interface Props {
+  locale?: string;
+}
+
+const { locale = defaultLocale } = Astro.props;
+const en = locale === 'en';
+const paperCount = getPapers().length;
+const blogCount = (await getCollection('blogs')).filter(
+  (entry) => entry.data.language === 'zh' || entry.data.language === locale,
+).length;
+---
+
+<PageChrome
+  locale={locale}
+  title={en ? 'All Posts' : '全部文章'}
+  description={en ? 'A single index for papers and independent blogs.' : '汇总本站的论文与独立博客，不再混入其他示例文章。'}
+>
+  <div class="space-y-12" data-pagefind-ignore="all">
+    <section aria-labelledby="all-papers-title" class="space-y-5">
+      <div class="flex flex-wrap items-end justify-between gap-3 border-b border-black/5 pb-3 dark:border-white/10">
+        <div>
+          <p class="text-primary text-xs font-semibold tracking-[0.2em] uppercase">Papers · {paperCount}</p>
+          <h2 id="all-papers-title" class="mt-1 text-2xl font-bold">{en ? 'Papers' : '论文'}</h2>
+        </div>
+        <a class="text-primary inline-flex items-center gap-1 text-sm font-semibold hover:underline" href={localizedPath('/papers', locale)}>
+          {en ? 'Papers only' : '只看论文'}
+          <Icon name="ri:arrow-right-line" />
+        </a>
+      </div>
+      <PaperList locale={locale} indexable={false} />
+    </section>
+
+    <section aria-labelledby="all-blogs-title" class="space-y-5">
+      <div class="flex flex-wrap items-end justify-between gap-3 border-b border-black/5 pb-3 dark:border-white/10">
+        <div>
+          <p class="text-primary text-xs font-semibold tracking-[0.2em] uppercase">Blogs · {blogCount}</p>
+          <h2 id="all-blogs-title" class="mt-1 text-2xl font-bold">{en ? 'Blogs' : '博客'}</h2>
+        </div>
+        <a class="text-primary inline-flex items-center gap-1 text-sm font-semibold hover:underline" href={localizedPath('/blogs', locale)}>
+          {en ? 'Blogs only' : '只看博客'}
+          <Icon name="ri:arrow-right-line" />
+        </a>
+      </div>
+      <BlogList locale={locale} indexable={false} />
+    </section>
+  </div>
+</PageChrome>

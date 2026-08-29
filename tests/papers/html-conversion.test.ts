@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { convertPandocHtml, parseAux, prepareWebTex, validateGeneratedHtml } from '../../scripts/paper-html.mjs';
+import {
+  collectDisplayEquations,
+  convertPandocHtml,
+  parseAux,
+  prepareWebTex,
+  validateGeneratedHtml,
+} from '../../scripts/paper-html.mjs';
 
 const aux = parseAux(String.raw`
 \newlabel{sec:test}{{1}{1}}
@@ -37,6 +43,7 @@ test('web adapter emits static MathML, linked references, citations, and bibliog
     displayAssets: [
       {
         id: 'eq-000001',
+        context: 'standalone',
         variants: Object.fromEntries(
           ['desktop', 'tablet', 'mobile'].map((variant, index) => [
             variant,
@@ -44,6 +51,8 @@ test('web adapter emits static MathML, linked references, citations, and bibliog
               href: `/papers/fixture/equations-${variant}.svg#eq-000001`,
               viewBox: `0 0 ${560 - index * 100} 40`,
               widthEm: [56, 40, 22][index],
+              layout: 'original',
+              overflow: false,
             },
           ]),
         ),
@@ -83,5 +92,17 @@ test('strict HTML validation rejects leaked LaTeX and mojibake', () => {
   assert.throws(
     () => validateGeneratedHtml('bare-display', '<h1 id="x">X</h1><math display="block"><mi>x</mi></math>'),
     /wrapper mismatch/,
+  );
+});
+
+test('display equation collection records theorem-like layout constraints', () => {
+  const equations = collectDisplayEquations(
+    'fixture',
+    '<html><body><div class="theorem"><p><span class="math display">\\[a=b\\]</span></p></div><p><span class="math display">\\[c=d\\]</span></p></body></html>',
+  );
+
+  assert.deepEqual(
+    equations.map(({ context }) => context),
+    ['contained', 'standalone'],
   );
 });

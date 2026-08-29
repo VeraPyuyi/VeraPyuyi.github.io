@@ -8,42 +8,6 @@ media:
     extensions: [jpg, jpeg, png, webp, avif]
 
 content:
-  - name: posts
-    label: 文章
-    type: collection
-    path: src/content/blog
-    filename:
-      template: "{year}-{month}-{day}-{title}.md"
-      field: create
-    view:
-      fields: [title, date, draft, sticky]
-      primary: title
-      sort: [date, title]
-      search: [title, description, keywords]
-      default:
-        sort: date
-        order: desc
-    fields:
-      - { name: link, label: 稳定链接 ID, type: string, required: true, description: 例如 tech/my-first-post；发布后不要修改，以保持网址与留言不变 }
-      - { name: title, label: 标题, type: string, required: true }
-      - { name: description, label: 摘要, type: text, required: true }
-      - { name: date, label: 发布时间, type: date, required: true }
-      - { name: updated, label: 更新时间, type: date }
-      - name: cover
-        label: 封面
-        type: image
-        options: { media: images, path: blog, rename: safe }
-      - { name: keywords, label: SEO 关键词, type: string, list: true }
-      - { name: draft, label: 草稿, type: boolean }
-      - { name: sticky, label: 置顶, type: boolean }
-      - { name: comments, label: 允许 GitHub 留言, type: boolean }
-      - { name: math, label: 启用数学公式, type: boolean }
-      - { name: catalog, label: 显示目录, type: boolean }
-      - name: body
-        label: 正文
-        type: rich-text
-        options: { media: images, path: blog, format: markdown, switcher: true, rename: safe }
-
   - name: blogs
     label: 博客
     type: collection

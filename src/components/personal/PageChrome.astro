@@ -19,7 +19,7 @@ const { locale, title, description, paperFontProfile, cover, coverAlt } = Astro.
 ---
 
 <Layout locale={locale} title={`${title} | ${siteConfig.title}`} description={description}>
-  <TwoColumnLayout showPostFooter={false}>
+  <TwoColumnLayout>
     <Cover
       slot="cover"
       title={title}

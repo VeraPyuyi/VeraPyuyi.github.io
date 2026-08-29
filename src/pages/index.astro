@@ -1,18 +1,16 @@
 ---
 import HomeSider from '@components/layout/HomeSider.astro';
-import PostList from '@components/post/PostList.astro';
 import Cover from '@components/ui/cover/Cover.astro';
-import { CONTENT_PADDING, PAGINATION } from '@constants/layout';
+import { CONTENT_PADDING } from '@constants/layout';
 import { seoConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
-import { getHomePagePosts } from '@lib/content';
-import { toPostCardDataList } from '@lib/content/transforms';
-import type { Page } from 'astro';
-import type { BlogPost } from 'types/blog';
+import { Icon } from 'astro-icon/components';
+import BlogList from '@/components/personal/BlogList.astro';
 import FeatureHub from '@/components/personal/FeatureHub.astro';
+import PaperList from '@/components/personal/PaperList.astro';
 import Divider from '@/components/ui/divider';
-import { defaultLocale, localizedPath, t } from '@/i18n';
+import { defaultLocale, localizedPath } from '@/i18n';
 
 interface Props {
   locale?: string;
@@ -20,38 +18,7 @@ interface Props {
 
 // Root pages render the default locale; `[lang]/` mirrors pass their locale in explicitly.
 const { locale = defaultLocale } = Astro.props;
-
-// 使用优化的单次查询获取所有首页数据
-const { highlightedPosts, stickyPosts: normalStickyPosts, regularPosts } = await getHomePagePosts(locale);
-
-// 将高亮系列文章放在置顶列表开头（转换为卡片数据）
-const stickyPosts = toPostCardDataList([...highlightedPosts, ...normalStickyPosts], locale);
-
-// 首页显示前N篇普通文章（不含系列文章）
-const { pageSize } = PAGINATION;
-const regularPostsSlice = regularPosts.slice(0, pageSize);
-const posts = toPostCardDataList(regularPostsSlice, locale);
-const totalRegularPosts = regularPosts.length;
-
-const homeUrl = localizedPath('/', locale);
-const postsBaseUrl = localizedPath('/posts', locale);
-
-const page: Page<BlogPost> = {
-  data: regularPostsSlice,
-  start: 0,
-  end: Math.min(pageSize - 1, regularPostsSlice.length - 1),
-  size: pageSize,
-  total: totalRegularPosts,
-  currentPage: 1,
-  lastPage: Math.ceil(totalRegularPosts / pageSize),
-  url: {
-    current: homeUrl,
-    prev: undefined,
-    next: totalRegularPosts > pageSize ? `${postsBaseUrl}/2` : undefined,
-    first: homeUrl,
-    last: `${postsBaseUrl}/${Math.ceil(totalRegularPosts / pageSize)}`,
-  },
-};
+const en = locale === 'en';
 ---
 
 <Layout locale={locale} title={seoConfig.title}>
@@ -62,14 +29,24 @@ const page: Page<BlogPost> = {
       class={`bg-gradient-start shadow-box tablet:shadow-none flex flex-col gap-4 overflow-hidden  ${CONTENT_PADDING.standard}`}
     >
       <FeatureHub locale={locale} />
-      {stickyPosts.length > 0 && (
-        <>
-          <Divider>{t(locale, 'post.stickyPosts')}</Divider>
-          <PostList posts={stickyPosts} showPaginator={false} />
-        </>
-      )}
-      <Divider>{t(locale, 'post.postList')}</Divider>
-      <PostList posts={posts} page={page} showPaginator={true} baseUrl={postsBaseUrl} isHomePage={true} />
+      <Divider>{en ? 'Latest papers' : '近期论文'}</Divider>
+      <PaperList locale={locale} limit={3} indexable={false} />
+      <a
+        class="text-primary ml-auto inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+        href={localizedPath('/papers', locale)}
+      >
+        {en ? 'View all papers' : '查看全部论文'}
+        <Icon name="ri:arrow-right-line" />
+      </a>
+      <Divider>{en ? 'Blogs' : '博客'}</Divider>
+      <BlogList locale={locale} limit={3} indexable={false} />
+      <a
+        class="text-primary ml-auto inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+        href={localizedPath('/posts', locale)}
+      >
+        {en ? 'View all posts' : '查看全部文章'}
+        <Icon name="ri:arrow-right-line" />
+      </a>
     </div>
   </TwoColumnLayout>
 </Layout>

@@ -2,12 +2,9 @@
 /** Body-level chrome: the page frame plus every globally mounted island. */
 
 import type { HomeSiderType } from '@constants/enum';
-import type { BlogPost } from 'types/blog';
 
 interface Props {
-  post?: BlogPost;
   siderType?: HomeSiderType;
-  isPostPage: boolean;
 }
 
 import AnnouncementProvider from '@components/announcement/AnnouncementProvider.astro';
@@ -26,12 +23,12 @@ import SettingsPanel from '@components/settings/SettingsPanel';
 import { Toaster } from '@components/ui/sonner';
 import { bgmConfig } from '@constants/site-config';
 
-const { post, siderType, isPostPage } = Astro.props;
+const { siderType } = Astro.props;
 ---
 
 <ChristmasEffects transition:persist="christmas-snowfall" />
 <div class="flex min-h-screen flex-col text-black dark:text-white">
-  <Header isPostPage={isPostPage} tocNumbering={post?.data.tocNumbering ?? true} />
+  <Header isPostPage={false} tocNumbering />
   <main class="relative flex grow flex-col gap-4">
     {(<slot />)}
   </main>
@@ -48,7 +45,7 @@ const { post, siderType, isPostPage } = Astro.props;
   )}
   <FloatingGroup client:only="react" />
   <SettingsPanel client:idle />
-  <MobileDrawer type={siderType} post={post} />
+  <MobileDrawer type={siderType} />
   <SearchDialog client:idle />
   <SearchPortal />
   <CodeBlockFullscreen client:idle />
