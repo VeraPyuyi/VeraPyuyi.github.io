@@ -23,6 +23,7 @@ const blogCount = (await getCollection('blogs')).filter(
   locale={locale}
   title={en ? 'All Posts' : '全部文章'}
   description={en ? 'A single index for papers and independent blogs.' : '汇总本站的论文与独立博客，不再混入其他示例文章。'}
+  showDescription={false}
 >
   <div class="space-y-12" data-pagefind-ignore="all">
     <section aria-labelledby="all-papers-title" class="space-y-5">

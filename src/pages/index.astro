@@ -19,9 +19,10 @@ interface Props {
 // Root pages render the default locale; `[lang]/` mirrors pass their locale in explicitly.
 const { locale = defaultLocale } = Astro.props;
 const en = locale === 'en';
+const browserTitle = 'Pyuyi’s Home';
 ---
 
-<Layout locale={locale} title={seoConfig.title}>
+<Layout locale={locale} title={browserTitle} openGraph={{ title: seoConfig.title }}>
   <TwoColumnLayout>
     <Cover slot="cover" />
     <HomeSider slot="sider" />

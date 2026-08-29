@@ -10,12 +10,13 @@ interface Props {
   locale: string;
   title: string;
   description: string;
+  showDescription?: boolean;
   paperFontProfile?: 'latin-modern' | 'computer-modern';
   cover?: string;
   coverAlt?: string;
 }
 
-const { locale, title, description, paperFontProfile, cover, coverAlt } = Astro.props;
+const { locale, title, description, showDescription = true, paperFontProfile, cover, coverAlt } = Astro.props;
 ---
 
 <Layout locale={locale} title={`${title} | ${siteConfig.title}`} description={description}>
@@ -41,7 +42,7 @@ const { locale, title, description, paperFontProfile, cover, coverAlt } = Astro.
         >
           {title}
         </h1>
-        <p class="text-muted-foreground max-w-3xl leading-7">{description}</p>
+        {showDescription && <p class="text-muted-foreground max-w-3xl leading-7">{description}</p>}
       </header>
       <slot />
     </div>
