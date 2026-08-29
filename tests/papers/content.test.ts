@@ -59,6 +59,30 @@ test('paper metadata is version-locked and complete', () => {
     assert.equal(paper.cover, `/uploads/papers/${paper.id}/cover.png`);
     assert.ok(paper.coverAlt);
     assert.ok(paper.coverAltEn);
+    if (paper.id === 'horizon-uniform-sensitivity') {
+      assert.deepEqual(paper.webOmitSections, [
+        'Data and code availability',
+        'Declaration of generative AI and AI-assisted technologies in the writing process',
+      ]);
+      for (const label of [
+        'eq:green-estimate',
+        'eq:nonlinear-boundary-linearization',
+        'eq:preconditioned-lipschitz',
+        'eq:joint-y-absorption',
+        'eq:posterior-omega',
+        'eq:terminal-trajectory-attenuation',
+        'eq:lq-terminal-hessian-forgetting',
+      ]) {
+        assert.equal(paper.webEquationLayouts[`label:${label}`], 'compact');
+      }
+      const hashLayouts = Object.entries(paper.webEquationLayouts).filter(([key]) => key.startsWith('sha256:'));
+      assert.equal(hashLayouts.length, 9);
+      assert.equal(hashLayouts.filter(([, layout]) => layout === 'compact').length, 8);
+      assert.equal(hashLayouts.filter(([, layout]) => layout === 'auto').length, 1);
+    } else {
+      assert.deepEqual(paper.webOmitSections, []);
+      assert.deepEqual(paper.webEquationLayouts, {});
+    }
   }
 });
 
@@ -107,6 +131,8 @@ test('paper web fonts are self-hosted with license files', () => {
   const paperPage = readFileSync(join(root, 'src/pages/papers/[slug].astro'), 'utf8');
   assert.match(paperPage, /\[data-paper-font='latin-modern'\] \.paper-content math[^}]+Paper Latin Modern Math/);
   assert.match(paperPage, /\[data-paper-font='computer-modern'\] \.paper-content math[^}]+Paper Computer Modern Math/);
+  assert.match(paperPage, /\.paper-content \.paper-equation \{[\s\S]*?width: 100%;[\s\S]*?background: transparent;/);
+  assert.doesNotMatch(paperPage, /width: min\(56em|translateX\(-50%\)|paper-equation-edge-surface/);
 });
 
 test('imported arXiv files remain byte-for-byte unchanged', () => {

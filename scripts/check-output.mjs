@@ -84,6 +84,9 @@ for (const slug of paperSlugs) {
         for (const [index, equation] of manifest.equations.entries()) {
           const expectedId = `eq-${String(index + 1).padStart(6, '0')}`;
           if (equation.id !== expectedId) failures.push(`${slug}: equation ${index + 1} has unstable id ${equation.id}`);
+          if (!/^(?:label:[^\s]+|sha256:[a-f0-9]{64})$/.test(equation.sourceKey ?? '')) {
+            failures.push(`${slug}: ${expectedId} has invalid source identity`);
+          }
           if (!['standalone', 'contained'].includes(equation.context)) {
             failures.push(`${slug}: ${expectedId} has invalid context`);
           }
@@ -94,8 +97,11 @@ for (const slug of paperSlugs) {
               continue;
             }
             if (asset.context !== equation.context) failures.push(`${slug}: ${expectedId} changed context in ${variant}`);
-            if (!['original', 'single-line'].includes(asset.layout)) {
+            if (!['original', 'single-line', 'compact'].includes(asset.layout)) {
               failures.push(`${slug}: ${expectedId} has invalid ${variant} layout`);
+            }
+            if (!['auto-original', 'auto-single-line', 'override-original', 'override-compact'].includes(asset.layoutReason)) {
+              failures.push(`${slug}: ${expectedId} has invalid ${variant} layout reason`);
             }
             if (typeof asset.overflow !== 'boolean' || !(asset.targetWidthEm > 0)) {
               failures.push(`${slug}: ${expectedId} has invalid ${variant} measurements`);

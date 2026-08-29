@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { parse, parseFragment, serialize } from 'parse5';
 import temml from 'temml';
 
@@ -15,6 +16,7 @@ const CONTAINED_EQUATION_CLASSES = new Set([
   'proposition',
   'corollary',
   'definition',
+  'condition',
   'proof',
   'remark',
   'example',
@@ -340,8 +342,63 @@ function normalizeWebTex(source) {
     .replace(/\\allowdisplaybreaks(?:\[[^\]]*\])?/g, '');
 }
 
-export function prepareWebTex(source, aux, { pandocCitations = false } = {}) {
-  const refs = replaceCommands(source, /\\(eqref|ref|cref|Cref)\{([^{}]+)\}/g, REFERENCE_MARKER, (command, keys) =>
+const SECTION_LEVEL = new Map([
+  ['part', 0],
+  ['chapter', 1],
+  ['section', 2],
+  ['subsection', 3],
+  ['subsubsection', 4],
+]);
+
+function normalizedHeading(value) {
+  return latexText(value).replace(/\s+/g, ' ').trim().normalize('NFC');
+}
+
+export function omitWebSections(source, requestedSections = []) {
+  if (requestedSections.length === 0) return { source, omittedSections: [] };
+  const targets = requestedSections.map(normalizedHeading);
+  if (targets.some((target) => !target) || new Set(targets).size !== targets.length) {
+    throw new Error('webOmitSections must contain unique non-empty headings');
+  }
+
+  const headings = [
+    ...source.matchAll(/\\(part|chapter|section|subsection|subsubsection)\*?\s*(?:\[[^\]]*\]\s*)?\{([^{}]*)\}/g),
+  ].map((match) => ({
+    start: match.index ?? 0,
+    command: match[1],
+    level: SECTION_LEVEL.get(match[1]) ?? Number.POSITIVE_INFINITY,
+    title: normalizedHeading(match[2]),
+  }));
+  const terminalStarts = [
+    source.search(/\\bibliography\s*\{/),
+    source.search(/\\begin\{thebibliography\}/),
+    source.search(/\\end\{document\}/),
+  ].filter((index) => index >= 0);
+  const documentEnd = terminalStarts.length > 0 ? Math.min(...terminalStarts) : source.length;
+  const intervals = targets.map((target) => {
+    const matches = headings.filter((heading) => heading.title === target);
+    if (matches.length !== 1) {
+      throw new Error(`Expected exactly one web section named "${target}", found ${matches.length}`);
+    }
+    const heading = matches[0];
+    const next = headings.find((candidate) => candidate.start > heading.start && candidate.level <= heading.level);
+    return { start: heading.start, end: next?.start ?? documentEnd, title: target };
+  });
+  const ordered = intervals.toSorted((left, right) => right.start - left.start);
+  let output = source;
+  for (const interval of ordered) output = `${output.slice(0, interval.start)}${output.slice(interval.end)}`;
+  const remainingHeadings = [
+    ...output.matchAll(/\\(?:part|chapter|section|subsection|subsubsection)\*?\s*(?:\[[^\]]*\]\s*)?\{([^{}]*)\}/g),
+  ].map((match) => normalizedHeading(match[1]));
+  for (const target of targets) {
+    if (remainingHeadings.includes(target)) throw new Error(`Unable to omit web section "${target}"`);
+  }
+  return { source: output, omittedSections: targets };
+}
+
+export function prepareWebTex(source, aux, { pandocCitations = false, omitSections = [] } = {}) {
+  const omitted = omitWebSections(source, omitSections);
+  const refs = replaceCommands(omitted.source, /\\(eqref|ref|cref|Cref)\{([^{}]+)\}/g, REFERENCE_MARKER, (command, keys) =>
     referenceHtml(command, keys, aux.labels),
   );
 
@@ -357,6 +414,7 @@ export function prepareWebTex(source, aux, { pandocCitations = false } = {}) {
     source: output,
     replacements: new Map([...refs.replacements, ...citations.replacements]),
     formulaReplacements: new Map([...refs.formulaReplacements, ...citations.formulaReplacements]),
+    omittedSections: omitted.omittedSections,
   };
 }
 
@@ -382,6 +440,19 @@ function mathTex(node) {
   return content;
 }
 
+export function equationSourceIdentity(tex) {
+  const normalized = tex.normalize('NFC').replace(/\s+/g, ' ').trim();
+  const labels = [...normalized.matchAll(/\\label(?:\[[^\]]*\])?\{([^{}]+)\}/g)].map((match) => match[1]);
+  const sourceHash = createHash('sha256').update(normalized).digest('hex');
+  const sourceKeys = [...labels.map((label) => `label:${label}`), `sha256:${sourceHash}`];
+  return {
+    labels,
+    sourceHash,
+    sourceKeys,
+    sourceKey: sourceKeys[0],
+  };
+}
+
 function collectMathNodes(node, output, insideContainedEnvironment = false) {
   const classes = attribute(node, 'class')?.split(/\s+/) ?? [];
   const contained = insideContainedEnvironment || classes.some((name) => CONTAINED_EQUATION_CLASSES.has(name));
@@ -403,7 +474,7 @@ export function collectDisplayEquations(slug, standaloneHtml, formulaReplacement
     if (restored.includes(REFERENCE_MARKER) || restored.includes(CITATION_MARKER)) {
       throw new Error(`${slug}: unresolved build marker remains in a display equation`);
     }
-    return { tex: restored, context: equation.context };
+    return { tex: restored, context: equation.context, ...equationSourceIdentity(restored) };
   });
 }
 
@@ -418,11 +489,14 @@ function displaySvgHtml(asset) {
     if (!Number.isFinite(value.widthEm) || value.widthEm <= 0) {
       throw new Error(`Invalid ${variant} SVG width for ${asset.id}`);
     }
+    if (!['original', 'single-line', 'compact'].includes(value.layout)) {
+      throw new Error(`Invalid ${variant} SVG layout for ${asset.id}`);
+    }
     return [
       `<svg class="paper-equation-svg paper-equation-svg--${variant}"`,
       ` viewBox="${escapeHtml(value.viewBox)}"`,
       ` style="--paper-equation-svg-width:${value.widthEm.toFixed(4)}em"`,
-      ` data-equation-layout="${value.layout === 'single-line' ? 'single-line' : 'original'}"`,
+      ` data-equation-layout="${value.layout}"`,
       ` data-equation-overflow="${value.overflow ? 'true' : 'false'}"`,
       ' preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">',
       `<use href="${escapeHtml(value.href)}" width="100%" height="100%"></use>`,
@@ -676,7 +750,7 @@ export function validateGeneratedHtml(slug, html, { requireSvg = false, expected
         viewBox[0] !== 0 ||
         viewBox[1] !== 0 ||
         !attribute(svg, 'style') ||
-        !['original', 'single-line'].includes(attribute(svg, 'data-equation-layout')) ||
+        !['original', 'single-line', 'compact'].includes(attribute(svg, 'data-equation-layout')) ||
         !['true', 'false'].includes(attribute(svg, 'data-equation-overflow'))
       ) {
         throw new Error(`${slug}: malformed responsive equation SVG`);

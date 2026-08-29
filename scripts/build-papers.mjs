@@ -30,6 +30,64 @@ const expectedDisplayEquations = new Map([
   ['bernstein-transfers-greedy-records', 193],
   ['cycle-decorated-ribbon-complexes', 175],
 ]);
+const paperEquationVariants = new Set(EQUATION_VARIANTS.map((variant) => variant.name));
+const paperEquationLayouts = new Set(['auto', 'original', 'compact']);
+
+function paperWebOptions(meta, slug) {
+  const omitSections = meta.webOmitSections ?? [];
+  if (
+    !Array.isArray(omitSections) ||
+    omitSections.some((item) => typeof item !== 'string' || item.trim() === '') ||
+    new Set(omitSections).size !== omitSections.length
+  ) {
+    throw new Error(`${slug}: invalid webOmitSections`);
+  }
+
+  const rawLayouts = meta.webEquationLayouts ?? {};
+  if (!rawLayouts || typeof rawLayouts !== 'object' || Array.isArray(rawLayouts)) {
+    throw new Error(`${slug}: invalid webEquationLayouts`);
+  }
+  const equationLayouts = {};
+  for (const [key, config] of Object.entries(rawLayouts)) {
+    if (!/^(?:label:[^\s]+|sha256:[a-f0-9]{64})$/.test(key)) {
+      throw new Error(`${slug}: invalid webEquationLayouts key ${key}`);
+    }
+    if (typeof config === 'string') {
+      if (!paperEquationLayouts.has(config)) throw new Error(`${slug}: invalid equation layout for ${key}`);
+      equationLayouts[key] = config;
+      continue;
+    }
+    if (!config || typeof config !== 'object' || Array.isArray(config) || Object.keys(config).length === 0) {
+      throw new Error(`${slug}: invalid responsive equation layout for ${key}`);
+    }
+    for (const [variant, layout] of Object.entries(config)) {
+      if (!paperEquationVariants.has(variant) || !paperEquationLayouts.has(layout)) {
+        throw new Error(`${slug}: invalid ${variant} equation layout for ${key}`);
+      }
+    }
+    equationLayouts[key] = config;
+  }
+  return { omitSections: omitSections.map((item) => item.trim()), equationLayouts };
+}
+
+function applyEquationLayouts(slug, equations, layouts) {
+  const used = new Set();
+  const configured = equations.map((equation) => {
+    const matches = equation.sourceKeys.filter((key) => Object.hasOwn(layouts, key));
+    if (matches.length === 0) return { ...equation, layoutPreference: 'auto' };
+    const first = layouts[matches[0]];
+    for (const key of matches) {
+      used.add(key);
+      if (JSON.stringify(layouts[key]) !== JSON.stringify(first)) {
+        throw new Error(`${slug}: conflicting equation layout overrides for ${equation.sourceKey}`);
+      }
+    }
+    return { ...equation, layoutPreference: first };
+  });
+  const unused = Object.keys(layouts).filter((key) => !used.has(key));
+  if (unused.length > 0) throw new Error(`${slug}: unused equation layout overrides: ${unused.join(', ')}`);
+  return configured;
+}
 
 function readUtf8(path) {
   const bytes = readFileSync(path);
@@ -156,6 +214,7 @@ for (const entry of paperEntries) {
   if (meta.bibliography && !existsSync(join(paperDir, meta.bibliography))) {
     throw new Error(`${slug}: missing bibliography ${meta.bibliography}`);
   }
+  const webOptions = paperWebOptions(meta, slug);
 
   const publicDir = join(outputRoot, slug);
   mkdirSync(publicDir, { recursive: true });
@@ -174,7 +233,10 @@ for (const entry of paperEntries) {
 
     const aux = parseAux(readUtf8(auxPath));
     const source = readUtf8(join(paperDir, htmlEntry));
-    const web = prepareWebTex(source, aux, { pandocCitations: Boolean(meta.bibliography) });
+    const web = prepareWebTex(source, aux, {
+      pandocCitations: Boolean(meta.bibliography),
+      omitSections: webOptions.omitSections,
+    });
     const webTexPath = join(workDir, 'web.tex');
     const pandocOutput = join(workDir, 'pandoc.html');
     writeFileSync(webTexPath, web.source, 'utf8');
@@ -195,7 +257,11 @@ for (const entry of paperEntries) {
     run(pandocBin, args, paperDir);
 
     const standaloneHtml = readUtf8(pandocOutput);
-    const equations = collectDisplayEquations(slug, standaloneHtml, web.formulaReplacements);
+    const equations = applyEquationLayouts(
+      slug,
+      collectDisplayEquations(slug, standaloneHtml, web.formulaReplacements),
+      webOptions.equationLayouts,
+    );
     const expectedEquationCount = expectedDisplayEquations.get(slug);
     if (expectedEquationCount !== undefined && equations.length !== expectedEquationCount) {
       throw new Error(`${slug}: expected ${expectedEquationCount} display equations, received ${equations.length}`);
@@ -257,6 +323,9 @@ for (const entry of paperEntries) {
       replacements: web.replacements,
       displayAssets,
     });
+    for (const section of web.omittedSections) {
+      if (html.includes(section)) throw new Error(`${slug}: omitted web section remains in generated HTML: ${section}`);
+    }
     writeFileSync(join(paperDir, 'generated.html'), html, 'utf8');
   } else if (existsSync(join(paperDir, 'generated.html')) && existsSync(join(publicDir, 'paper.pdf'))) {
     const generatedPath = join(paperDir, 'generated.html');

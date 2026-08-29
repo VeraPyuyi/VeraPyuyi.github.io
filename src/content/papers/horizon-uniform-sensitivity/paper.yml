@@ -18,6 +18,26 @@ keywords:
 texEntry: Automatica_Bellman_Pontryagin.tex
 htmlEntry: Automatica_Bellman_Pontryagin.tex
 fontProfile: latin-modern
+webOmitSections:
+  - Data and code availability
+  - Declaration of generative AI and AI-assisted technologies in the writing process
+webEquationLayouts:
+  'label:eq:green-estimate': compact
+  'label:eq:nonlinear-boundary-linearization': compact
+  'label:eq:preconditioned-lipschitz': compact
+  'label:eq:joint-y-absorption': compact
+  'label:eq:posterior-omega': compact
+  'label:eq:terminal-trajectory-attenuation': compact
+  'label:eq:lq-terminal-hessian-forgetting': compact
+  'sha256:379b6604345d631fe1c407a7efc51daeb7ccbeca44ace4147e01d1b8e7bb427b': compact
+  'sha256:fd378d7089b96cf3541950823eb34988580870582409d0e0045378be69d3e2da': compact
+  'sha256:dea56d1ac5ae80a3c8e28879ebd9307e2a3c54a1e190c900644920991cf7c56a': compact
+  'sha256:738cd4a6a0d06c43c13d9b18dc134d2319b7f41476bddd66df017c622d705ff8': compact
+  'sha256:968a16c80a57013a916020c2b61add89dc4d04701f66ba5af040c7a9ff16ac39': auto
+  'sha256:0aa6c5bd21cce313fb4ff8a1d34cf12525f79863e1116fee8d6b76bc9dd0c790': compact
+  'sha256:47cc7107b48fff2d809d21a6ee0a81368bb9d9f240142654e4ef9450e8973f5e': compact
+  'sha256:2a3cad2d859379ad279987464093e1d5a9dbe35b2f84324f203efb793d2fca75': compact
+  'sha256:88802467b31e8f40691a38192d5d4eed4a7dd7d37de1af69af8d3da1a1945a0b': compact
 cover: /uploads/papers/horizon-uniform-sensitivity/cover.png
 coverAlt: 粉蓝星空中，星星猫在控制台旁观察两条随终端扰动向后衰减的发光轨迹。
 coverAltEn: A star cat watches two glowing phase-space trajectories as a terminal ripple fades backward across a pastel cosmic horizon.

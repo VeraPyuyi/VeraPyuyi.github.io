@@ -2,10 +2,13 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 export const EQUATION_VARIANTS = Object.freeze([
-  { name: 'desktop', widthEm: 56, containedWidthEm: 46 },
-  { name: 'tablet', widthEm: 40, containedWidthEm: 34 },
-  { name: 'mobile', widthEm: 22, containedWidthEm: 20 },
+  { name: 'desktop', widthEm: 36, containedWidthEm: 32 },
+  { name: 'tablet', widthEm: 34, containedWidthEm: 30 },
+  { name: 'mobile', widthEm: 20, containedWidthEm: 17.5 },
 ]);
+
+export const FORMULA_DISPLAY_SCALE = 1.08;
+export const SINGLE_LINE_MAX_FILL = 0.9;
 
 const NUMBERED_ENVIRONMENTS = new Set(['equation', 'align', 'gather', 'multline']);
 const MULTIROW_ENVIRONMENTS = new Set(['align', 'gather']);
@@ -16,12 +19,12 @@ const INTRINSIC_MULTILINE_ENVIRONMENT =
   /\\begin\{(?:array|cases|matrix|pmatrix|bmatrix|Bmatrix|vmatrix|Vmatrix|smallmatrix|subarray)\}/;
 const UNSAFE_LINEARIZATION_COMMAND = /\\(?:intertext|shortintertext|displaybreak)\b|\\tag\*?(?=\s*\{)/;
 const FIT_TOLERANCE_EM = 0.03;
-const SINGLE_LINE_GUTTER_EM = 1;
 const BUILD_MARKER = /PYUYIPAPER(?:REF|CITE)\d+END/;
 
 /** @typedef {'standalone' | 'contained'} EquationContext */
-/** @typedef {'original' | 'single-line'} EquationLayout */
-/** @typedef {{ tex: string, context?: EquationContext }} EquationRecord */
+/** @typedef {'original' | 'single-line' | 'compact'} EquationLayout */
+/** @typedef {'auto' | 'original' | 'compact'} EquationLayoutPreference */
+/** @typedef {{ tex: string, context?: EquationContext, layoutPreference?: EquationLayoutPreference | Record<string, EquationLayoutPreference>, sourceKey?: string, sourceHash?: string, labels?: string[] }} EquationRecord */
 /**
  * @typedef {object} EquationRenderPage
  * @property {number} equationIndex
@@ -30,6 +33,10 @@ const BUILD_MARKER = /PYUYIPAPER(?:REF|CITE)\d+END/;
  * @property {number} targetWidthEm
  * @property {number} renderWidthEm
  * @property {string} tex
+ * @property {string} [sourceKey]
+ * @property {string} [sourceHash]
+ * @property {string[]} labels
+ * @property {string} layoutReason
  */
 
 function escapeRegExp(value) {
@@ -185,12 +192,33 @@ export function linearizeDisplayEquation(tex) {
   return `${environment.token}\n${flattenedBody}\n${endToken}`;
 }
 
+export function compactDisplayEquation(tex) {
+  return tex
+    .trim()
+    .normalize('NFC')
+    .replace(/\\qquad\b/g, '\\quad{}')
+    .replace(/\\hspace\*?\{([+]?(?:\d+(?:\.\d*)?|\.\d+))em\}/g, (match, rawWidth) =>
+      Number.parseFloat(rawWidth) > 1 ? '\\hspace{1em}' : match,
+    );
+}
+
+function layoutPreferenceForVariant(config, variantName) {
+  if (typeof config === 'string') return config;
+  return config?.[variantName] ?? 'auto';
+}
+
 /** @param {string | EquationRecord} equation */
 function normalizeEquationRecord(equation) {
-  if (typeof equation === 'string') return { tex: equation, context: 'standalone' };
+  if (typeof equation === 'string') {
+    return { tex: equation, context: 'standalone', layoutPreference: 'auto', labels: [] };
+  }
   return {
     tex: equation.tex,
     context: equation.context === 'contained' ? 'contained' : 'standalone',
+    layoutPreference: equation.layoutPreference ?? 'auto',
+    sourceKey: equation.sourceKey,
+    sourceHash: equation.sourceHash,
+    labels: equation.labels ?? [],
   };
 }
 
@@ -203,14 +231,30 @@ export function createEquationRenderPlan(equations, variant) {
   return equations.flatMap((value, equationIndex) => {
     const equation = normalizeEquationRecord(value);
     const targetWidthEm = equation.context === 'contained' ? variant.containedWidthEm : variant.widthEm;
+    const layoutPreference = layoutPreferenceForVariant(equation.layoutPreference, variant.name);
     const original = {
       equationIndex,
       context: equation.context,
       layout: 'original',
       targetWidthEm,
-      renderWidthEm: targetWidthEm,
+      renderWidthEm: targetWidthEm / FORMULA_DISPLAY_SCALE,
       tex: equation.tex,
+      sourceKey: equation.sourceKey,
+      sourceHash: equation.sourceHash,
+      labels: equation.labels,
+      layoutReason: layoutPreference === 'original' ? 'override-original' : 'auto-original',
     };
+    if (layoutPreference === 'original') return [original];
+    if (layoutPreference === 'compact') {
+      return [
+        {
+          ...original,
+          layout: 'compact',
+          tex: compactDisplayEquation(equation.tex),
+          layoutReason: 'override-compact',
+        },
+      ];
+    }
     const candidate = linearizeDisplayEquation(equation.tex);
     if (!candidate) return [original];
     return [
@@ -218,8 +262,9 @@ export function createEquationRenderPlan(equations, variant) {
       {
         ...original,
         layout: 'single-line',
-        renderWidthEm: Math.max(1, targetWidthEm - SINGLE_LINE_GUTTER_EM),
+        renderWidthEm: Math.max(1, (targetWidthEm * SINGLE_LINE_MAX_FILL) / FORMULA_DISPLAY_SCALE),
         tex: candidate,
+        layoutReason: 'auto-single-line',
       },
     ];
   });
@@ -336,6 +381,8 @@ export function buildEquationBatchTex({ slug, source, equations = [], labels, wi
     '\\setlength{\\belowdisplayskip}{0pt}',
     '\\setlength{\\abovedisplayshortskip}{0pt}',
     '\\setlength{\\belowdisplayshortskip}{0pt}',
+    '\\setlength{\\jot}{4pt}',
+    '\\renewcommand{\\arraystretch}{1.05}',
     '\\setlength{\\parindent}{0pt}',
     '\\hbadness=10000',
     '\\vbadness=10000',
@@ -408,7 +455,9 @@ export function createEquationSprite({ slug, variant, svgDirectory, outputPath, 
       context: 'standalone',
       layout: 'original',
       targetWidthEm: variant.widthEm,
-      renderWidthEm: variant.widthEm,
+      renderWidthEm: variant.widthEm / FORMULA_DISPLAY_SCALE,
+      labels: [],
+      layoutReason: 'default-original',
     }));
   if (files.length !== plan.length) {
     throw new Error(`${slug}/${variant.name}: expected ${plan.length} SVG pages, received ${files.length}`);
@@ -418,18 +467,20 @@ export function createEquationSprite({ slug, variant, svgDirectory, outputPath, 
   const unitWidth = median(pages.map((page) => page.viewBox[2] / page.renderWidthEm));
   const selected = Array.from({ length: equationCount }, (_, equationIndex) => {
     const candidates = pages.filter((page) => page.equationIndex === equationIndex);
-    const original = candidates.find((page) => page.layout === 'original');
-    if (!original) throw new Error(`${slug}/${variant.name}: equation ${equationIndex + 1} has no original SVG`);
+    const original = candidates.find((page) => page.layout !== 'single-line');
+    if (!original) throw new Error(`${slug}/${variant.name}: equation ${equationIndex + 1} has no base SVG`);
     const candidate = candidates.find((page) => page.layout === 'single-line');
     const candidateFits = candidate && candidate.viewBox[2] <= (candidate.renderWidthEm + FIT_TOLERANCE_EM) * unitWidth;
     const page = candidateFits ? candidate : original;
     const id = `eq-${String(equationIndex + 1).padStart(6, '0')}`;
+    const widthEm = (page.viewBox[2] / unitWidth) * FORMULA_DISPLAY_SCALE;
     return {
       ...page,
       id,
       inner: prefixSvgIds(page.inner, `${id}-`),
-      widthEm: page.viewBox[2] / unitWidth,
-      overflow: page.viewBox[2] > (page.targetWidthEm + FIT_TOLERANCE_EM) * unitWidth,
+      widthEm,
+      overflow: widthEm > page.targetWidthEm + FIT_TOLERANCE_EM,
+      layoutReason: candidateFits ? 'auto-single-line' : page.layoutReason,
     };
   });
   const symbols = selected.map((page) => `<symbol id="${page.id}" viewBox="${page.viewBox.join(' ')}">${page.inner}</symbol>`);
@@ -452,8 +503,12 @@ export function createEquationSprite({ slug, variant, svgDirectory, outputPath, 
     href: `/papers/${slug}/equations-${variant.name}.svg#${page.id}`,
     context: page.context,
     layout: page.layout,
+    layoutReason: page.layoutReason,
     targetWidthEm: page.targetWidthEm,
     overflow: page.overflow,
+    sourceKey: page.sourceKey,
+    sourceHash: page.sourceHash,
+    labels: page.labels ?? [],
   }));
 }
 
@@ -466,14 +521,21 @@ export function equationAssetsFromVariants(slug, byVariant) {
   }
   return Array.from({ length: equationCount }, (_, index) => {
     const context = byVariant[EQUATION_VARIANTS[0].name][index].context;
+    const first = byVariant[EQUATION_VARIANTS[0].name][index];
     for (const variant of EQUATION_VARIANTS) {
       if (byVariant[variant.name][index].context !== context) {
         throw new Error(`${slug}: equation ${index + 1} context differs across responsive variants`);
+      }
+      if (byVariant[variant.name][index].sourceKey !== first.sourceKey) {
+        throw new Error(`${slug}: equation ${index + 1} source identity differs across responsive variants`);
       }
     }
     return {
       id: `eq-${String(index + 1).padStart(6, '0')}`,
       context,
+      sourceKey: first.sourceKey,
+      sourceHash: first.sourceHash,
+      labels: first.labels,
       variants: Object.fromEntries(EQUATION_VARIANTS.map((variant) => [variant.name, byVariant[variant.name][index]])),
     };
   });

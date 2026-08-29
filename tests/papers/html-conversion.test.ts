@@ -3,6 +3,8 @@ import test from 'node:test';
 import {
   collectDisplayEquations,
   convertPandocHtml,
+  equationSourceIdentity,
+  omitWebSections,
   parseAux,
   prepareWebTex,
   validateGeneratedHtml,
@@ -50,8 +52,9 @@ test('web adapter emits static MathML, linked references, citations, and bibliog
             {
               href: `/papers/fixture/equations-${variant}.svg#eq-000001`,
               viewBox: `0 0 ${560 - index * 100} 40`,
-              widthEm: [56, 40, 22][index],
+              widthEm: [36, 34, 20][index],
               layout: 'original',
+              layoutReason: 'auto-original',
               overflow: false,
             },
           ]),
@@ -98,11 +101,38 @@ test('strict HTML validation rejects leaked LaTeX and mojibake', () => {
 test('display equation collection records theorem-like layout constraints', () => {
   const equations = collectDisplayEquations(
     'fixture',
-    '<html><body><div class="theorem"><p><span class="math display">\\[a=b\\]</span></p></div><p><span class="math display">\\[c=d\\]</span></p></body></html>',
+    '<html><body><div class="condition"><p><span class="math display">\\[a=b\\]</span></p></div><p><span class="math display">\\[c=d\\]</span></p></body></html>',
   );
 
   assert.deepEqual(
     equations.map(({ context }) => context),
     ['contained', 'standalone'],
   );
+  assert.match(equations[0].sourceKey, /^sha256:[a-f0-9]{64}$/);
+});
+
+test('equation source identities prefer LaTeX labels and retain a normalized hash fallback', () => {
+  const identity = equationSourceIdentity(String.raw`\begin{equation}\label{eq:test} a = b\end{equation}`);
+  assert.equal(identity.sourceKey, 'label:eq:test');
+  assert.deepEqual(identity.labels, ['eq:test']);
+  assert.match(identity.sourceHash, /^[a-f0-9]{64}$/);
+  assert.deepEqual(identity.sourceKeys, ['label:eq:test', `sha256:${identity.sourceHash}`]);
+});
+
+test('web-only section omission removes exact sections without changing the source before or after them', () => {
+  const source = String.raw`\section{Main}
+Keep this.
+\section*{Data and code availability}
+Remove this.
+\section*{Declaration of generative AI and AI-assisted technologies in the writing process}
+Remove this too.
+\bibliography{references}`;
+  const result = omitWebSections(source, [
+    'Data and code availability',
+    'Declaration of generative AI and AI-assisted technologies in the writing process',
+  ]);
+  assert.match(result.source, /\\section\{Main\}[\s\S]*Keep this\./);
+  assert.match(result.source, /\\bibliography\{references\}/);
+  assert.doesNotMatch(result.source, /Data and code availability|generative AI|Remove this/);
+  assert.throws(() => omitWebSections(source, ['Missing section']), /found 0/);
 });

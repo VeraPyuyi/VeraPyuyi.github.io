@@ -5,11 +5,14 @@ import { join } from 'node:path';
 import test from 'node:test';
 import {
   buildEquationBatchTex,
+  compactDisplayEquation,
   createEquationRenderPlan,
   createEquationSprite,
   EQUATION_VARIANTS,
   equationAssetsFromVariants,
+  FORMULA_DISPLAY_SCALE,
   linearizeDisplayEquation,
+  SINGLE_LINE_MAX_FILL,
 } from '../../scripts/paper-svg.mjs';
 
 const preamble = String.raw`\documentclass{amsart}
@@ -37,10 +40,12 @@ test('equation batch preserves TeX alignment and restores counters from labelled
   });
 
   assert.match(tex, /\\onecolumn/);
-  assert.match(tex, /\\setlength\{\\PyuyiEquationWidth\}\{56em\}/);
+  assert.match(tex, /\\setlength\{\\PyuyiEquationWidth\}\{51\.85185185185185em\}/);
   assert.match(tex, /\\setcounter\{section\}\{2\}/);
   assert.match(tex, /\\setcounter\{equation\}\{2\}/);
   assert.match(tex, /a &= b[\s\S]*c &= d[\s\S]*e &= f/);
+  assert.match(tex, /\\setlength\{\\jot\}\{4pt\}/);
+  assert.match(tex, /\\renewcommand\{\\arraystretch\}\{1\.05\}/);
 });
 
 test('safe multirow equations are linearized without changing labels or mathematical tokens', () => {
@@ -60,6 +65,17 @@ test('multi-number equations and intrinsic multiline structures keep their origi
   assert.equal(linearizeDisplayEquation(String.raw`\[f(x)=\begin{cases}x,&x>0\\0,&x\le0\end{cases}\]`), undefined);
 });
 
+test('compact layout preserves rows and labels while limiting horizontal indentation', () => {
+  const compact = compactDisplayEquation(String.raw`\begin{align}
+    a&=b\\
+    &\hspace{5em}+c\qquad d\label{eq:a}
+  \end{align}`);
+  assert.match(compact, /\\hspace\{1em\}/);
+  assert.match(compact, /\\quad\{\}/);
+  assert.match(compact, /\\label\{eq:a\}/);
+  assert.match(compact, /\\\\/);
+});
+
 test('render plans use constrained widths and keep one-line candidates breakpoint-specific', () => {
   const plan = createEquationRenderPlan(
     [
@@ -72,29 +88,14 @@ test('render plans use constrained widths and keep one-line candidates breakpoin
   );
 
   assert.deepEqual(
-    plan.map(
-      ({
-        context,
-        layout,
-        targetWidthEm,
-        renderWidthEm,
-      }: {
-        context: string;
-        layout: string;
-        targetWidthEm: number;
-        renderWidthEm: number;
-      }) => ({
-        context,
-        layout,
-        targetWidthEm,
-        renderWidthEm,
-      }),
-    ),
+    plan.map(({ context, layout, targetWidthEm }) => ({ context, layout, targetWidthEm })),
     [
-      { context: 'contained', layout: 'original', targetWidthEm: 46, renderWidthEm: 46 },
-      { context: 'contained', layout: 'single-line', targetWidthEm: 46, renderWidthEm: 45 },
+      { context: 'contained', layout: 'original', targetWidthEm: 32 },
+      { context: 'contained', layout: 'single-line', targetWidthEm: 32 },
     ],
   );
+  assert.equal(plan[0].renderWidthEm, 32 / FORMULA_DISPLAY_SCALE);
+  assert.equal(plan[1].renderWidthEm, (32 * SINGLE_LINE_MAX_FILL) / FORMULA_DISPLAY_SCALE);
 });
 
 test('equation sprite contains path-only symbols and responsive metadata', () => {
@@ -146,8 +147,11 @@ test('equation sprite rejects browser-font text nodes', () => {
 
 test('equation sprite selects a fitting single-line candidate and records the decision', () => {
   const root = mkdtempSync(join(tmpdir(), 'pyuyi-equation-choice-'));
-  writeFileSync(join(root, 'equation-0001.svg'), '<svg viewBox="0 0 560 20"><path fill="currentColor" d="M0 0h1v1z"/></svg>');
-  writeFileSync(join(root, 'equation-0002.svg'), '<svg viewBox="0 0 550 12"><path fill="currentColor" d="M0 0h1v1z"/></svg>');
+  writeFileSync(
+    join(root, 'equation-0001.svg'),
+    '<svg viewBox="0 0 333.3333333333 20"><path fill="currentColor" d="M0 0h1v1z"/></svg>',
+  );
+  writeFileSync(join(root, 'equation-0002.svg'), '<svg viewBox="0 0 300 12"><path fill="currentColor" d="M0 0h1v1z"/></svg>');
   const variant = EQUATION_VARIANTS[0];
   const assets = createEquationSprite({
     slug: 'fixture',
@@ -160,22 +164,27 @@ test('equation sprite selects a fitting single-line candidate and records the de
         equationIndex: 0,
         context: 'standalone',
         layout: 'original',
-        targetWidthEm: 56,
-        renderWidthEm: 56,
+        targetWidthEm: 36,
+        renderWidthEm: 36 / FORMULA_DISPLAY_SCALE,
         tex: 'original',
+        labels: [],
+        layoutReason: 'auto-original',
       },
       {
         equationIndex: 0,
         context: 'standalone',
         layout: 'single-line',
-        targetWidthEm: 56,
-        renderWidthEm: 55,
+        targetWidthEm: 36,
+        renderWidthEm: (36 * SINGLE_LINE_MAX_FILL) / FORMULA_DISPLAY_SCALE,
         tex: 'candidate',
+        labels: [],
+        layoutReason: 'auto-single-line',
       },
     ],
   });
 
   assert.equal(assets[0].layout, 'single-line');
+  assert.equal(assets[0].layoutReason, 'auto-single-line');
   assert.equal(assets[0].overflow, false);
-  assert.equal(assets[0].targetWidthEm, 56);
+  assert.equal(assets[0].targetWidthEm, 36);
 });

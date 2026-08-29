@@ -1,7 +1,13 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import type { PaperFontProfile, PaperMeta } from '@/types/personal-content';
+import type {
+  PaperEquationVariant,
+  PaperFontProfile,
+  PaperMeta,
+  PaperWebEquationLayout,
+  PaperWebEquationLayoutConfig,
+} from '@/types/personal-content';
 
 const PAPER_ROOT = join(process.cwd(), 'src/content/papers');
 
@@ -17,6 +23,8 @@ interface PaperYaml {
   htmlEntry?: string;
   bibliography?: string;
   fontProfile?: PaperFontProfile;
+  webOmitSections?: unknown;
+  webEquationLayouts?: unknown;
   cover?: string;
   coverAlt?: string;
   coverAltEn?: string;
@@ -26,6 +34,52 @@ interface PaperYaml {
   sourceUrl?: string;
   license?: string;
   licenseUrl?: string;
+}
+
+const EQUATION_VARIANTS = new Set<PaperEquationVariant>(['desktop', 'tablet', 'mobile']);
+const EQUATION_LAYOUTS = new Set<PaperWebEquationLayout>(['auto', 'original', 'compact']);
+
+function parseWebOmitSections(value: unknown, id: string): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string' || item.trim() === '')) {
+    throw new Error(`[papers] ${id}: invalid webOmitSections`);
+  }
+  const sections = value.map((item) => item.trim());
+  if (new Set(sections).size !== sections.length) throw new Error(`[papers] ${id}: duplicate webOmitSections`);
+  return sections;
+}
+
+function parseWebEquationLayouts(value: unknown, id: string): Record<string, PaperWebEquationLayoutConfig> {
+  if (value === undefined) return {};
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`[papers] ${id}: invalid webEquationLayouts`);
+  }
+  const layouts: Record<string, PaperWebEquationLayoutConfig> = {};
+  for (const [key, config] of Object.entries(value)) {
+    if (!/^(?:label:[^\s]+|sha256:[a-f0-9]{64})$/.test(key)) {
+      throw new Error(`[papers] ${id}: invalid webEquationLayouts key ${key}`);
+    }
+    if (typeof config === 'string') {
+      if (!EQUATION_LAYOUTS.has(config as PaperWebEquationLayout)) {
+        throw new Error(`[papers] ${id}: invalid layout for ${key}`);
+      }
+      layouts[key] = config as PaperWebEquationLayout;
+      continue;
+    }
+    if (!config || typeof config !== 'object' || Array.isArray(config)) {
+      throw new Error(`[papers] ${id}: invalid layout for ${key}`);
+    }
+    const responsive: Partial<Record<PaperEquationVariant, PaperWebEquationLayout>> = {};
+    for (const [variant, layout] of Object.entries(config)) {
+      if (!EQUATION_VARIANTS.has(variant as PaperEquationVariant) || !EQUATION_LAYOUTS.has(layout as PaperWebEquationLayout)) {
+        throw new Error(`[papers] ${id}: invalid responsive layout for ${key}`);
+      }
+      responsive[variant as PaperEquationVariant] = layout as PaperWebEquationLayout;
+    }
+    if (Object.keys(responsive).length === 0) throw new Error(`[papers] ${id}: empty responsive layout for ${key}`);
+    layouts[key] = responsive;
+  }
+  return layouts;
 }
 
 function required(value: unknown, field: string, id: string): string {
@@ -72,6 +126,8 @@ export function getPapers(): PaperMeta[] {
       const arxivVersion = required(data.arxivVersion, 'arxivVersion', id);
       if (!/^v\d+$/.test(arxivVersion)) throw new Error(`[papers] ${id}: invalid arxivVersion`);
       const generatedPath = join(dir, 'generated.html');
+      const webOmitSections = parseWebOmitSections(data.webOmitSections, id);
+      const webEquationLayouts = parseWebEquationLayouts(data.webEquationLayouts, id);
       return {
         id,
         title: required(data.title, 'title', id),
@@ -85,6 +141,8 @@ export function getPapers(): PaperMeta[] {
         htmlEntry,
         bibliography: data.bibliography,
         fontProfile: data.fontProfile,
+        webOmitSections,
+        webEquationLayouts,
         cover: data.cover,
         coverAlt: data.coverAlt,
         coverAltEn: data.coverAltEn,
