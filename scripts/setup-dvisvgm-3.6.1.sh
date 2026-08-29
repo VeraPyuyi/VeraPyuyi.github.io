@@ -58,7 +58,7 @@ if [ -x "$DVISVGM_PREFIX/bin/dvisvgm" ] && \
 fi
 
 download_verified \
-  "https://github.com/mgieseki/dvisvgm/releases/download/3.6.1/dvisvgm-3.6.1.tar.gz" \
+  "https://api.github.com/repos/mgieseki/dvisvgm/releases/assets/501052592" \
   "$DVISVGM_ARCHIVE" \
   "$DVISVGM_SHA256"
 download_verified \
