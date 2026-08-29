@@ -70,8 +70,34 @@ const html = getPaperHtml(paper);
     line-height: var(--reader-line-height, 1.82);
     text-rendering: optimizeLegibility;
   }
+  [data-paper-heading-fit] {
+    max-width: 100%;
+  }
+  [data-paper-heading-fit][data-paper-heading-state='measuring'],
+  [data-paper-heading-fit][data-paper-heading-state='single'] {
+    overflow-wrap: normal;
+    text-wrap: nowrap;
+    white-space: nowrap;
+  }
+  [data-paper-heading-fit][data-paper-heading-state='wrapped'] {
+    overflow-wrap: normal;
+    text-wrap: pretty;
+    white-space: normal;
+  }
+  .paper-cover-heading > .paper-heading-text {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .paper-content :is(h1, h2, h3, h4, h5, h6)[data-paper-heading-fit] {
+    line-height: 1.22;
+  }
   .paper-content #title-block-header { margin-bottom: 2.5rem; text-align: center; }
-  .paper-content #title-block-header > .title { margin-bottom: 1rem; font-size: clamp(1.75rem, 4vw, 2.55rem); line-height: 1.2; text-wrap: balance; }
+  .paper-content #title-block-header > .title { margin-bottom: 1rem; font-size: clamp(1.75rem, 4vw, 2.55rem); line-height: 1.2; text-wrap: pretty; }
+  .paper-content #title-block-header > .title[data-paper-heading-state='measuring'],
+  .paper-content #title-block-header > .title[data-paper-heading-state='single'] {
+    text-wrap: nowrap;
+    white-space: nowrap;
+  }
   .paper-content #title-block-header > :is(.author, .date) { margin-block: 0.25rem; color: hsl(var(--muted-foreground)); }
   .paper-content #TOC {
     margin: 1.75rem 0 3rem;
@@ -230,6 +256,88 @@ const html = getPaperHtml(paper);
 
 <script>
   let equationObserver: ResizeObserver | undefined;
+  let paperHeadingObserver: ResizeObserver | undefined;
+  let paperHeadingFrame = 0;
+  let paperHeadingWidths = new WeakMap<Element, number>();
+
+  type PaperHeadingKind = 'cover' | 'page' | 'title' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+
+  const paperHeadingMinimums: Record<'desktop' | 'tablet' | 'mobile', Record<PaperHeadingKind, number>> = {
+    desktop: { cover: 22, page: 19, title: 18, h1: 24, h2: 20, h3: 18, h4: 17, h5: 16, h6: 16 },
+    tablet: { cover: 20, page: 18, title: 17, h1: 20, h2: 18, h3: 17, h4: 16, h5: 16, h6: 16 },
+    mobile: { cover: 17, page: 17, title: 16, h1: 16, h2: 16, h3: 15, h4: 15, h5: 15, h6: 15 },
+  };
+
+  function getPaperHeadingKind(heading: HTMLElement): PaperHeadingKind {
+    const explicit = heading.dataset.paperHeadingFit;
+    if (explicit === 'cover' || explicit === 'page' || explicit === 'title') return explicit;
+    return heading.tagName.toLowerCase() as PaperHeadingKind;
+  }
+
+  function getPaperHeadingMinimum(kind: PaperHeadingKind): number {
+    const breakpoint = window.innerWidth >= 1200 ? 'desktop' : window.innerWidth >= 640 ? 'tablet' : 'mobile';
+    return paperHeadingMinimums[breakpoint][kind];
+  }
+
+  function fitPaperHeading(heading: HTMLElement) {
+    heading.style.removeProperty('font-size');
+    heading.dataset.paperHeadingState = 'measuring';
+
+    const text = heading.querySelector<HTMLElement>('[data-paper-heading-text]') ?? heading;
+    const baseSize = Number.parseFloat(getComputedStyle(heading).fontSize);
+    const availableWidth = text.clientWidth;
+    const naturalWidth = text.scrollWidth;
+    if (!Number.isFinite(baseSize) || availableWidth <= 0 || naturalWidth <= 0) {
+      heading.dataset.paperHeadingState = 'wrapped';
+      return;
+    }
+
+    const minimumSize = Math.min(baseSize, getPaperHeadingMinimum(getPaperHeadingKind(heading)));
+    const fittedSize = naturalWidth > availableWidth
+      ? Math.max(minimumSize, baseSize * (availableWidth / naturalWidth) * 0.985)
+      : baseSize;
+    heading.style.fontSize = `${fittedSize.toFixed(2)}px`;
+    heading.dataset.paperHeadingState = text.scrollWidth <= text.clientWidth + 1 ? 'single' : 'wrapped';
+  }
+
+  function fitPaperHeadings() {
+    paperHeadingFrame = 0;
+    const articleHeadings = document.querySelectorAll<HTMLElement>('.paper-content :is(h1, h2, h3, h4, h5, h6)');
+    for (const heading of articleHeadings) {
+      if (!heading.dataset.paperHeadingFit) {
+        heading.dataset.paperHeadingFit = heading.matches('#title-block-header > .title')
+          ? 'title'
+          : heading.tagName.toLowerCase();
+      }
+    }
+    for (const heading of document.querySelectorAll<HTMLElement>('[data-paper-heading-fit]')) fitPaperHeading(heading);
+  }
+
+  function queuePaperHeadingFit() {
+    if (paperHeadingFrame) cancelAnimationFrame(paperHeadingFrame);
+    paperHeadingFrame = requestAnimationFrame(fitPaperHeadings);
+  }
+
+  function installPaperHeadings() {
+    paperHeadingObserver?.disconnect();
+    paperHeadingWidths = new WeakMap<Element, number>();
+    paperHeadingObserver = new ResizeObserver((entries) => {
+      let widthChanged = false;
+      for (const entry of entries) {
+        const previous = paperHeadingWidths.get(entry.target);
+        const current = entry.contentRect.width;
+        paperHeadingWidths.set(entry.target, current);
+        if (previous === undefined || Math.abs(previous - current) > 1) widthChanged = true;
+      }
+      if (widthChanged) queuePaperHeadingFit();
+    });
+
+    fitPaperHeadings();
+    for (const heading of document.querySelectorAll<HTMLElement>('[data-paper-heading-fit]')) {
+      paperHeadingObserver.observe(heading);
+    }
+    document.fonts.ready.then(queuePaperHeadingFit);
+  }
 
   function updatePaperEquation(scroller: HTMLElement) {
     const shell = scroller.closest<HTMLElement>('.paper-equation');
@@ -304,5 +412,7 @@ const html = getPaperHtml(paper);
   }
 
   installPaperEquations();
+  installPaperHeadings();
   document.addEventListener('astro:page-load', installPaperEquations);
+  document.addEventListener('astro:page-load', installPaperHeadings);
 </script>

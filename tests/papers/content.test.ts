@@ -135,6 +135,22 @@ test('paper web fonts are self-hosted with license files', () => {
   assert.doesNotMatch(paperPage, /width: min\(56em|translateX\(-50%\)|paper-equation-edge-surface/);
 });
 
+test('paper headings prefer one line while retaining a readable wrapping fallback', () => {
+  const paperPage = readFileSync(join(root, 'src/pages/papers/[slug].astro'), 'utf8');
+  const pageChrome = readFileSync(join(root, 'src/components/personal/PageChrome.astro'), 'utf8');
+  const cover = readFileSync(join(root, 'src/components/ui/cover/Cover.astro'), 'utf8');
+
+  assert.match(cover, /data-paper-heading-fit=\{paperFontProfile \? 'cover' : undefined\}/);
+  assert.match(cover, /data-paper-heading-text=\{paperFontProfile \? '' : undefined\}/);
+  assert.match(pageChrome, /data-paper-heading-fit=\{paperFontProfile \? 'page' : undefined\}/);
+  assert.match(paperPage, /text\.scrollWidth <= text\.clientWidth \+ 1 \? 'single' : 'wrapped'/);
+  assert.match(paperPage, /heading\.style\.removeProperty\('font-size'\)/);
+  assert.match(paperPage, /heading\.style\.fontSize = `\$\{fittedSize\.toFixed\(2\)\}px`/);
+  assert.match(paperPage, /\[data-paper-heading-state='single'\][\s\S]*?white-space: nowrap;/);
+  assert.match(paperPage, /\[data-paper-heading-state='wrapped'\][\s\S]*?white-space: normal;/);
+  assert.match(paperPage, /#title-block-header > \.title\[data-paper-heading-state='single'\][\s\S]*?white-space: nowrap;/);
+});
+
 test('imported arXiv files remain byte-for-byte unchanged', () => {
   for (const [slug, source] of Object.entries(expected)) {
     for (const [filename, digest] of Object.entries(source.files)) {
