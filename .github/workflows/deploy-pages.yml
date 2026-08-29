@@ -72,7 +72,7 @@ jobs:
           persist-credentials: false
 
       - name: Install dvisvgm build dependencies
-        run: sudo apt-get update && sudo apt-get install --yes autoconf automake libtool libkpathsea-dev
+        run: sudo apt-get update && sudo apt-get install --yes autoconf automake libfreetype-dev libtool libkpathsea-dev pkg-config
 
       - name: Build locked dvisvgm 3.6.1
         run: sh scripts/setup-dvisvgm-3.6.1.sh

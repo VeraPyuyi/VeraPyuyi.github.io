@@ -59,10 +59,15 @@ if [ -x "$DVISVGM_PREFIX/bin/dvisvgm" ] && \
   exit 0
 fi
 
-download_verified \
-  "https://download.savannah.gnu.org/releases/freetype/freetype-2.14.3.tar.xz" \
-  "$FREETYPE_ARCHIVE" \
-  "$FREETYPE_SHA256"
+USE_SYSTEM_FREETYPE=false
+if [ -n "$DVISVGM_SOURCE_DIR" ] && [ "$(uname -s)" = "Linux" ]; then
+  USE_SYSTEM_FREETYPE=true
+else
+  download_verified \
+    "https://download.savannah.gnu.org/releases/freetype/freetype-2.14.3.tar.xz" \
+    "$FREETYPE_ARCHIVE" \
+    "$FREETYPE_SHA256"
+fi
 
 TEMP_DIR=$(mktemp -d "$TOOLCHAIN_DIR/dvisvgm.XXXXXX")
 trap 'rm -rf "$TEMP_DIR"' EXIT INT TERM
@@ -90,7 +95,9 @@ else
     "$DVISVGM_SHA256"
   tar -xzf "$DVISVGM_ARCHIVE" -C "$TEMP_DIR"
 fi
-tar -xJf "$FREETYPE_ARCHIVE" -C "$TEMP_DIR"
+if [ "$USE_SYSTEM_FREETYPE" = "false" ]; then
+  tar -xJf "$FREETYPE_ARCHIVE" -C "$TEMP_DIR"
+fi
 
 JOBS=2
 if [ "$(uname -s)" = "Darwin" ]; then
@@ -99,21 +106,32 @@ else
   JOBS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)
 fi
 
-rm -rf "$FREETYPE_PREFIX"
-(
-  cd "$TEMP_DIR/freetype-2.14.3"
-  ./configure \
-    --prefix="$FREETYPE_PREFIX" \
-    --disable-shared \
-    --enable-static \
-    --without-zlib \
-    --without-bzip2 \
-    --without-png \
-    --without-harfbuzz \
-    --without-brotli
-  make -j "$JOBS"
-  make install
-)
+if [ "$USE_SYSTEM_FREETYPE" = "true" ]; then
+  if ! pkg-config --exists freetype2; then
+    echo "The FreeType development package is required (install libfreetype-dev)." >&2
+    exit 1
+  fi
+  FREETYPE_CFLAGS_VALUE=$(pkg-config --cflags freetype2)
+  FREETYPE_LIBS_VALUE=$(pkg-config --libs freetype2)
+else
+  rm -rf "$FREETYPE_PREFIX"
+  (
+    cd "$TEMP_DIR/freetype-2.14.3"
+    ./configure \
+      --prefix="$FREETYPE_PREFIX" \
+      --disable-shared \
+      --enable-static \
+      --without-zlib \
+      --without-bzip2 \
+      --without-png \
+      --without-harfbuzz \
+      --without-brotli
+    make -j "$JOBS"
+    make install
+  )
+  FREETYPE_CFLAGS_VALUE="-I$FREETYPE_PREFIX/include/freetype2"
+  FREETYPE_LIBS_VALUE="$FREETYPE_PREFIX/lib/libfreetype.a"
+fi
 
 KPATHSEA_OPTION=
 case "$(uname -s):$(uname -m)" in
@@ -153,8 +171,8 @@ rm -rf "$DVISVGM_PREFIX"
 (
   cd "$TEMP_DIR/dvisvgm-3.6.1"
   PKG_CONFIG="$PKG_CONFIG_STUB" \
-  FREETYPE_CFLAGS="-I$FREETYPE_PREFIX/include/freetype2" \
-  FREETYPE_LIBS="$FREETYPE_PREFIX/lib/libfreetype.a" \
+  FREETYPE_CFLAGS="$FREETYPE_CFLAGS_VALUE" \
+  FREETYPE_LIBS="$FREETYPE_LIBS_VALUE" \
     ./configure \
       --prefix="$DVISVGM_PREFIX" \
       --disable-shared \
