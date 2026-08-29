@@ -20,7 +20,8 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       ASTRO_TELEMETRY_DISABLED: '1'
-      DVISVGM_BIN: dvisvgm
+      DVISVGM_BIN: ${{ github.workspace }}/.cache/paper-toolchain/bin/dvisvgm
+      DVISVGM_SOURCE_DIR: ${{ github.workspace }}/.cache/paper-toolchain/source/dvisvgm-3.6.1
       PUBLIC_GISCUS_REPO: ${{ vars.PUBLIC_GISCUS_REPO }}
       PUBLIC_GISCUS_REPO_ID: ${{ vars.PUBLIC_GISCUS_REPO_ID }}
       PUBLIC_GISCUS_CATEGORY_ID: ${{ vars.PUBLIC_GISCUS_CATEGORY_ID }}
@@ -61,6 +62,20 @@ jobs:
         with:
           package_file: texlive-packages.txt
           texlive_version: 2026
+
+      - name: Checkout dvisvgm 3.6.1 source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: mgieseki/dvisvgm
+          ref: 2ad0587be8ec8c4e7371bd83349ccad3e9f2b4d0
+          path: .cache/paper-toolchain/source/dvisvgm-3.6.1
+          persist-credentials: false
+
+      - name: Install dvisvgm build dependencies
+        run: sudo apt-get update && sudo apt-get install --yes autoconf automake libtool libkpathsea-dev
+
+      - name: Build locked dvisvgm 3.6.1
+        run: sh scripts/setup-dvisvgm-3.6.1.sh
 
       - name: Verify locked paper toolchain
         run: pnpm papers:toolchain

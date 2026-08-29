@@ -12,6 +12,8 @@ KPATHSEA_PREFIX="$VENDOR_DIR/kpathsea-6.4.2"
 DVISVGM_ARCHIVE="$DOWNLOAD_DIR/dvisvgm-3.6.1.tar.gz"
 FREETYPE_ARCHIVE="$DOWNLOAD_DIR/freetype-2.14.3.tar.xz"
 MACPORTS_ARCHIVE="$DOWNLOAD_DIR/texlive-bin-2026.78235_5-x11.darwin_25.arm64.tbz2"
+DVISVGM_SOURCE_DIR=${DVISVGM_SOURCE_DIR:-}
+DVISVGM_COMMIT=2ad0587be8ec8c4e7371bd83349ccad3e9f2b4d0
 
 DVISVGM_SHA256=d6aab13136de758e91530a009ace194c84d909dbdb8efa8fa5721de71ff298d8
 FREETYPE_SHA256=36bc4f1cc413335368ee656c42afca65c5a3987e8768cc28cf11ba775e785a5f
@@ -58,10 +60,6 @@ if [ -x "$DVISVGM_PREFIX/bin/dvisvgm" ] && \
 fi
 
 download_verified \
-  "https://api.github.com/repos/mgieseki/dvisvgm/releases/assets/501052592" \
-  "$DVISVGM_ARCHIVE" \
-  "$DVISVGM_SHA256"
-download_verified \
   "https://download.savannah.gnu.org/releases/freetype/freetype-2.14.3.tar.xz" \
   "$FREETYPE_ARCHIVE" \
   "$FREETYPE_SHA256"
@@ -69,7 +67,29 @@ download_verified \
 TEMP_DIR=$(mktemp -d "$TOOLCHAIN_DIR/dvisvgm.XXXXXX")
 trap 'rm -rf "$TEMP_DIR"' EXIT INT TERM
 
-tar -xzf "$DVISVGM_ARCHIVE" -C "$TEMP_DIR"
+if [ -n "$DVISVGM_SOURCE_DIR" ]; then
+  if [ ! -d "$DVISVGM_SOURCE_DIR/.git" ]; then
+    echo "The checked-out dvisvgm source directory is missing: $DVISVGM_SOURCE_DIR" >&2
+    exit 1
+  fi
+  actual_commit=$(git -C "$DVISVGM_SOURCE_DIR" rev-parse HEAD)
+  if [ "$actual_commit" != "$DVISVGM_COMMIT" ]; then
+    echo "dvisvgm source mismatch: expected $DVISVGM_COMMIT, received $actual_commit" >&2
+    exit 1
+  fi
+  mkdir -p "$TEMP_DIR/dvisvgm-3.6.1"
+  cp -R "$DVISVGM_SOURCE_DIR/." "$TEMP_DIR/dvisvgm-3.6.1/"
+  (
+    cd "$TEMP_DIR/dvisvgm-3.6.1"
+    autoreconf -fi
+  )
+else
+  download_verified \
+    "https://api.github.com/repos/mgieseki/dvisvgm/releases/assets/501052592" \
+    "$DVISVGM_ARCHIVE" \
+    "$DVISVGM_SHA256"
+  tar -xzf "$DVISVGM_ARCHIVE" -C "$TEMP_DIR"
+fi
 tar -xJf "$FREETYPE_ARCHIVE" -C "$TEMP_DIR"
 
 JOBS=2
