@@ -8,10 +8,10 @@
     "node": ">=22.20.0"
   },
   "scripts": {
-    "dev": "pnpm koharu migrate --check && astro dev",
+    "dev": "astro dev",
     "generate:lqips": "tsx src/scripts/generateLqips.ts",
     "generate:all": "pnpm generate:lqips",
-    "build": "node scripts/build-papers.mjs && node scripts/optimize-images.mjs && pnpm koharu migrate --check && astro build",
+    "build": "node scripts/build-papers.mjs && node scripts/optimize-images.mjs && astro build",
     "papers:build": "node scripts/build-papers.mjs",
     "papers:build:strict": "node scripts/build-papers.mjs --strict",
     "papers:setup:local": "sh scripts/setup-paper-toolchain.sh",

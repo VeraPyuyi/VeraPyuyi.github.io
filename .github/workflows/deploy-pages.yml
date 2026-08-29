@@ -81,7 +81,7 @@ jobs:
         run: node scripts/optimize-images.mjs
 
       - name: Build Astro and Pagefind
-        run: pnpm koharu migrate --check && pnpm astro build
+        run: pnpm astro build
 
       - name: Check generated links and required output
         run: pnpm check:output
