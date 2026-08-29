@@ -47,8 +47,8 @@ export const seoConfig = {
 const BUILT_IN_COVERS = Array.from({ length: 21 }, (_, i) => `/img/cover/${i + 1}.webp`);
 export const defaultCoverList = yamlConfig?.defaultCoverList?.length ? yamlConfig.defaultCoverList : BUILT_IN_COVERS;
 
-// Map YAML comment config. Public build variables allow Giscus IDs to be kept
-// outside the repository while preserving a friendly checked-in setup state.
+// Map YAML comment config. Giscus identifiers are public; build variables let
+// forks override the checked-in repository and category without editing YAML.
 const rawCommentConfig: CommentConfig = yamlConfig.comment || {};
 export const commentConfig: CommentConfig = rawCommentConfig.giscus
   ? {

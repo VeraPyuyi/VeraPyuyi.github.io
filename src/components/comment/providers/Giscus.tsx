@@ -3,6 +3,7 @@ import { useTranslation } from '@hooks/useTranslation';
 import { useEffect, useState } from 'react';
 import { commentConfig } from '@/constants/site-config';
 import { getHtmlLang } from '@/i18n/utils';
+import { resolveGiscusTarget } from './giscusTarget';
 
 type GiscusTheme = 'light' | 'dark';
 
@@ -52,6 +53,8 @@ export default function Giscus({ contentId }: { contentId?: string }) {
     return null;
   }
 
+  const target = resolveGiscusTarget(config, contentId);
+
   return (
     <GiscusComponent
       host={config?.host}
@@ -59,8 +62,8 @@ export default function Giscus({ contentId }: { contentId?: string }) {
       repoId={config.repoId}
       category={config?.category}
       categoryId={config?.categoryId}
-      mapping={contentId ? 'specific' : (config?.mapping ?? 'pathname')}
-      term={contentId ?? config?.term}
+      mapping={target.mapping}
+      term={target.term}
       strict={config?.strict}
       reactionsEnabled={config?.reactionsEnabled}
       emitMetadata={config?.emitMetadata}

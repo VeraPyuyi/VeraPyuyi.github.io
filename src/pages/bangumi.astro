@@ -29,7 +29,7 @@ const description = t(locale, 'bangumi.description');
       class={`bg-gradient-start shadow-box tablet:shadow-none flex flex-col overflow-hidden ${CONTENT_PADDING.standard}`}
     >
       <BangumiCollection client:load userId={bangumiConfig.userId} />
-      <Comment />
+      <Comment contentId="page:bangumi" />
     </div>
   </TwoColumnLayout>
 </Layout>

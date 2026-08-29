@@ -22,18 +22,20 @@ pnpm dev
 
 本地没有 Pandoc/Tectonic 时，论文页会显示构建占位提示；GitHub Actions 始终使用 `--strict` 生成完整 HTML/MathML 与 PDF。
 
-## 上线前的公开配置
+## 公开服务配置
 
-在 GitHub 仓库的 **Settings → Secrets and variables → Actions → Variables** 填写：
+Giscus 已绑定本仓库的 `Announcements` Discussions 分类，公开仓库 ID 和分类 ID 保存在
+`config/site.yaml`，无需作为 Secret 保存。若 fork 本站，可在 GitHub 仓库的
+**Settings → Secrets and variables → Actions → Variables** 用下列变量覆盖：
 
 | 变量 | 用途 |
 | --- | --- |
 | `PUBLIC_GISCUS_REPO` | `VeraPyuyi/VeraPyuyi.github.io` |
-| `PUBLIC_GISCUS_REPO_ID` | giscus.app 生成的仓库 ID |
-| `PUBLIC_GISCUS_CATEGORY_ID` | giscus.app 生成的 Discussion 分类 ID |
+| `PUBLIC_GISCUS_REPO_ID` | `R_kgDOUE5Tuw` |
+| `PUBLIC_GISCUS_CATEGORY_ID` | `DIC_kwDOUE5Tu84DEdNf` |
 | `PUBLIC_GOATCOUNTER_CODE` | GoatCounter 站点代码（不含域名） |
 
-然后启用 **Pages / GitHub Actions** 和 **Discussions**，安装 Giscus App，再用 GitHub 登录 [Pages CMS](https://app.pagescms.org/) 并授权该仓库。上传图片前请移除位置信息；构建会为上传图片生成 WebP/AVIF 与低清占位图，并移除生成版本的元数据。
+本仓库已启用 **Pages / GitHub Actions** 和 **Discussions**，并安装 Giscus App。fork 后需为新仓库重新完成这些设置。Pages CMS 仍需用 GitHub 登录并授权目标仓库。上传图片前请移除位置信息；构建会为上传图片生成 WebP/AVIF 与低清占位图，并移除生成版本的元数据。
 
 ## astro-koharu 上游文档
 

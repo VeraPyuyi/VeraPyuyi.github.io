@@ -413,9 +413,9 @@ comment:
   #   siteId: your-site-id
   giscus:
     repo: VeraPyuyi/VeraPyuyi.github.io
-    repoId: '' # 可在 .env 中用 PUBLIC_GISCUS_REPO_ID 覆盖
+    repoId: R_kgDOUE5Tuw # Giscus 公开仓库 ID；可用 PUBLIC_GISCUS_REPO_ID 覆盖
     category: Announcements
-    categoryId: '' # 可在 .env 中用 PUBLIC_GISCUS_CATEGORY_ID 覆盖
+    categoryId: DIC_kwDOUE5Tu84DEdNf # Announcements 公开分类 ID；可用 PUBLIC_GISCUS_CATEGORY_ID 覆盖
     mapping: specific
     strict: '1'
     reactionsEnabled: '1'

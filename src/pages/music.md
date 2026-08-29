@@ -2,6 +2,7 @@
 layout: ../layouts/PageLayout.astro
 title: "音乐"
 description: "音乐播放框架"
+commentId: "page:music"
 ---
 
 全站音乐播放框架已经准备好，目前暂未配置歌单，因此不会加载播放器，也不会请求第三方音乐接口。
