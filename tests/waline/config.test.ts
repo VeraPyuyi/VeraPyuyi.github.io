@@ -68,7 +68,8 @@ test('Waline backend is pinned to a patched version and keeps credentials out of
   const backendEntry = read('deploy/waline/index.cjs');
 
   assert.equal(backendPackage.dependencies['@waline/vercel'], '1.41.4');
-  assert.equal(backendPackage.packageManager, 'pnpm@11.19.0');
+  assert.equal(backendPackage.packageManager, 'pnpm@9.15.9');
+  assert.equal(backendPackage.engines.node, '22.x');
   assert.match(envExample, /LOGIN=force/);
   assert.match(envExample, /SECURE_DOMAINS=verapyuyi\.github\.io/);
   assert.match(envExample, /DATABASE_URL=/);

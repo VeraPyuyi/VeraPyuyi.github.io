@@ -2,9 +2,9 @@
   "name": "pyuyi-waline",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@11.19.0",
+  "packageManager": "pnpm@9.15.9",
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
   },
   "dependencies": {
     "@waline/vercel": "1.41.4"
