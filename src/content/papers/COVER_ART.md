@@ -1,14 +1,35 @@
 # Paper cover art provenance
 
-Initially generated on 2026-08-27 and updated with the recurring original researcher on 2026-08-30 using the built-in GPT Image tool.
+Initially generated on 2026-08-27, updated with the recurring original researcher on 2026-08-30, and restored at
+higher visual fidelity on 2026-08-31 using the built-in GPT Image tool.
 `public/og.png` was supplied as a **style reference only** for the pastel palette and original star-cat mascot. It was
 not edited. The three selected 2026-08-27 covers were then used as edit targets so their
 paper-specific mathematical structures could be retained. The final covers contain no intended text, logos,
 trademarks, watermarks, or third-party characters.
 
-Each selected output was center-cropped and normalized to 1600 × 900 with metadata removed; the site serves locally
-generated AVIF/WebP variants. The researcher and star cat remain secondary guides, while each paper's mathematical
-structure is the primary subject.
+The restored outputs were center-cropped and normalized to 3200 × 1800 with metadata removed. The site serves local
+480, 960, 1600, 2400, and 3200 pixel AVIF/WebP variants, with higher encoding quality reserved for paper covers.
+The researcher and star cat remain secondary guides, while each paper's mathematical structure is the primary subject.
+
+## High-resolution restoration prompt
+
+Each cover was edited separately with its own original cover as the sole authoritative input. The shared request was:
+
+```text
+Use case: identity-preserve and precise high-resolution restoration
+Asset type: 16:9 academic paper website cover illustration
+Primary request: produce a higher-definition restoration of the input for a large Retina website banner. Change only
+rendering clarity and fine-detail fidelity. Preserve the exact scene, framing, crop, camera, composition, researcher
+identity, pose, hair, outfit, star cat, palette, lighting, relative positions, and all paper-specific mathematical
+structures. Refine anime linework, hair strands, facial and garment edges, mathematical nodes, arrows, ribbons, and
+gradients; remove softness, ringing, pixelation, and compression artifacts.
+Constraints: no redesign; no added or removed objects; no text, letters, numbers, equations, pseudo-text, logos,
+signatures, trademarks, or watermark; no anatomy changes or sexualization.
+```
+
+The per-cover invariants repeated the exact structures listed below: the paired forward/backward trajectories for
+Horizon, the alternating and circular fences plus transfer records for Bernstein, and the cycle-decorated square-cell
+ribbon complexes plus synchronized cuts for Cycle.
 
 ## `horizon-uniform-sensitivity`
 

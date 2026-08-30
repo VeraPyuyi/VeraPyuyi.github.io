@@ -7,7 +7,8 @@ const publicRoot = join(root, 'public');
 const uploadsRoot = join(publicRoot, 'uploads');
 const mediaRoot = join(publicRoot, 'media');
 const extensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif']);
-const widths = [480, 960, 1600];
+const defaultWidths = [480, 960, 1600];
+const paperCoverWidths = [480, 960, 1600, 2400, 3200];
 const manifest = {};
 
 function walk(directory) {
@@ -21,13 +22,18 @@ function walk(directory) {
 async function optimize(source, key, outputDirectory, basename) {
   const metadata = await sharp(source).metadata();
   const originalWidth = metadata.width ?? 1600;
+  const isPaperCover = /^\/uploads\/papers\/[^/]+\/cover\.png$/.test(key);
+  const widths = isPaperCover ? paperCoverWidths : defaultWidths;
   const variants = [];
   mkdirSync(outputDirectory, { recursive: true });
   for (const width of widths.filter((value) => value <= originalWidth || value === widths[0])) {
     for (const format of ['webp', 'avif']) {
       const output = join(outputDirectory, `${basename}-${width}.${format}`);
       const pipeline = sharp(source).rotate().resize({ width, withoutEnlargement: true });
-      await (format === 'webp' ? pipeline.webp({ quality: 82 }) : pipeline.avif({ quality: 58, effort: 5 })).toFile(output);
+      await (format === 'webp'
+        ? pipeline.webp(isPaperCover ? { quality: 90, effort: 6, smartSubsample: true } : { quality: 82 })
+        : pipeline.avif(isPaperCover ? { quality: 72, effort: 6, chromaSubsampling: '4:4:4' } : { quality: 58, effort: 5 })
+      ).toFile(output);
       variants.push(`/${relative(publicRoot, output).replaceAll('\\', '/')}`);
     }
   }

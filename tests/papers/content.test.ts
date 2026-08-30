@@ -93,11 +93,15 @@ test('paper covers are normalized, responsive, and locally described', async () 
     const source = join(root, 'public', paper.cover.slice(1));
     assert.ok(existsSync(source), paper.cover);
     const metadata = await sharp(source).metadata();
-    assert.equal(metadata.width, 1600);
-    assert.equal(metadata.height, 900);
+    assert.equal(metadata.width, 3200);
+    assert.equal(metadata.height, 1800);
 
     const variants = manifest[paper.cover];
-    assert.equal(variants.length, 7);
+    assert.equal(variants.length, 11);
+    for (const width of [480, 960, 1600, 2400, 3200]) {
+      assert.ok(variants.includes(`/media/papers/${paper.id}/cover-${width}.avif`));
+      assert.ok(variants.includes(`/media/papers/${paper.id}/cover-${width}.webp`));
+    }
     for (const variant of variants) assert.ok(existsSync(join(root, 'public', variant.slice(1))), variant);
   }
 
