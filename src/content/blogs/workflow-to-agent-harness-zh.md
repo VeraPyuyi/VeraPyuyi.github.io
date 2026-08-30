@@ -14,6 +14,8 @@ keywords:
 draft: false
 featured: true
 comments: true
+cover: /uploads/blogs/workflow-to-agent-harness/cover.png
+coverAlt: 蓝粉长发的原创研究者与星猫修复包含检查点、反馈回路和恢复路径的智能体执行网络
 order: 400
 ---
 

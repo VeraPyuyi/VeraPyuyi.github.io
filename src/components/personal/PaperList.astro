@@ -8,19 +8,30 @@ interface Props {
   locale?: string;
   limit?: number;
   indexable?: boolean;
+  randomized?: boolean;
 }
 
-const { locale = defaultLocale, limit, indexable = true } = Astro.props;
+const { locale = defaultLocale, limit, indexable = true, randomized = false } = Astro.props;
 const en = locale === 'en';
 const allPapers = getPapers();
-const papers = limit === undefined ? allPapers : allPapers.slice(0, limit);
+const papers = randomized || limit === undefined ? allPapers : allPapers.slice(0, limit);
+const visibleLimit = limit ?? papers.length;
 const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pagefind-ignore': 'all' };
 ---
 
-<div class="space-y-5" {...pagefindAttributes}>
+<div
+  class="space-y-5"
+  data-home-random-pool={randomized ? 'papers' : undefined}
+  data-home-random-limit={randomized ? visibleLimit : undefined}
+  {...pagefindAttributes}
+>
   {
-    papers.map((paper) => (
-      <article class="grid overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur md:grid-cols-[15rem_1fr] dark:border-white/10 dark:bg-white/5">
+    papers.map((paper, index) => (
+      <article
+        class="grid overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur md:grid-cols-[15rem_1fr] dark:border-white/10 dark:bg-white/5"
+        data-home-random-item={randomized ? '' : undefined}
+        hidden={randomized && index >= visibleLimit}
+      >
         <ResponsiveImage
           src={paper.cover ?? '/og.png'}
           alt={(en ? paper.coverAltEn : paper.coverAlt) ?? (en ? 'Pyuyi paper cover' : 'Pyuyi 论文封面')}

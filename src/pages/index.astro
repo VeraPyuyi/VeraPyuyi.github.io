@@ -8,6 +8,7 @@ import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
 import { Icon } from 'astro-icon/components';
 import BlogList from '@/components/personal/BlogList.astro';
 import FeatureHub from '@/components/personal/FeatureHub.astro';
+import HomeRandomizer from '@/components/personal/HomeRandomizer.astro';
 import PaperList from '@/components/personal/PaperList.astro';
 import Divider from '@/components/ui/divider';
 import { defaultLocale, localizedPath } from '@/i18n';
@@ -31,7 +32,7 @@ const browserTitle = 'Pyuyi’s Home';
     >
       <FeatureHub locale={locale} />
       <Divider>{en ? 'Latest papers' : '近期论文'}</Divider>
-      <PaperList locale={locale} limit={3} indexable={false} />
+      <PaperList locale={locale} limit={2} indexable={false} randomized />
       <a
         class="text-primary ml-auto inline-flex items-center gap-1 text-sm font-semibold hover:underline"
         href={localizedPath('/papers', locale)}
@@ -40,7 +41,7 @@ const browserTitle = 'Pyuyi’s Home';
         <Icon name="ri:arrow-right-line" />
       </a>
       <Divider>{en ? 'Blogs' : '博客'}</Divider>
-      <BlogList locale={locale} limit={3} indexable={false} />
+      <BlogList locale={locale} limit={2} indexable={false} randomized />
       <a
         class="text-primary ml-auto inline-flex items-center gap-1 text-sm font-semibold hover:underline"
         href={localizedPath('/posts', locale)}
@@ -49,5 +50,6 @@ const browserTitle = 'Pyuyi’s Home';
         <Icon name="ri:arrow-right-line" />
       </a>
     </div>
+    <HomeRandomizer />
   </TwoColumnLayout>
 </Layout>

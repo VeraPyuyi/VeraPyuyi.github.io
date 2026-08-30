@@ -1,10 +1,14 @@
 # Paper cover art provenance
 
-Generated on 2026-08-27 with the built-in GPT Image tool. `public/og.png` was supplied only as a style reference for the pastel pink, powder-blue, lavender palette, painterly finish, and original star-cat mascot. It was not edited. The final covers contain no intended text, logos, trademarks, watermarks, or third-party characters.
+Initially generated on 2026-08-27 and updated with the recurring original researcher on 2026-08-30 using the built-in GPT Image tool.
+`public/og.png` was supplied as a **style reference only** for the pastel palette and original star-cat mascot. It was
+not edited. The three selected 2026-08-27 covers were then used as edit targets so their
+paper-specific mathematical structures could be retained. The final covers contain no intended text, logos,
+trademarks, watermarks, or third-party characters.
 
-Each selected output was center-cropped and normalized to 1600 × 900. The public PNG source uses a compact 128-colour
-palette to keep the repository lightweight; the site serves locally generated AVIF/WebP variants. The star cat
-remains a secondary guide; the paper-specific mathematical structure is the primary subject.
+Each selected output was center-cropped and normalized to 1600 × 900 with metadata removed; the site serves locally
+generated AVIF/WebP variants. The researcher and star cat remain secondary guides, while each paper's mathematical
+structure is the primary subject.
 
 ## `horizon-uniform-sensitivity`
 
@@ -53,3 +57,27 @@ Color palette: pastel pink, powder blue, lavender, deep navy, restrained warm go
 Constraints: original art; only unlabeled cells, beads, cuts, and geometric arrows; no words, no letters, no numerals, no equations, no readable mathematical notation, no logos, no trademarks, no watermark, no copyrighted characters.
 Avoid: triangular origami, generic polygon loops, tangled ribbons, any two-by-two square block inside a ribbon strip, pseudo-text, busy UI, mascot close-up.
 ```
+
+## Recurring original researcher integration
+
+The final covers share the same original adult researcher: a woman in her twenties with a slender natural small-bust
+build, waist-length hair transitioning from sapphire blue through lavender to cherry pink, blue-violet eyes, and a
+small gold star hairpin. Her modest outfit consists of a cream high-collar blouse, powder-blue cardigan, deep navy
+knee-length pleated skirt, opaque navy knee socks, and simple shoes. The selected Monte Carlo blog cover provided the
+identity, body, outfit, and anime-rendering anchor. No existing anime character was referenced.
+
+The final edit prompts preserved each source cover's palette, lighting, 16:9 framing, star cat, and mathematical
+construction while adding the researcher only to the foreground:
+
+- `horizon-uniform-sensitivity`: seat the researcher beside the star cat at the lower-left control station, calmly
+  pointing toward the paired trajectories. Do not cover or modify any blue forward node or arrow, pink backward node
+  or arrow, central transversal crossing, horizon marker, or terminal circle.
+- `bernstein-transfers-greedy-records`: place the researcher beside the star cat in the lower-left foreground, tracing
+  the transfer from the zigzag fence record toward the circular record. Preserve every alternating node, vertical
+  projection, transfer ribbon, ring node, lower linear record, and terminal arrow.
+- `cycle-decorated-ribbon-complexes`: place the researcher kneeling in the lower foreground with a small glowing
+  ribbon model, gesturing toward a synchronized cut. Preserve the main cyclic square-cell ribbon, all vertices and
+  orientations, cut glints, both smaller branched complexes, transformation arrows, and dotted boundary paths.
+
+All three edit prompts prohibited short or recolored hair, a large bust, cleavage, exaggerated anatomy, chibi
+researcher proportions, sexualized poses, extra characters, text, notation, logos, and watermarks.

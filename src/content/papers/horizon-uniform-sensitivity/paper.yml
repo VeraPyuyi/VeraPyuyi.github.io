@@ -39,8 +39,8 @@ webEquationLayouts:
   'sha256:2a3cad2d859379ad279987464093e1d5a9dbe35b2f84324f203efb793d2fca75': compact
   'sha256:88802467b31e8f40691a38192d5d4eed4a7dd7d37de1af69af8d3da1a1945a0b': compact
 cover: /uploads/papers/horizon-uniform-sensitivity/cover.png
-coverAlt: 粉蓝星空中，星星猫在控制台旁观察两条随终端扰动向后衰减的发光轨迹。
-coverAltEn: A star cat watches two glowing phase-space trajectories as a terminal ripple fades backward across a pastel cosmic horizon.
+coverAlt: 蓝粉长发的原创研究者与星猫在控制台前观察蓝色正向轨迹、粉色反向轨迹及向后衰减的终端扰动。
+coverAltEn: The original blue-and-pink-haired researcher and her star cat observe forward and backward trajectories as a terminal perturbation decays toward the initial horizon.
 comments: true
 arxivId: '2606.17762'
 arxivVersion: v3

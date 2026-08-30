@@ -27,22 +27,32 @@ const dateInSiteTimezone = z
 
 const blogArticleCollection = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blogs' }),
-  schema: z.object({
-    title: z.string(),
-    summary: z.string(),
-    publishedAt: dateInSiteTimezone,
-    updatedAt: dateInSiteTimezone.optional(),
-    language: z.enum(['zh', 'en']),
-    translationKey: z.string().min(1),
-    routeSlug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-    keywords: z.array(z.string()).default([]),
-    draft: z.boolean().default(false),
-    featured: z.boolean().default(false),
-    comments: z.boolean().default(true),
-    cover: z.string().optional(),
-    coverAlt: z.string().optional(),
-    order: z.number().default(0),
-  }),
+  schema: z
+    .object({
+      title: z.string(),
+      summary: z.string(),
+      publishedAt: dateInSiteTimezone,
+      updatedAt: dateInSiteTimezone.optional(),
+      language: z.enum(['zh', 'en']),
+      translationKey: z.string().min(1),
+      routeSlug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+      keywords: z.array(z.string()).default([]),
+      draft: z.boolean().default(false),
+      featured: z.boolean().default(false),
+      comments: z.boolean().default(true),
+      cover: z.string().optional(),
+      coverAlt: z.string().optional(),
+      order: z.number().default(0),
+    })
+    .superRefine((entry, context) => {
+      if (entry.draft) return;
+      if (!entry.cover) {
+        context.addIssue({ code: 'custom', path: ['cover'], message: 'Published blogs require a cover image.' });
+      }
+      if (!entry.coverAlt?.trim()) {
+        context.addIssue({ code: 'custom', path: ['coverAlt'], message: 'Published blogs require cover alt text.' });
+      }
+    }),
 });
 
 const momentCollection = defineCollection({

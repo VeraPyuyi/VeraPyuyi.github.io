@@ -14,6 +14,8 @@ keywords:
 draft: false
 featured: true
 comments: true
+cover: /uploads/blogs/attention-as-spiking-dynamics/cover.png
+coverAlt: 蓝粉长发的原创研究者调节暖色兴奋脉冲与冷色抑制波，星猫跟随被点亮的因果神经路径
 order: 100
 ---
 

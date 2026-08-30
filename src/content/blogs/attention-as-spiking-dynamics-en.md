@@ -14,6 +14,8 @@ keywords:
 draft: false
 featured: true
 comments: true
+cover: /uploads/blogs/attention-as-spiking-dynamics/cover.png
+coverAlt: The original blue-and-pink-haired researcher balances warm excitatory spikes and cool inhibitory waves as her star cat follows the selected causal path.
 order: 100
 ---
 

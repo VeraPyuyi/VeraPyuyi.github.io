@@ -14,6 +14,8 @@ keywords:
 draft: false
 featured: true
 comments: true
+cover: /uploads/blogs/llm-sampling-energy-view/cover.png
+coverAlt: 蓝粉长发的原创研究者调节采样温度，发光粒子沿多条路径穿过能量地形，星猫观察概率谷
 order: 200
 ---
 

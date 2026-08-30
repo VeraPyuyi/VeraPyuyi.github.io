@@ -14,6 +14,8 @@ keywords:
 draft: false
 featured: true
 comments: true
+cover: /uploads/blogs/workflow-to-agent-harness/cover.png
+coverAlt: The original blue-and-pink-haired researcher and her star cat repair an agent network of checkpoints, feedback loops, and recovery paths.
 order: 400
 ---
 

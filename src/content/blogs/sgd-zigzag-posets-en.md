@@ -14,6 +14,8 @@ keywords:
 draft: false
 featured: true
 comments: true
+cover: /uploads/blogs/sgd-zigzag-posets/cover.png
+coverAlt: The original blue-and-pink-haired researcher draws a luminous alternating SGD trajectory while her star cat measures its fence-poset nodes.
 order: 300
 ---
 

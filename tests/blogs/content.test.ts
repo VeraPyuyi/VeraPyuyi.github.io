@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
 import matter from 'gray-matter';
+import sharp from 'sharp';
 
 const root = process.cwd();
 const blogRoot = join(root, 'src/content/blogs');
@@ -27,6 +28,8 @@ test('the Inspirations essays form five complete bilingual pairs', () => {
     assert.ok(['zh', 'en'].includes(data.language));
     assert.equal(data.draft, false);
     assert.equal(data.comments, true);
+    assert.equal(data.cover, `/uploads/blogs/${data.routeSlug}/cover.png`);
+    assert.ok(typeof data.coverAlt === 'string' && data.coverAlt.trim().length > 0);
     assert.ok(Array.isArray(data.keywords) && data.keywords.length > 0);
     assert.doesNotMatch(content, /cite|chatgpt-content-reference|turn\d+(?:search|view|academia)|\uFFFD/);
     assert.equal(
@@ -58,6 +61,40 @@ test('the Inspirations essays form five complete bilingual pairs', () => {
   for (const languages of pairs.values()) assert.deepEqual([...languages].sort(), ['en', 'zh']);
 });
 
+test('bilingual blog covers are normalized, responsive, and locally documented', async () => {
+  const files = readdirSync(blogRoot).filter((name) => /\.(md|mdx)$/.test(name));
+  const covers = new Map<string, Set<string>>();
+  const manifest = JSON.parse(read('public/media-manifest.json')) as Record<string, string[]>;
+
+  for (const filename of files) {
+    const { data } = matter(readFileSync(join(blogRoot, filename), 'utf8'));
+    const pairCovers = covers.get(data.translationKey) ?? new Set<string>();
+    pairCovers.add(data.cover);
+    covers.set(data.translationKey, pairCovers);
+  }
+
+  assert.equal(covers.size, 5);
+  for (const [slug, pairCovers] of covers) {
+    assert.equal(pairCovers.size, 1, `${slug} translations must share one cover`);
+    const [cover] = pairCovers;
+    assert.ok(cover);
+    const source = join(root, 'public', cover.slice(1));
+    assert.ok(existsSync(source), cover);
+    const metadata = await sharp(source).metadata();
+    assert.equal(metadata.width, 1600);
+    assert.equal(metadata.height, 900);
+
+    const variants = manifest[cover];
+    assert.equal(variants.length, 7);
+    for (const variant of variants) assert.ok(existsSync(join(root, 'public', variant.slice(1))), variant);
+  }
+
+  const provenance = read('docs/design/blog-cover-art.md');
+  assert.match(provenance, /built-in GPT Image/);
+  assert.match(provenance, /style reference only/);
+  for (const slug of covers.keys()) assert.match(provenance, new RegExp(slug));
+});
+
 test('essay titles use the agreed reflective form in both languages', () => {
   for (const filename of readdirSync(blogRoot).filter((name) => /\.md$/.test(name))) {
     const { data } = matter(readFileSync(join(blogRoot, filename), 'utf8'));
@@ -72,6 +109,7 @@ test('blog routes, shared comments, indexing, and CMS collections are wired expl
   const localePage = read('src/pages/[lang]/blogs/[slug].astro');
   const listPage = read('src/pages/blogs.astro');
   const pagesCms = read('.pages.yml');
+  const blogList = read('src/components/personal/BlogList.astro');
 
   assert.match(routeRegistry, /export const blogRoute/);
   assert.match(rootPage, /getStaticPaths = blogRoute\.root/);
@@ -83,6 +121,8 @@ test('blog routes, shared comments, indexing, and CMS collections are wired expl
   assert.doesNotMatch(listPage, /BlogSiteList|Independent sites|独立站点/);
   assert.match(listPage, /字句一行行亮起，回应它们的始终只有深夜。/);
   assert.match(listPage, /Lines of words light up one by one; only the night ever answers\./);
+  assert.match(blogList, /<ResponsiveImage/);
+  assert.match(blogList, /aspect-video/);
   assert.match(pagesCms, /- name: blogs\b/);
   assert.match(pagesCms, /path: src\/content\/blogs/);
   assert.doesNotMatch(pagesCms, /blogSites|blog-sites|独立博客站点/);

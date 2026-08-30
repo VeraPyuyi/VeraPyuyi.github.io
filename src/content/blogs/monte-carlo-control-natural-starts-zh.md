@@ -14,6 +14,8 @@ keywords:
 draft: false
 featured: true
 comments: true
+cover: /uploads/blogs/monte-carlo-control-natural-starts/cover.png
+coverAlt: 蓝粉长发的原创研究者与星猫在实验台前引导多个自然起点沿随机状态路径汇聚至奖励节点
 order: 500
 ---
 

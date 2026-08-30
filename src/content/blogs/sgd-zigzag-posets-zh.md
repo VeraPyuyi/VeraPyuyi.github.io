@@ -14,6 +14,8 @@ keywords:
 draft: false
 featured: true
 comments: true
+cover: /uploads/blogs/sgd-zigzag-posets/cover.png
+coverAlt: 蓝粉长发的原创研究者绘制损失地形上交替升降的发光 SGD 轨迹，星猫在一旁测量节点
 order: 300
 ---
 

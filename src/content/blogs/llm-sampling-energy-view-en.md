@@ -14,6 +14,8 @@ keywords:
 draft: false
 featured: true
 comments: true
+cover: /uploads/blogs/llm-sampling-energy-view/cover.png
+coverAlt: The original blue-and-pink-haired researcher adjusts sampling temperature as luminous paths cross an energy landscape and her star cat watches.
 order: 200
 ---
 

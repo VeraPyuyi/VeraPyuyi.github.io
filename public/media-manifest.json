@@ -8,6 +8,51 @@
     "/og-1600.avif",
     "/og-lqip.webp"
   ],
+  "/uploads/blogs/attention-as-spiking-dynamics/cover.png": [
+    "/media/blogs/attention-as-spiking-dynamics/cover-480.webp",
+    "/media/blogs/attention-as-spiking-dynamics/cover-480.avif",
+    "/media/blogs/attention-as-spiking-dynamics/cover-960.webp",
+    "/media/blogs/attention-as-spiking-dynamics/cover-960.avif",
+    "/media/blogs/attention-as-spiking-dynamics/cover-1600.webp",
+    "/media/blogs/attention-as-spiking-dynamics/cover-1600.avif",
+    "/media/blogs/attention-as-spiking-dynamics/cover-lqip.webp"
+  ],
+  "/uploads/blogs/llm-sampling-energy-view/cover.png": [
+    "/media/blogs/llm-sampling-energy-view/cover-480.webp",
+    "/media/blogs/llm-sampling-energy-view/cover-480.avif",
+    "/media/blogs/llm-sampling-energy-view/cover-960.webp",
+    "/media/blogs/llm-sampling-energy-view/cover-960.avif",
+    "/media/blogs/llm-sampling-energy-view/cover-1600.webp",
+    "/media/blogs/llm-sampling-energy-view/cover-1600.avif",
+    "/media/blogs/llm-sampling-energy-view/cover-lqip.webp"
+  ],
+  "/uploads/blogs/monte-carlo-control-natural-starts/cover.png": [
+    "/media/blogs/monte-carlo-control-natural-starts/cover-480.webp",
+    "/media/blogs/monte-carlo-control-natural-starts/cover-480.avif",
+    "/media/blogs/monte-carlo-control-natural-starts/cover-960.webp",
+    "/media/blogs/monte-carlo-control-natural-starts/cover-960.avif",
+    "/media/blogs/monte-carlo-control-natural-starts/cover-1600.webp",
+    "/media/blogs/monte-carlo-control-natural-starts/cover-1600.avif",
+    "/media/blogs/monte-carlo-control-natural-starts/cover-lqip.webp"
+  ],
+  "/uploads/blogs/sgd-zigzag-posets/cover.png": [
+    "/media/blogs/sgd-zigzag-posets/cover-480.webp",
+    "/media/blogs/sgd-zigzag-posets/cover-480.avif",
+    "/media/blogs/sgd-zigzag-posets/cover-960.webp",
+    "/media/blogs/sgd-zigzag-posets/cover-960.avif",
+    "/media/blogs/sgd-zigzag-posets/cover-1600.webp",
+    "/media/blogs/sgd-zigzag-posets/cover-1600.avif",
+    "/media/blogs/sgd-zigzag-posets/cover-lqip.webp"
+  ],
+  "/uploads/blogs/workflow-to-agent-harness/cover.png": [
+    "/media/blogs/workflow-to-agent-harness/cover-480.webp",
+    "/media/blogs/workflow-to-agent-harness/cover-480.avif",
+    "/media/blogs/workflow-to-agent-harness/cover-960.webp",
+    "/media/blogs/workflow-to-agent-harness/cover-960.avif",
+    "/media/blogs/workflow-to-agent-harness/cover-1600.webp",
+    "/media/blogs/workflow-to-agent-harness/cover-1600.avif",
+    "/media/blogs/workflow-to-agent-harness/cover-lqip.webp"
+  ],
   "/uploads/papers/bernstein-transfers-greedy-records/cover.png": [
     "/media/papers/bernstein-transfers-greedy-records/cover-480.webp",
     "/media/papers/bernstein-transfers-greedy-records/cover-480.avif",

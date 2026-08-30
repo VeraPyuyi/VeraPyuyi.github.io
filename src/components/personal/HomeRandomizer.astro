@@ -1,0 +1,35 @@
+<script>
+  import { sampleWithoutReplacement } from '@/lib/utils';
+
+  const poolSelector = '[data-home-random-pool]';
+
+  function randomizeHomePools() {
+    document
+      .querySelectorAll<HTMLElement>(`${poolSelector}:not([data-home-random-ready])`)
+      .forEach((pool) => {
+        const items = [...pool.querySelectorAll<HTMLElement>('[data-home-random-item]')];
+        const requestedLimit = Number.parseInt(pool.dataset.homeRandomLimit ?? '', 10);
+        const limit = Number.isFinite(requestedLimit) ? requestedLimit : items.length;
+        const selected = sampleWithoutReplacement(items, limit);
+        const selectedItems = new Set(selected);
+        const unselected = items.filter((item) => !selectedItems.has(item));
+
+        for (const item of selected) item.hidden = false;
+        for (const item of unselected) item.hidden = true;
+        pool.append(...selected, ...unselected);
+        pool.dataset.homeRandomReady = 'true';
+      });
+  }
+
+  function rerandomizeRestoredPage(event: PageTransitionEvent) {
+    if (!event.persisted) return;
+    document.querySelectorAll<HTMLElement>(poolSelector).forEach((pool) => {
+      delete pool.dataset.homeRandomReady;
+    });
+    randomizeHomePools();
+  }
+
+  randomizeHomePools();
+  document.addEventListener('astro:page-load', randomizeHomePools);
+  window.addEventListener('pageshow', rerandomizeRestoredPage);
+</script>

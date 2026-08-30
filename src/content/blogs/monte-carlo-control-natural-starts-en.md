@@ -14,6 +14,8 @@ keywords:
 draft: false
 featured: true
 comments: true
+cover: /uploads/blogs/monte-carlo-control-natural-starts/cover.png
+coverAlt: The original blue-and-pink-haired researcher and her star cat guide stochastic state paths from multiple natural starts toward a reward node.
 order: 500
 ---
 

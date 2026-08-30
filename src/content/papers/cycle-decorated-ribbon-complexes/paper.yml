@@ -19,8 +19,8 @@ htmlEntry: main_jca_focused.tex
 bibliography: references_jca_focused.bib
 fontProfile: latin-modern
 cover: /uploads/papers/cycle-decorated-ribbon-complexes/cover.png
-coverAlt: 星星猫观察由半透明折纸丝带组成的环状复形，以及其同步发光切点与分支。
-coverAltEn: A star cat observes a cycle of translucent origami ribbons with synchronized glowing cuts and branching pieces.
+coverAlt: 蓝粉长发的原创研究者与星猫观察环状丝带复形、同步发光切点及切分后的两个分支复形。
+coverAltEn: The original blue-and-pink-haired researcher and her star cat examine a cyclic ribbon complex, synchronized glowing cuts, and its two branched factors.
 comments: true
 arxivId: '2608.07599'
 arxivVersion: v2
