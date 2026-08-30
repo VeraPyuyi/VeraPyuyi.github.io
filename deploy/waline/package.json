@@ -1,0 +1,12 @@
+{
+  "name": "pyuyi-waline",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@waline/vercel": "1.41.4"
+  }
+}

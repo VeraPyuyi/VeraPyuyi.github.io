@@ -20,10 +20,10 @@ const baseConfig: GiscusConfig = {
   mapping: 'specific',
 };
 
-test('Giscus uses the installed repository and Announcements category', () => {
+test('Giscus remains a valid fallback while Waline is active', () => {
   const config = parse(read('config/site.yaml')).comment;
 
-  assert.equal(config.provider, 'giscus');
+  assert.equal(config.provider, 'waline');
   assert.equal(config.giscus.repo, baseConfig.repo);
   assert.equal(config.giscus.repoId, baseConfig.repoId);
   assert.equal(config.giscus.category, baseConfig.category);

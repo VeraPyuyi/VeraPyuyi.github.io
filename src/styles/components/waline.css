@@ -10,6 +10,16 @@
   --waline-theme-color: #e9546b;
   /* 激活状态颜色，用于悬停、焦点状态 */
   --waline-active-color: #ed788c;
+  --waline-color: hsl(var(--foreground));
+  --waline-bg-color: hsl(var(--background) / 0.72);
+  --waline-bg-color-light: hsl(var(--muted) / 0.72);
+  --waline-bg-color-hover: hsl(var(--muted));
+  --waline-border-color: hsl(var(--border));
+  --waline-disable-bg-color: hsl(var(--muted));
+  --waline-disable-color: hsl(var(--muted-foreground));
+  --waline-bq-color: hsl(var(--muted) / 0.75);
+  --waline-info-bg-color: hsl(var(--muted));
+  --waline-info-color: hsl(var(--muted-foreground));
 }
 
 /* === 暗色模式 (Dark Mode) === */
@@ -18,14 +28,70 @@ html.dark body {
   --waline-theme-color: #ed788c;
   --waline-active-color: #f09aab;
 
-  --waline-color: #8e8e8e;
-  --waline-disable-bg-color: hsl(0, 0%, 70%);
-  --waline-info-bg-color: #8e8e8e;
-  --waline-info-color: #fff;
+  --waline-color: hsl(var(--foreground));
+  --waline-disable-bg-color: hsl(var(--muted));
+  --waline-info-bg-color: hsl(var(--muted));
+  --waline-info-color: hsl(var(--muted-foreground));
 }
 
 /* === 额外的样式优化 (Additional Styles) === */
 .wl-comment {
-  margin-left: 0.5em;
-  margin-right: 0.5em;
+  margin-right: 0;
+  margin-left: 0;
+}
+
+.wl-panel {
+  overflow: hidden;
+  border-radius: 1rem;
+  background: hsl(var(--card) / 0.78);
+  box-shadow: 0 12px 32px hsl(var(--primary) / 0.06);
+  backdrop-filter: blur(10px);
+}
+
+.wl-editor {
+  min-height: 8.5rem;
+  line-height: 1.75;
+}
+
+.wl-btn {
+  border-radius: 9999px;
+}
+
+.wl-action:focus-visible,
+.wl-btn:focus-visible,
+.wl-sort li:focus-visible {
+  outline: 2px solid var(--waline-theme-color);
+  outline-offset: 3px;
+}
+
+.wl-emoji-popup,
+.wl-gif-popup {
+  max-width: min(92vw, 32rem);
+  border-radius: 1rem;
+  box-shadow: 0 16px 40px rgb(15 23 42 / 14%);
+}
+
+.wl-emoji-popup .wl-emoji {
+  transition: transform 160ms ease;
+}
+
+.wl-emoji-popup .wl-emoji:hover {
+  transform: scale(1.12);
+}
+
+.wl-content img:not(.wl-emoji),
+.wl-preview img:not(.wl-emoji) {
+  display: block;
+  width: auto;
+  max-width: min(100%, 44rem);
+  max-height: 70vh;
+  margin-block: 0.75rem;
+  border-radius: 0.85rem;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-emoji-popup .wl-emoji {
+    transition: none;
+  }
 }

@@ -407,7 +407,7 @@ navigation:
     # path: # 用于区分不同文章的自定义 js 路径，如果您的文章路径不是 location.pathname，需传此参数
     # lang: # 语言 (默认: 'zh-CN')
 comment:
-  provider: giscus
+  provider: waline
   # remark42:
   #   host: https://comment.example.com/
   #   siteId: your-site-id
@@ -423,36 +423,29 @@ comment:
     inputPosition: top
     loading: lazy
 
-  # waline:
-  #   serverURL: https://your-waline.vercel.app  # Waline 服务端地址 (必填)
-  #   lang: zh-CN                      # 语言 (默认: 'zh-CN')
-  #   dark: html.dark                  # 暗黑模式 (默认: 'html.dark')
-  #                                    # 可选: true (自适应) | false (禁用) | CSS选择器字符串
-  #   meta:                            # 评论者信息字段 (默认: ['nick', 'mail', 'link'])
-  #     - nick
-  #     - mail
-  #     - link
-  #   requiredMeta:                    # 必填字段 (默认: [])
-  #     - nick
-  #   login: enable                    # 登录模式 ('enable' | 'disable' | 'force', 默认: 'enable')
-  #   wordLimit: 0                     # 评论字数限制 (0 = 无限制, 默认: 0)
-  #                                    # 可选: 单个数字 | [min, max] 数组
-  #   pageSize: 10                     # 每页评论数 (默认: 10)
-  #   imageUploader: false             # 图片上传功能 (默认: false)
-  #   highlighter: true                # 代码高亮 (默认: true)
-  #   texRenderer: false               # LaTeX 渲染 (默认: false)
-  #   search: false                    # 搜索功能 (默认: false)
-  #   reaction: false                  # 文章反应功能 (默认: false)
-  #                                    # 可选: true | false | 字符串数组 (自定义反应图标)
-  #   emoji: true                      # 表情包配置 (默认: ['//unpkg.com/@waline/emojis@1.2.0/weibo'])
-  #                                    # 可选: true | false | 字符串/对象数组
-  #                                    # 预设表情包: '//unpkg.com/@waline/emojis@1.2.0/weibo'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/alus'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/bilibili'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/qq'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/tieba'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/tw-emoji'
-  #   commentSorting: latest           # 评论排序 ('latest' | 'oldest' | 'hottest', 默认: 'latest')
+  # Waline 负责站内 GitHub 登录、图片与表情留言；公开地址也可使用
+  # PUBLIC_WALINE_SERVER_URL 覆盖。
+  waline:
+    serverURL: https://pyuyi-comments.vercel.app
+    dark: html.dark
+    meta: []
+    requiredMeta: []
+    login: force
+    wordLimit: [1, 2000]
+    pageSize: 10
+    imageUploader: true
+    highlighter: true
+    texRenderer: false
+    search: false
+    reaction: true
+    emoji:
+      - https://unpkg.com/@waline/emojis@1.2.0/weibo
+      - https://unpkg.com/@waline/emojis@1.2.0/bilibili
+      - https://unpkg.com/@waline/emojis@1.2.0/qq
+      - https://unpkg.com/@waline/emojis@1.2.0/alus
+    commentSorting: latest
+    comment: false
+    pageview: false
   #   noCopyright: false               # 隐藏页脚版权信息 (默认: false)
   #   comment: true                    # 评论数统计 (默认: true)
   #   pageview: true                   # 页面访问量统计 (默认: true)

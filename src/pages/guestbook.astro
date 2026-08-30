@@ -1,6 +1,7 @@
 ---
 import { Comment } from '@/components/comment';
 import PageChrome from '@/components/personal/PageChrome.astro';
+import { commentConfig } from '@/constants/site-config';
 import { defaultLocale } from '@/i18n';
 
 interface Props {
@@ -8,13 +9,42 @@ interface Props {
 }
 const { locale = defaultLocale } = Astro.props;
 const en = locale === 'en';
+const isWaline = commentConfig.provider === 'waline';
+const description = isWaline
+  ? en
+    ? 'Sign in with GitHub to leave a message, reply, upload an image, or choose a sticker without leaving this page.'
+    : '使用 GitHub 登录后即可直接在本页留言、回复、上传图片或选择表情包。'
+  : en
+    ? 'Sign in with GitHub to leave a message, reply, react, or attach an image in the linked Discussion.'
+    : '使用 GitHub 登录后留言、回复和发表情；访客图片可在对应 Discussion 中上传并自动回显。';
 ---
 
-<PageChrome locale={locale} title={en ? 'Guestbook' : '留言板'} description={en ? 'Sign in with GitHub to leave a message, reply, react, or attach an image in the linked Discussion.' : '使用 GitHub 登录后留言、回复和发表情；访客图片可在对应 Discussion 中上传并自动回显。'}>
+<PageChrome locale={locale} title={en ? 'Guestbook' : '留言板'} description={description}>
   <div class="rounded-3xl border border-blue-200/70 bg-gradient-to-br from-pink-50 to-blue-50 p-6 text-sm leading-7 dark:border-white/10 dark:from-pink-500/10 dark:to-blue-500/10">
     <h2 class="text-lg font-bold">{en ? 'Before you write' : '留言之前'}</h2>
-    <p class="text-muted-foreground mt-2">{en ? 'Messages are public and moderated in GitHub Discussions. Please avoid personal or sensitive information.' : '留言公开保存在 GitHub Discussions，并可在 GitHub 端审核。请不要留下隐私或敏感信息。'}</p>
-    <a class="text-primary mt-3 inline-block font-semibold hover:underline" href="https://github.com/VeraPyuyi/VeraPyuyi.github.io/discussions" target="_blank" rel="noreferrer">{en ? 'Open Discussions / upload an image →' : '前往 Discussions / 上传图片 →'}</a>
+    <p class="text-muted-foreground mt-2">
+      {
+        isWaline
+          ? en
+            ? 'Messages are public and moderated by the site owner. Paste, drag, or choose an image in the editor, and avoid personal or sensitive information.'
+            : '留言将公开显示并由站长管理。可在编辑框中粘贴、拖入或选择图片，请勿留下隐私或敏感信息。'
+          : en
+            ? 'Messages are public and moderated in GitHub Discussions. Please avoid personal or sensitive information.'
+            : '留言公开保存在 GitHub Discussions，并可在 GitHub 端审核。请不要留下隐私或敏感信息。'
+      }
+    </p>
+    {
+      !isWaline && (
+        <a
+          class="text-primary mt-3 inline-block font-semibold hover:underline"
+          href="https://github.com/VeraPyuyi/VeraPyuyi.github.io/discussions"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {en ? 'Open Discussions / upload an image →' : '前往 Discussions / 上传图片 →'}
+        </a>
+      )
+    }
   </div>
   <Comment contentId="guestbook" />
 </PageChrome>

@@ -1,5 +1,10 @@
 ---
 import Waline from './Waline';
+
+interface Props {
+  contentId?: string;
+}
+const { contentId } = Astro.props;
 ---
 
-<Waline client:only="react" />
+<Waline client:only="react" contentId={contentId} />

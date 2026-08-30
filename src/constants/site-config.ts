@@ -14,6 +14,7 @@ import type {
   BgmAudioGroup,
   ChristmasConfig,
   CommentConfig,
+  CommentProvider,
   DevConfig,
   RouterItem,
   SocialConfig,
@@ -47,20 +48,28 @@ export const seoConfig = {
 const BUILT_IN_COVERS = Array.from({ length: 21 }, (_, i) => `/img/cover/${i + 1}.webp`);
 export const defaultCoverList = yamlConfig?.defaultCoverList?.length ? yamlConfig.defaultCoverList : BUILT_IN_COVERS;
 
-// Map YAML comment config. Giscus identifiers are public; build variables let
-// forks override the checked-in repository and category without editing YAML.
+// Map YAML comment config. All browser-exposed identifiers and service URLs are
+// public; build variables let deployments switch providers without committing secrets.
 const rawCommentConfig: CommentConfig = yamlConfig.comment || {};
-export const commentConfig: CommentConfig = rawCommentConfig.giscus
-  ? {
-      ...rawCommentConfig,
-      giscus: {
+const walineServerURL = import.meta.env.PUBLIC_WALINE_SERVER_URL || rawCommentConfig.waline?.serverURL;
+export const commentConfig: CommentConfig = {
+  ...rawCommentConfig,
+  provider: (import.meta.env.PUBLIC_COMMENT_PROVIDER || rawCommentConfig.provider) as CommentProvider,
+  giscus: rawCommentConfig.giscus
+    ? {
         ...rawCommentConfig.giscus,
         repo: (import.meta.env.PUBLIC_GISCUS_REPO || rawCommentConfig.giscus.repo) as `${string}/${string}`,
         repoId: import.meta.env.PUBLIC_GISCUS_REPO_ID || rawCommentConfig.giscus.repoId,
         categoryId: import.meta.env.PUBLIC_GISCUS_CATEGORY_ID || rawCommentConfig.giscus.categoryId,
-      },
-    }
-  : rawCommentConfig;
+      }
+    : undefined,
+  waline: rawCommentConfig.waline
+    ? {
+        ...rawCommentConfig.waline,
+        serverURL: walineServerURL ?? '',
+      }
+    : undefined,
+};
 
 // Map YAML analytics config
 export const analyticsConfig: AnalyticsConfig = yamlConfig.analytics || {};

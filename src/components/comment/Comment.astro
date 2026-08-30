@@ -19,9 +19,10 @@ const { contentId } = Astro.props;
 const provider = commentConfig.provider ?? 'none';
 const locale = getLocaleFromUrl(Astro.url.pathname);
 let Provider = null;
-const giscusReady =
-  provider !== 'giscus' ||
-  Boolean(commentConfig.giscus?.repo && commentConfig.giscus?.repoId && commentConfig.giscus?.categoryId);
+const providerReady =
+  (provider !== 'giscus' ||
+    Boolean(commentConfig.giscus?.repo && commentConfig.giscus?.repoId && commentConfig.giscus?.categoryId)) &&
+  (provider !== 'waline' || Boolean(commentConfig.waline?.serverURL));
 
 if (provider === 'remark42') {
   Provider = (await import('./providers/Remark42.astro')).default;
@@ -38,13 +39,17 @@ if (provider === 'remark42') {
   provider !== 'none' && Provider && (
     <div class={cn('comments w-full', { 'z-5': christmasEnabled.get() })}>
       <p class="text-muted-foreground mb-4 text-center text-sm">{t(locale, 'comment.prompt')}</p>
-      {giscusReady ? (
+      {providerReady ? (
         <Provider contentId={contentId} />
       ) : (
         <div class="rounded-2xl border border-dashed border-pink-300 bg-pink-50/70 p-5 text-center text-sm text-pink-900 dark:border-pink-400/30 dark:bg-pink-500/10 dark:text-pink-100">
-          {locale === 'en'
-            ? 'Comments are ready in the code. Add the public Giscus repository and category IDs to enable GitHub sign-in.'
-            : '留言组件已经接好；填入 Giscus 的公开仓库 ID 与分类 ID 后，即可使用 GitHub 登录留言。'}
+          {provider === 'waline'
+            ? locale === 'en'
+              ? 'The on-page rich-media comment UI is ready. Add the public Waline server URL to connect it.'
+              : '站内图片与表情留言界面已经接好；填入 Waline 的公开服务地址后即可连接。'
+            : locale === 'en'
+              ? 'Comments are ready in the code. Add the public Giscus repository and category IDs to enable GitHub sign-in.'
+              : '留言组件已经接好；填入 Giscus 的公开仓库 ID 与分类 ID 后，即可使用 GitHub 登录留言。'}
         </div>
       )}
     </div>
