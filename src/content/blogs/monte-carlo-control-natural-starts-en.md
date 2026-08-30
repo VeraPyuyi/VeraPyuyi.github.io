@@ -1,7 +1,7 @@
 ---
 title: Some Thoughts on Monte Carlo Control and Natural Starts
 summary: A route from Basic MC, Exploring Starts, and ε-greedy control to initial distributions, biased random walks, hitting probabilities, and natural starts.
-publishedAt: "2026-08-30 12:00:00"
+publishedAt: "2026-08-30 15:48:15"
 language: en
 translationKey: monte-carlo-control-natural-starts
 routeSlug: monte-carlo-control-natural-starts

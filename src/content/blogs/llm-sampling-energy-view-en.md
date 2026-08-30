@@ -1,7 +1,7 @@
 ---
 title: Some Thoughts on Large-Model Sampling and Energy-Based Views
 summary: Separating data, token, and reasoning-trajectory sampling in large models, and asking what a Gibbs energy view can genuinely contribute.
-publishedAt: "2026-08-30 12:00:00"
+publishedAt: "2026-08-26 01:58:33"
 language: en
 translationKey: llm-sampling-energy-view
 routeSlug: llm-sampling-energy-view

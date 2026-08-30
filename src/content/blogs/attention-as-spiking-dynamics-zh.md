@@ -1,7 +1,7 @@
 ---
 title: 关于 SNN 中注意力与脉冲动力学的一些想法
 summary: 区分注意力模块与注意力功能，并尝试用兴奋—抑制竞争、脉冲测度和因果算子描述一种受限的动力学替代路线。
-publishedAt: "2026-08-30 12:00:00"
+publishedAt: "2026-08-28 13:07:34"
 language: zh
 translationKey: attention-as-spiking-dynamics
 routeSlug: attention-as-spiking-dynamics

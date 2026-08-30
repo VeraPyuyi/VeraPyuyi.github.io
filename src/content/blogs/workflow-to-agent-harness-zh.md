@@ -1,7 +1,7 @@
 ---
 title: 关于 Workflow 与 Agent Harness 的一些想法
 summary: 当模型开始动态规划和调用工具，Workflow 并没有消失，而是在 Harness 中变成可执行、可恢复、可验证的控制结构。
-publishedAt: "2026-08-30 12:00:00"
+publishedAt: "2026-08-21 01:35:36"
 language: zh
 translationKey: workflow-to-agent-harness
 routeSlug: workflow-to-agent-harness

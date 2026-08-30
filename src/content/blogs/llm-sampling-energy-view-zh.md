@@ -1,7 +1,7 @@
 ---
 title: 关于大模型采样与能量视角的一些想法
 summary: 从训练数据、token 到推理轨迹，区分大模型中不同的采样问题，并讨论 Gibbs 能量视角能带来什么。
-publishedAt: "2026-08-30 12:00:00"
+publishedAt: "2026-08-26 01:58:33"
 language: zh
 translationKey: llm-sampling-energy-view
 routeSlug: llm-sampling-energy-view

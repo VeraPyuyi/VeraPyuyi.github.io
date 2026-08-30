@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
 import matter from 'gray-matter';
 import sharp from 'sharp';
+import { getResponsiveMedia } from '../../src/lib/media';
 
 const root = process.cwd();
 const blogRoot = join(root, 'src/content/blogs');
@@ -12,7 +14,7 @@ function read(path: string): string {
   return readFileSync(join(root, path), 'utf8');
 }
 
-test('the Inspirations essays form five complete bilingual pairs', () => {
+test('the research essays form five complete bilingual pairs', () => {
   const files = readdirSync(blogRoot)
     .filter((name) => /\.(md|mdx)$/.test(name))
     .sort();
@@ -61,6 +63,21 @@ test('the Inspirations essays form five complete bilingual pairs', () => {
   for (const languages of pairs.values()) assert.deepEqual([...languages].sort(), ['en', 'zh']);
 });
 
+test('blog publication timestamps match the original conversation creation times', () => {
+  const expected = new Map([
+    ['monte-carlo-control-natural-starts', '2026-08-30 15:48:15'],
+    ['workflow-to-agent-harness', '2026-08-21 01:35:36'],
+    ['sgd-zigzag-posets', '2026-08-24 02:37:52'],
+    ['llm-sampling-energy-view', '2026-08-26 01:58:33'],
+    ['attention-as-spiking-dynamics', '2026-08-28 13:07:34'],
+  ]);
+
+  for (const filename of readdirSync(blogRoot).filter((name) => /\.md$/.test(name))) {
+    const { data } = matter(readFileSync(join(blogRoot, filename), 'utf8'));
+    assert.equal(data.publishedAt, expected.get(data.routeSlug), filename);
+  }
+});
+
 test('bilingual blog covers are normalized, responsive, and locally documented', async () => {
   const files = readdirSync(blogRoot).filter((name) => /\.(md|mdx)$/.test(name));
   const covers = new Map<string, Set<string>>();
@@ -93,6 +110,21 @@ test('bilingual blog covers are normalized, responsive, and locally documented',
   assert.match(provenance, /built-in GPT Image/);
   assert.match(provenance, /style reference only/);
   for (const slug of covers.keys()) assert.match(provenance, new RegExp(slug));
+});
+
+test('responsive media URLs include a source-content revision to bypass stale cover caches', () => {
+  const source = '/uploads/papers/bernstein-transfers-greedy-records/cover.png';
+  const sourceBytes = readFileSync(join(root, 'public', source.slice(1)));
+  const revision = createHash('sha256').update(sourceBytes).digest('hex').slice(0, 12);
+  const media = getResponsiveMedia(source);
+
+  assert.match(media.fallback, new RegExp(`\\?v=${revision}$`));
+  assert.match(media.lqip ?? '', new RegExp(`\\?v=${revision}$`));
+  for (const srcset of [media.avifSrcset, media.webpSrcset]) {
+    assert.ok(srcset);
+    assert.equal(srcset.split(', ').length, 3);
+    for (const candidate of srcset.split(', ')) assert.match(candidate, new RegExp(`\\?v=${revision} \\d+w$`));
+  }
 });
 
 test('essay titles use the agreed reflective form in both languages', () => {

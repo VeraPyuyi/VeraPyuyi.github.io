@@ -1,7 +1,7 @@
 ---
 title: Some Thoughts on SGD Trajectories and Zigzag Posets
 summary: Projecting stochastic-gradient trajectories into ordinal patterns, and examining what fence posets may reveal—and fail to reveal—about local optimization dynamics.
-publishedAt: "2026-08-30 12:00:00"
+publishedAt: "2026-08-24 02:37:52"
 language: en
 translationKey: sgd-zigzag-posets
 routeSlug: sgd-zigzag-posets

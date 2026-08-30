@@ -1,7 +1,7 @@
 ---
 title: 关于 Monte Carlo 控制算法与自然起点的一些想法
 summary: 从 Basic MC、Exploring Starts 与 ε-greedy 的差异出发，重新理解初始分布、探索机制、命中概率和自然起点。
-publishedAt: "2026-08-30 12:00:00"
+publishedAt: "2026-08-30 15:48:15"
 language: zh
 translationKey: monte-carlo-control-natural-starts
 routeSlug: monte-carlo-control-natural-starts

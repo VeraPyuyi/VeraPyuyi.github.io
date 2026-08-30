@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -13,6 +14,7 @@ export interface ResponsiveMedia {
 }
 
 let manifest: MediaManifest | undefined;
+const revisionCache = new Map<string, string | undefined>();
 
 function getManifest(): MediaManifest {
   if (manifest) return manifest;
@@ -25,23 +27,43 @@ function widthFromPath(path: string): number {
   return Number(path.match(/-(\d+)\.(?:avif|webp)$/)?.[1] ?? 0);
 }
 
-function srcset(paths: string[]): string | undefined {
+function revisionFor(source: string): string | undefined {
+  if (revisionCache.has(source)) return revisionCache.get(source);
+  if (!source.startsWith('/')) return undefined;
+
+  const sourcePath = join(process.cwd(), 'public', source.slice(1));
+  const revision = existsSync(sourcePath)
+    ? createHash('sha256').update(readFileSync(sourcePath)).digest('hex').slice(0, 12)
+    : undefined;
+  revisionCache.set(source, revision);
+  return revision;
+}
+
+function versioned(path: string, revision: string | undefined): string {
+  if (!revision) return path;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}v=${revision}`;
+}
+
+function srcset(paths: string[], revision: string | undefined): string | undefined {
   const entries = paths
     .map((path) => ({ path, width: widthFromPath(path) }))
     .filter((entry) => entry.width > 0)
     .sort((a, b) => a.width - b.width);
-  return entries.length ? entries.map(({ path, width }) => `${path} ${width}w`).join(', ') : undefined;
+  return entries.length ? entries.map(({ path, width }) => `${versioned(path, revision)} ${width}w`).join(', ') : undefined;
 }
 
 export function getResponsiveMedia(source: string): ResponsiveMedia {
   const variants = getManifest()[source] ?? [];
   const webp = variants.filter((path) => path.endsWith('.webp') && !path.endsWith('-lqip.webp'));
   const avif = variants.filter((path) => path.endsWith('.avif'));
+  const revision = revisionFor(source);
   const fallback = webp.sort((a, b) => widthFromPath(a) - widthFromPath(b)).at(-1) ?? source;
+  const lqip = variants.find((path) => path.endsWith('-lqip.webp'));
   return {
-    avifSrcset: srcset(avif),
-    fallback,
-    lqip: variants.find((path) => path.endsWith('-lqip.webp')),
-    webpSrcset: srcset(webp),
+    avifSrcset: srcset(avif, revision),
+    fallback: versioned(fallback, revision),
+    lqip: lqip ? versioned(lqip, revision) : undefined,
+    webpSrcset: srcset(webp, revision),
   };
 }

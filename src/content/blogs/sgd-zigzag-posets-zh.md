@@ -1,7 +1,7 @@
 ---
 title: 关于 SGD 轨迹与 Zigzag 偏序集的一些想法
 summary: 把随机梯度轨迹投影为次序模式，探索 fence 偏序集、局部振荡、参数可识别性与真实神经网络之间的距离。
-publishedAt: "2026-08-30 12:00:00"
+publishedAt: "2026-08-24 02:37:52"
 language: zh
 translationKey: sgd-zigzag-posets
 routeSlug: sgd-zigzag-posets

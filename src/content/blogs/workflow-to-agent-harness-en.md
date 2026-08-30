@@ -1,7 +1,7 @@
 ---
 title: Some Thoughts on Workflows and Agent Harnesses
 summary: As models learn to plan and use tools dynamically, workflows do not disappear; they become executable, recoverable, and verifiable control structures inside a harness.
-publishedAt: "2026-08-30 12:00:00"
+publishedAt: "2026-08-21 01:35:36"
 language: en
 translationKey: workflow-to-agent-harness
 routeSlug: workflow-to-agent-harness

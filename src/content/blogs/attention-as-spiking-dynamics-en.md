@@ -1,7 +1,7 @@
 ---
 title: Some Thoughts on Attention and Spiking Dynamics in SNNs
 summary: Separating attention modules from attention functions, then exploring a constrained route through excitatory–inhibitory competition, spike measures, and causal operators.
-publishedAt: "2026-08-30 12:00:00"
+publishedAt: "2026-08-28 13:07:34"
 language: en
 translationKey: attention-as-spiking-dynamics
 routeSlug: attention-as-spiking-dynamics
