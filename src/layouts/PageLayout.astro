@@ -22,7 +22,7 @@ const { frontmatter } = Astro.props;
 const showComments = frontmatter.comments ?? true;
 ---
 
-<Layout title={`${frontmatter.title} | ${seoConfig.title}`}>
+<Layout title={`${frontmatter.title} | ${seoConfig.title}`} description={frontmatter.description}>
   <TwoColumnLayout>
     <Cover slot="cover" title={frontmatter.coverTitle ?? frontmatter.title} />
     <HomeSider slot="sider" />
