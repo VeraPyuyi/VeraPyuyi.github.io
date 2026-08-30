@@ -17,4 +17,9 @@ comments: false
 
 ### 联系
 
-可以通过 [GitHub](https://github.com/VeraPyuyi)、[Google Scholar](https://scholar.google.com/citations?user=ld3xCE8AAAAJ&hl=zh-CN&oi=ao) 或站内[留言板](/guestbook/) 找到我。
+可以通过以下方式找到我：
+
+- [GitHub](https://github.com/VeraPyuyi)
+- [小红书](https://xhslink.cn/m/yYpTrDg2Ku)
+- [Google Scholar](https://scholar.google.com/citations?user=ld3xCE8AAAAJ&hl=zh-CN&oi=ao)
+- [留言板](/guestbook/)

@@ -17,4 +17,9 @@ This website feels more like a small room with the light still on—a place for 
 
 ### Contact
 
-You can find me on [GitHub](https://github.com/VeraPyuyi), [Google Scholar](https://scholar.google.com/citations?user=ld3xCE8AAAAJ&hl=zh-CN&oi=ao), or leave a note in the [guestbook](/en/guestbook/).
+You can find me here:
+
+- [GitHub](https://github.com/VeraPyuyi)
+- [Xiaohongshu](https://xhslink.cn/m/yYpTrDg2Ku)
+- [Google Scholar](https://scholar.google.com/citations?user=ld3xCE8AAAAJ&hl=zh-CN&oi=ao)
+- [Guestbook](/en/guestbook/)
