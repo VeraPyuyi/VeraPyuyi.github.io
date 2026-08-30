@@ -25,18 +25,23 @@ const dateInSiteTimezone = z
     return parseDateInSiteTimezone(val);
   });
 
-const blogDirectoryCollection = defineCollection({
+const blogArticleCollection = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blogs' }),
   schema: z.object({
-    name: z.string(),
-    description: z.string(),
-    status: z.enum(['idea', 'active', 'maintained', 'archived']).default('active'),
-    tags: z.array(z.string()).default([]),
+    title: z.string(),
+    summary: z.string(),
+    publishedAt: dateInSiteTimezone,
+    updatedAt: dateInSiteTimezone.optional(),
+    language: z.enum(['zh', 'en']),
+    translationKey: z.string().min(1),
+    routeSlug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    keywords: z.array(z.string()).default([]),
+    draft: z.boolean().default(false),
+    featured: z.boolean().default(false),
+    comments: z.boolean().default(true),
     cover: z.string().optional(),
-    source: z.url().optional(),
-    url: z.url().optional(),
+    coverAlt: z.string().optional(),
     order: z.number().default(0),
-    language: z.enum(['zh', 'en']).default('zh'),
   }),
 });
 
@@ -77,7 +82,7 @@ const albumCollection = defineCollection({
 });
 
 export const collections = {
-  blogs: blogDirectoryCollection,
+  blogs: blogArticleCollection,
   moments: momentCollection,
   albums: albumCollection,
 };

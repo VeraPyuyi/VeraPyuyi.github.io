@@ -46,18 +46,30 @@ test('the homepage uses original bilingual feature copy and only overrides the b
   assert.match(home, /<Cover slot="cover" \/>/);
 });
 
-test('only three papers and one independent blog remain in aggregate content', () => {
+test('aggregate content contains three papers and five bilingual essays', () => {
   const paperDirectories = readdirSync(join(root, 'src/content/papers'), { withFileTypes: true }).filter((entry) =>
     entry.isDirectory(),
   );
-  const blogs = readdirSync(join(root, 'src/content/blogs')).filter((name) => /\.mdx?$/.test(name));
-
+  const blogs = readdirSync(join(root, 'src/content/blogs'))
+    .filter((name) => /\.mdx?$/.test(name))
+    .sort();
   assert.deepEqual(paperDirectories.map((entry) => entry.name).sort(), [
     'bernstein-transfers-greedy-records',
     'cycle-decorated-ribbon-complexes',
     'horizon-uniform-sensitivity',
   ]);
-  assert.deepEqual(blogs, ['personal-site.md']);
+  assert.deepEqual(blogs, [
+    'attention-as-spiking-dynamics-en.md',
+    'attention-as-spiking-dynamics-zh.md',
+    'llm-sampling-energy-view-en.md',
+    'llm-sampling-energy-view-zh.md',
+    'monte-carlo-control-natural-starts-en.md',
+    'monte-carlo-control-natural-starts-zh.md',
+    'sgd-zigzag-posets-en.md',
+    'sgd-zigzag-posets-zh.md',
+    'workflow-to-agent-harness-en.md',
+    'workflow-to-agent-harness-zh.md',
+  ]);
 });
 
 test('legacy sample posts and their CMS collection are removed', () => {
@@ -70,13 +82,15 @@ test('legacy sample posts and their CMS collection are removed', () => {
   assert.doesNotMatch(contentConfig, /\bblog\s*:/);
   assert.doesNotMatch(pagesCms, /- name: posts\b/);
   assert.match(pagesCms, /- name: blogs\b/);
+  assert.doesNotMatch(pagesCms, /- name: blogSites\b/);
 });
 
-test('aggregate RSS uses stable paper and blog GUID namespaces without blog dates', () => {
+test('aggregate RSS uses stable paper and translated-blog GUID namespaces with publication dates', () => {
   const rssItems = read('src/lib/rss-items.ts');
   assert.match(rssItems, /paper:\$\{escapeHtml\(paper\.id\)\}/);
-  assert.match(rssItems, /blog:\$\{escapeHtml\(entry\.id\)\}/);
+  assert.match(rssItems, /blog:\$\{escapeHtml\(entry\.data\.translationKey\)\}/);
 
   const blogObject = rssItems.slice(rssItems.indexOf('const blogItems'));
-  assert.doesNotMatch(blogObject, /pubDate:/);
+  assert.match(blogObject, /pubDate: entry\.data\.publishedAt/);
+  assert.match(blogObject, /`\/blogs\/\$\{entry\.data\.routeSlug\}`/);
 });

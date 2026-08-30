@@ -1,6 +1,7 @@
 ---
 import HomeSider from '@components/layout/HomeSider.astro';
 import Cover from '@components/ui/cover/Cover.astro';
+import type { HomeSiderType } from '@constants/enum';
 import { CONTENT_PADDING } from '@constants/layout';
 import { siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
@@ -14,12 +15,36 @@ interface Props {
   paperFontProfile?: 'latin-modern' | 'computer-modern';
   cover?: string;
   coverAlt?: string;
+  siderType?: HomeSiderType;
+  keywords?: string[];
+  contentType?: 'website' | 'article';
+  mathStyles?: boolean;
 }
 
-const { locale, title, description, showDescription = true, paperFontProfile, cover, coverAlt } = Astro.props;
+const {
+  locale,
+  title,
+  description,
+  showDescription = true,
+  paperFontProfile,
+  cover,
+  coverAlt,
+  siderType,
+  keywords,
+  contentType = 'website',
+  mathStyles = false,
+} = Astro.props;
 ---
 
-<Layout locale={locale} title={`${title} | ${siteConfig.title}`} description={description}>
+<Layout
+  locale={locale}
+  title={`${title} | ${siteConfig.title}`}
+  description={description}
+  siderType={siderType}
+  keywords={keywords}
+  openGraph={{ type: contentType, image: cover }}
+>
+  {mathStyles && <link slot="head" rel="stylesheet" href="/katex/katex.min.css" />}
   <TwoColumnLayout>
     <Cover
       slot="cover"
@@ -29,7 +54,7 @@ const { locale, title, description, showDescription = true, paperFontProfile, co
       imageAlt={coverAlt}
       paperFontProfile={paperFontProfile}
     />
-    <HomeSider slot="sider" />
+    <HomeSider slot="sider" type={siderType} />
     <div
       class={`shadow-box bg-gradient-start flex min-w-0 w-full max-w-full flex-col gap-8 overflow-x-clip ${CONTENT_PADDING.standard}`}
       data-paper-font={paperFontProfile}

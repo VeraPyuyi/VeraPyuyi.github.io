@@ -9,32 +9,34 @@ media:
 
 content:
   - name: blogs
-    label: 博客
+    label: 博客文章
     type: collection
     path: src/content/blogs
-    filename: "{name}.md"
+    filename: "{routeSlug}-{language}.md"
     view:
-      fields: [name, status, order]
-      primary: name
-      sort: [order, name]
+      fields: [title, language, publishedAt, draft]
+      primary: title
+      sort: [publishedAt, title]
+      default: { sort: publishedAt, order: desc }
     fields:
-      - { name: name, label: 名称, type: string, required: true }
-      - { name: description, label: 简介, type: text, required: true }
-      - name: status
-        label: 状态
-        type: select
-        options:
-          values: [idea, active, maintained, archived]
-      - { name: tags, label: 技术标签, type: string, list: true }
+      - { name: title, label: 标题, type: string, required: true }
+      - { name: summary, label: 摘要, type: text, required: true }
+      - { name: publishedAt, label: 发布时间, type: date, required: true }
+      - { name: updatedAt, label: 更新时间, type: date }
+      - { name: language, label: 语言, type: select, required: true, options: { values: [zh, en] } }
+      - { name: translationKey, label: 双语内容 ID, type: string, required: true }
+      - { name: routeSlug, label: 固定链接, type: string, required: true }
+      - { name: keywords, label: SEO 关键词, type: string, list: true }
+      - { name: draft, label: 草稿, type: boolean }
+      - { name: featured, label: 首页精选, type: boolean }
+      - { name: comments, label: 开启留言, type: boolean }
       - name: cover
         label: 封面
         type: image
         options: { media: images, path: blogs, rename: safe }
-      - { name: source, label: 源码地址, type: string }
-      - { name: url, label: 博客地址, type: string }
+      - { name: coverAlt, label: 封面替代文字, type: string }
       - { name: order, label: 排序, type: number }
-      - { name: language, label: 语言, type: select, options: { values: [zh, en] } }
-      - { name: body, label: 详情, type: rich-text, options: { format: markdown, switcher: true } }
+      - { name: body, label: 正文, type: rich-text, required: true, options: { format: markdown, switcher: true } }
 
   - name: moments
     label: 生活动态

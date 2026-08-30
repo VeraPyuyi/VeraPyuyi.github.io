@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
+import matter from 'gray-matter';
 
 const root = process.cwd();
 const dist = join(root, 'dist');
@@ -60,6 +61,21 @@ const required = [
 const paperSlugs = readdirSync(join(root, 'src/content/papers'), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name);
+const blogArticles = readdirSync(join(root, 'src/content/blogs'), { withFileTypes: true })
+  .filter((entry) => entry.isFile() && ['.md', '.mdx'].includes(extname(entry.name)))
+  .map((entry) => {
+    const source = readFileSync(join(root, 'src/content/blogs', entry.name), 'utf8');
+    const { data } = matter(source);
+    return {
+      language: data.language,
+      routeSlug: data.routeSlug,
+      translationKey: data.translationKey,
+    };
+  });
+for (const article of blogArticles) {
+  const localePrefix = article.language === 'en' ? 'en/' : '';
+  required.push(`${localePrefix}blogs/${article.routeSlug}/index.html`);
+}
 let equationTotal = 0;
 for (const slug of paperSlugs) {
   required.push(`papers/${slug}/index.html`, `en/papers/${slug}/index.html`);
@@ -160,7 +176,12 @@ for (const localePrefix of ['', 'en/']) {
     const href = `/${localePrefix}papers/${slug}`;
     if (!postsHtml.includes(href)) failures.push(`${localePrefix}posts: missing paper ${slug}`);
   }
-  if (!postsHtml.includes('id="blog-personal-site"')) failures.push(`${localePrefix}posts: missing personal-site blog`);
+  const language = localePrefix === 'en/' ? 'en' : 'zh';
+  for (const article of blogArticles.filter((entry) => entry.language === language)) {
+    const href = `/${localePrefix}blogs/${article.routeSlug}`;
+    if (!postsHtml.includes(href)) failures.push(`${localePrefix}posts: missing blog ${article.routeSlug}`);
+  }
+  if (postsHtml.includes('id="blog-personal-site"')) failures.push(`${localePrefix}posts: contains independent site entry`);
   if (!postsHtml.includes('data-pagefind-ignore="all"'))
     failures.push(`${localePrefix}posts: aggregate content is indexed twice`);
   if (/href=["']\/(?:en\/)?post\//.test(postsHtml)) failures.push(`${localePrefix}posts: contains removed post route`);
@@ -171,14 +192,24 @@ for (const localePrefix of ['', 'en/']) {
   if (!existsSync(rssPath)) continue;
   const rss = readFileSync(rssPath, 'utf8');
   const itemBlocks = [...rss.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((match) => match[1]);
-  const expectedGuids = [...paperSlugs.map((slug) => `paper:${slug}`), 'blog:personal-site'];
+  const language = localePrefix === 'en/' ? 'en' : 'zh';
+  const localeBlogs = blogArticles.filter((entry) => entry.language === language);
+  const expectedGuids = [
+    ...paperSlugs.map((slug) => `paper:${slug}`),
+    ...localeBlogs.map((entry) => `blog:${entry.translationKey}`),
+  ];
   for (const guid of expectedGuids) {
     if (!rss.includes(`<guid isPermaLink="false">${guid}</guid>`)) failures.push(`${localePrefix}rss.xml: missing ${guid}`);
   }
   if (itemBlocks.length !== expectedGuids.length)
     failures.push(`${localePrefix}rss.xml: expected ${expectedGuids.length} items`);
-  const blogItem = itemBlocks.find((item) => item.includes('blog:personal-site'));
-  if (!blogItem || /<pubDate>/.test(blogItem)) failures.push(`${localePrefix}rss.xml: blog has a fabricated publication date`);
+  for (const article of localeBlogs) {
+    const guid = `blog:${article.translationKey}`;
+    const blogItem = itemBlocks.find((item) => item.includes(guid));
+    if (!blogItem || !/<pubDate>/.test(blogItem)) failures.push(`${localePrefix}rss.xml: ${guid} has no publication date`);
+    const href = `/${localePrefix}blogs/${article.routeSlug}`;
+    if (!blogItem?.includes(href)) failures.push(`${localePrefix}rss.xml: ${guid} has the wrong detail link`);
+  }
 }
 
 if (failures.length) throw new Error(`Broken output links:\n${[...new Set(failures)].join('\n')}`);

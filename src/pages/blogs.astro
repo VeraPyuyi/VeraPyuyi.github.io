@@ -14,7 +14,17 @@ const en = locale === 'en';
 <PageChrome
   locale={locale}
   title={en ? 'Blogs' : '博客'}
-  description={en ? 'Personal blogs, themed sites, and links to their source code.' : '收集个人博客、专题站点，以及对应的源码与访问入口。'}
+  description={
+    en
+      ? 'Lines of words light up one by one; only the night ever answers.'
+      : '字句一行行亮起，回应它们的始终只有深夜。'
+  }
 >
-  <BlogList locale={locale} />
+  <section aria-labelledby="blog-articles-title" class="space-y-5">
+    <div class="border-b border-black/5 pb-3 dark:border-white/10">
+      <p class="text-primary text-xs font-semibold tracking-[0.2em] uppercase">Essays</p>
+      <h2 id="blog-articles-title" class="mt-1 text-2xl font-bold">{en ? 'Blog essays' : '博客文章'}</h2>
+    </div>
+    <BlogList locale={locale} indexable={false} />
+  </section>
 </PageChrome>

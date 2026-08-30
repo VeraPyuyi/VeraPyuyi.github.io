@@ -1,0 +1,98 @@
+---
+import { render } from 'astro:content';
+import CustomContent from '@components/common/CustomContent.astro';
+import { HomeSiderType } from '@constants/enum';
+import { Icon } from 'astro-icon/components';
+import readingTime from 'reading-time';
+import { Comment } from '@/components/comment';
+import PageChrome from '@/components/personal/PageChrome.astro';
+import { defaultLocale, localizedPath } from '@/i18n';
+import { getBlogArticle } from '@/lib/blogs';
+import { displayDate } from '@/lib/date';
+import { blogRoute } from '../_shared/routes';
+
+export const getStaticPaths = blogRoute.root;
+
+interface Props {
+  blogSlug: string;
+  locale?: string;
+}
+
+const { blogSlug, locale = defaultLocale } = Astro.props;
+const entry = await getBlogArticle(blogSlug, locale);
+if (!entry) throw new Error(`Blog article not found: ${blogSlug} (${locale})`);
+const { Content } = await render(entry);
+const en = locale === 'en';
+const minutes = Math.max(1, Math.ceil(readingTime(entry.body ?? '').minutes));
+const publishedDate = displayDate.date(entry.data.publishedAt);
+---
+
+<PageChrome
+  locale={locale}
+  title={entry.data.title}
+  description={entry.data.summary}
+  cover={entry.data.cover}
+  coverAlt={entry.data.coverAlt}
+  siderType={HomeSiderType.POST}
+  keywords={entry.data.keywords}
+  contentType="article"
+  mathStyles
+>
+  <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/55 p-4 text-sm dark:border-white/10 dark:bg-white/5">
+    <div class="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
+      <Icon name="ri:calendar-line" />
+      <time datetime={entry.data.publishedAt.toISOString()}>{publishedDate}</time>
+      <span aria-hidden="true">·</span>
+      <span>{en ? `${minutes} min read` : `约 ${minutes} 分钟阅读`}</span>
+    </div>
+    <a class="text-primary inline-flex items-center gap-1 font-semibold hover:underline" href={localizedPath('/blogs', locale)}>
+      <Icon name="ri:arrow-left-line" />
+      {en ? 'All blogs' : '全部博客'}
+    </a>
+  </div>
+  <article class="blog-content prose dark:prose-invert max-w-none" data-pagefind-body>
+    <span class="sr-only" data-pagefind-meta="title">{entry.data.title}</span>
+    <CustomContent Content={Content} />
+  </article>
+  {entry.data.comments && <Comment contentId={`blog:${entry.data.translationKey}`} />}
+</PageChrome>
+
+<style is:global>
+  .blog-content {
+    width: min(100%, 74ch);
+    max-width: 74ch;
+    margin-inline: auto;
+    overflow-wrap: break-word;
+    line-height: var(--reader-line-height, 1.82);
+    text-rendering: optimizeLegibility;
+  }
+
+  .blog-content :is(h2, h3, h4) {
+    text-wrap: pretty;
+  }
+
+  .blog-content .katex-display {
+    max-width: 100%;
+    margin-block: 1.15rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.2rem;
+  }
+
+  .blog-content blockquote {
+    border-radius: 0 1rem 1rem 0;
+    background: hsl(var(--primary) / 0.06);
+    padding-block: 0.65rem;
+    padding-right: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .blog-content {
+      line-height: var(--reader-line-height, 1.76);
+    }
+
+    .blog-content .katex-display {
+      margin-block: 0.9rem;
+    }
+  }
+</style>

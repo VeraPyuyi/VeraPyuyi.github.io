@@ -1,6 +1,6 @@
-import { getCollection } from 'astro:content';
 import type { RSSFeedItem } from '@astrojs/rss';
 import { localizedPath } from '@/i18n';
+import { getBlogArticles } from '@/lib/blogs';
 import { getPapers } from '@/lib/papers';
 
 function escapeHtml(value: string): string {
@@ -10,10 +10,6 @@ function escapeHtml(value: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
-}
-
-function blogAnchor(id: string): string {
-  return `blog-${id.replace(/[^a-z0-9_-]+/gi, '-')}`;
 }
 
 export async function getAggregateRssItems(locale: string): Promise<RSSFeedItem[]> {
@@ -32,21 +28,16 @@ export async function getAggregateRssItems(locale: string): Promise<RSSFeedItem[
     };
   });
 
-  const blogs = (await getCollection('blogs'))
-    .filter((entry) => entry.data.language === 'zh' || entry.data.language === locale)
-    .sort((left, right) => right.data.order - left.data.order);
+  const blogs = await getBlogArticles(locale);
   const blogItems: RSSFeedItem[] = blogs.map((entry) => {
-    const link = `${localizedPath('/blogs', locale)}#${blogAnchor(entry.id)}`;
-    const links = [
-      entry.data.source ? `<a href="${escapeHtml(entry.data.source)}">${en ? 'Source' : '源码'}</a>` : undefined,
-      entry.data.url ? `<a href="${escapeHtml(entry.data.url)}">${en ? 'Visit' : '访问'}</a>` : undefined,
-    ].filter(Boolean);
+    const link = localizedPath(`/blogs/${entry.data.routeSlug}`, locale);
     return {
-      title: entry.data.name,
-      description: entry.data.description,
+      title: entry.data.title,
+      pubDate: entry.data.publishedAt,
+      description: entry.data.summary,
       link,
-      content: `<p>${escapeHtml(entry.data.description)}</p>${links.length > 0 ? `<p>${links.join(' · ')}</p>` : ''}`,
-      customData: `<guid isPermaLink="false">blog:${escapeHtml(entry.id)}</guid>`,
+      content: `<p>${escapeHtml(entry.data.summary)}</p><p><a href="${escapeHtml(link)}">${en ? 'Read the essay' : '阅读全文'}</a></p>`,
+      customData: `<guid isPermaLink="false">blog:${escapeHtml(entry.data.translationKey)}</guid>`,
     };
   });
 

@@ -1,0 +1,15 @@
+---
+import { blogRoute } from '../../_shared/routes';
+import BlogPage from '../../blogs/[slug].astro';
+
+export const getStaticPaths = blogRoute.mirror;
+
+interface Props {
+  blogSlug: string;
+  locale: string;
+}
+
+const { blogSlug, locale } = Astro.props;
+---
+
+<BlogPage blogSlug={blogSlug} locale={locale} />

@@ -14,9 +14,7 @@ interface Props {
 const { locale = defaultLocale } = Astro.props;
 const en = locale === 'en';
 const paperCount = getPapers().length;
-const blogCount = (await getCollection('blogs')).filter(
-  (entry) => entry.data.language === 'zh' || entry.data.language === locale,
-).length;
+const blogCount = (await getCollection('blogs')).filter((entry) => entry.data.language === locale && !entry.data.draft).length;
 ---
 
 <PageChrome

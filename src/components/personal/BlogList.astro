@@ -1,9 +1,9 @@
 ---
-import { getCollection, render } from 'astro:content';
-import CustomContent from '@components/common/CustomContent.astro';
 import { Icon } from 'astro-icon/components';
-import ResponsiveImage from '@/components/personal/ResponsiveImage.astro';
+import readingTime from 'reading-time';
 import { defaultLocale, localizedPath } from '@/i18n';
+import { getBlogArticles } from '@/lib/blogs';
+import { displayDate } from '@/lib/date';
 
 interface Props {
   locale?: string;
@@ -13,82 +13,43 @@ interface Props {
 
 const { locale = defaultLocale, limit, indexable = true } = Astro.props;
 const en = locale === 'en';
-const allBlogs = (await getCollection('blogs'))
-  .filter((entry) => entry.data.language === 'zh' || entry.data.language === locale)
-  .sort((a, b) => b.data.order - a.data.order);
+const allBlogs = await getBlogArticles(locale);
 const blogs = limit === undefined ? allBlogs : allBlogs.slice(0, limit);
-const rendered = await Promise.all(blogs.map(async (entry) => ({ entry, Content: (await render(entry)).Content })));
 const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pagefind-ignore': 'all' };
-const statusText = {
-  idea: en ? 'Idea' : '构思中',
-  active: en ? 'Active' : '更新中',
-  maintained: en ? 'Maintained' : '维护中',
-  archived: en ? 'Archived' : '已归档',
-};
 ---
 
 <div class="grid gap-5 lg:grid-cols-2" {...pagefindAttributes}>
   {
-    rendered.map(({ entry, Content }) => {
-      const anchor = `blog-${entry.id.replace(/[^a-z0-9_-]+/gi, '-')}`;
+    blogs.map((entry) => {
+      const href = localizedPath(`/blogs/${entry.data.routeSlug}`, locale);
+      const minutes = Math.max(1, Math.ceil(readingTime(entry.body ?? '').minutes));
       return (
-        <article
-          id={anchor}
-          class="group scroll-mt-24 overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none dark:border-white/10 dark:bg-white/5"
-        >
-          {entry.data.cover && (
-            <ResponsiveImage
-              src={entry.data.cover}
-              alt={`${entry.data.name} ${en ? 'cover' : '封面'}`}
-              class="aspect-[16/8] w-full object-cover"
-              sizes="(min-width: 1024px) 50vw, 100vw"
-            />
-          )}
-          <div class="space-y-4 p-6">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <h2 class="text-xl font-bold">{entry.data.name}</h2>
-                <p class="text-muted-foreground mt-1 text-sm leading-6">{entry.data.description}</p>
-              </div>
-              <span class="bg-primary/10 text-primary shrink-0 rounded-full px-3 py-1 text-xs font-semibold">
-                {statusText[entry.data.status]}
-              </span>
+        <article class="group flex min-w-0 flex-col overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none dark:border-white/10 dark:bg-white/5">
+          <a
+            class="relative flex aspect-[16/7] items-center justify-center overflow-hidden bg-gradient-to-br from-pink-200/75 via-violet-100/70 to-sky-200/75 dark:from-pink-500/15 dark:via-violet-500/10 dark:to-sky-500/15"
+            href={href}
+            aria-label={entry.data.title}
+          >
+            <span class="absolute -top-8 -right-5 size-28 rounded-full bg-white/45 blur-2xl dark:bg-white/5"></span>
+            <span class="bg-primary/15 absolute -bottom-10 -left-4 size-32 rounded-full blur-2xl"></span>
+            <Icon name="ri:quill-pen-line" class="text-primary relative size-11 drop-shadow-sm transition group-hover:rotate-[-6deg] motion-reduce:transform-none" />
+          </a>
+          <div class="flex flex-1 flex-col gap-4 p-6">
+            <div class="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              <time datetime={entry.data.publishedAt.toISOString()}>{displayDate.date(entry.data.publishedAt)}</time>
+              <span aria-hidden="true">·</span>
+              <span>{en ? `${minutes} min read` : `约 ${minutes} 分钟`}</span>
             </div>
-            <div class="flex flex-wrap gap-2">
-              {entry.data.tags.map((tag) => <span class="rounded-full bg-black/5 px-2.5 py-1 text-xs dark:bg-white/10">{tag}</span>)}
+            <div class="space-y-2">
+              <h2 class="text-xl leading-8 font-bold text-pretty">
+                <a class="hover:text-primary" href={href}>{entry.data.title}</a>
+              </h2>
+              <p class="text-muted-foreground text-sm leading-6">{entry.data.summary}</p>
             </div>
-            <div class="prose prose-sm dark:prose-invert"><CustomContent Content={Content} /></div>
-            <div class="flex flex-wrap gap-3 text-sm font-semibold">
-              {entry.data.source && (
-                <a
-                  class="text-primary inline-flex items-center gap-1 hover:underline"
-                  href={entry.data.source}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Icon name="ri:github-fill" />
-                  {en ? 'Source' : '源码'}
-                </a>
-              )}
-              {entry.data.url && (
-                <a
-                  class="text-primary inline-flex items-center gap-1 hover:underline"
-                  href={entry.data.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Icon name="ri:external-link-line" />
-                  {en ? 'Visit' : '访问'}
-                </a>
-              )}
-              <a
-                class="text-muted-foreground inline-flex items-center gap-1 hover:text-primary"
-                href={`${localizedPath('/blogs', locale)}#${anchor}`}
-              >
-                <Icon name="ri:link" />
-                {en ? 'Permalink' : '固定链接'}
-              </a>
-            </div>
+            <a class="text-primary mt-auto inline-flex items-center gap-1 text-sm font-semibold hover:underline" href={href}>
+              <Icon name="ri:book-read-line" />
+              {en ? 'Read the essay' : '阅读全文'}
+            </a>
           </div>
         </article>
       );

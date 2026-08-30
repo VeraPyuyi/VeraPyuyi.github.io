@@ -19,9 +19,7 @@ interface Props {
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const paperCount = getPapers().length;
-const blogCount = (await getCollection('blogs')).filter(
-  (entry) => entry.data.language === 'zh' || entry.data.language === locale,
-).length;
+const blogCount = (await getCollection('blogs')).filter((entry) => entry.data.language === locale && !entry.data.draft).length;
 const articleCount = paperCount + blogCount;
 
 // 生成唯一 ID 前缀
