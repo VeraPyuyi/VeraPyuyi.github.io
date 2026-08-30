@@ -119,11 +119,12 @@ test('responsive media URLs include a source-content revision to bypass stale co
   const media = getResponsiveMedia(source);
 
   assert.match(media.fallback, new RegExp(`\\?v=${revision}$`));
-  assert.match(media.lqip ?? '', new RegExp(`\\?v=${revision}$`));
-  for (const srcset of [media.avifSrcset, media.webpSrcset]) {
-    assert.ok(srcset);
-    assert.equal(srcset.split(', ').length, 5);
-    for (const candidate of srcset.split(', ')) assert.match(candidate, new RegExp(`\\?v=${revision} \\d+w$`));
+  assert.equal(media.avifSrcset, undefined);
+  assert.equal(media.lqip, undefined);
+  assert.ok(media.webpSrcset);
+  assert.equal(media.webpSrcset.split(', ').length, 5);
+  for (const candidate of media.webpSrcset.split(', ')) {
+    assert.match(candidate, new RegExp(`\\?v=${revision} \\d+w$`));
   }
 });
 

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { extname, join, parse, relative } from 'node:path';
 import sharp from 'sharp';
 
@@ -24,22 +24,33 @@ async function optimize(source, key, outputDirectory, basename) {
   const originalWidth = metadata.width ?? 1600;
   const isPaperCover = /^\/uploads\/papers\/[^/]+\/cover\.png$/.test(key);
   const widths = isPaperCover ? paperCoverWidths : defaultWidths;
+  const formats = isPaperCover ? ['webp'] : ['webp', 'avif'];
   const variants = [];
+  const expectedOutputs = new Set();
   mkdirSync(outputDirectory, { recursive: true });
   for (const width of widths.filter((value) => value <= originalWidth || value === widths[0])) {
-    for (const format of ['webp', 'avif']) {
+    for (const format of formats) {
       const output = join(outputDirectory, `${basename}-${width}.${format}`);
       const pipeline = sharp(source).rotate().resize({ width, withoutEnlargement: true });
       await (format === 'webp'
-        ? pipeline.webp(isPaperCover ? { quality: 90, effort: 6, smartSubsample: true } : { quality: 82 })
-        : pipeline.avif(isPaperCover ? { quality: 72, effort: 6, chromaSubsampling: '4:4:4' } : { quality: 58, effort: 5 })
+        ? pipeline.webp(isPaperCover ? { lossless: true, effort: 6 } : { quality: 82 })
+        : pipeline.avif({ quality: 58, effort: 5 })
       ).toFile(output);
+      expectedOutputs.add(output);
       variants.push(`/${relative(publicRoot, output).replaceAll('\\', '/')}`);
     }
   }
-  const lqip = join(outputDirectory, `${basename}-lqip.webp`);
-  await sharp(source).rotate().resize({ width: 32, withoutEnlargement: true }).blur(1).webp({ quality: 38 }).toFile(lqip);
-  variants.push(`/${relative(publicRoot, lqip).replaceAll('\\', '/')}`);
+  if (!isPaperCover) {
+    const lqip = join(outputDirectory, `${basename}-lqip.webp`);
+    await sharp(source).rotate().resize({ width: 32, withoutEnlargement: true }).blur(1).webp({ quality: 38 }).toFile(lqip);
+    expectedOutputs.add(lqip);
+    variants.push(`/${relative(publicRoot, lqip).replaceAll('\\', '/')}`);
+  }
+  for (const entry of readdirSync(outputDirectory)) {
+    if (!entry.startsWith(`${basename}-`) || !/\.(?:avif|webp)$/.test(entry)) continue;
+    const output = join(outputDirectory, entry);
+    if (!expectedOutputs.has(output)) unlinkSync(output);
+  }
   manifest[key] = variants;
 }
 

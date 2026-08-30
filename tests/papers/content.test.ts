@@ -97,12 +97,25 @@ test('paper covers are normalized, responsive, and locally described', async () 
     assert.equal(metadata.height, 1800);
 
     const variants = manifest[paper.cover];
-    assert.equal(variants.length, 11);
+    assert.equal(variants.length, 5);
     for (const width of [480, 960, 1600, 2400, 3200]) {
-      assert.ok(variants.includes(`/media/papers/${paper.id}/cover-${width}.avif`));
       assert.ok(variants.includes(`/media/papers/${paper.id}/cover-${width}.webp`));
     }
+    assert.equal(
+      variants.some((variant) => variant.endsWith('.avif')),
+      false,
+    );
+    assert.equal(
+      variants.some((variant) => variant.endsWith('-lqip.webp')),
+      false,
+    );
     for (const variant of variants) assert.ok(existsSync(join(root, 'public', variant.slice(1))), variant);
+
+    const sourcePixels = await sharp(source).raw().toBuffer();
+    const servedPixels = await sharp(join(root, 'public', `media/papers/${paper.id}/cover-3200.webp`))
+      .raw()
+      .toBuffer();
+    assert.equal(sourcePixels.equals(servedPixels), true, `${paper.id} must remain pixel-identical after encoding`);
   }
 
   const provenance = readFileSync(join(papersRoot, 'COVER_ART.md'), 'utf8');

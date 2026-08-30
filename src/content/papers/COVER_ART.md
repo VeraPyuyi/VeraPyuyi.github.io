@@ -7,9 +7,11 @@ not edited. The three selected 2026-08-27 covers were then used as edit targets 
 paper-specific mathematical structures could be retained. The final covers contain no intended text, logos,
 trademarks, watermarks, or third-party characters.
 
-The restored outputs were center-cropped and normalized to 3200 × 1800 with metadata removed. The site serves local
-480, 960, 1600, 2400, and 3200 pixel AVIF/WebP variants, with higher encoding quality reserved for paper covers.
-The researcher and star cat remain secondary guides, while each paper's mathematical structure is the primary subject.
+The restored outputs were center-cropped and normalized to 3200 × 1800 with metadata removed. Since 2026-08-31, the
+site serves local 480, 960, 1600, 2400, and 3200 pixel **lossless WebP** variants for paper covers. Their decoded pixels
+are verified against the PNG masters; paper covers intentionally have no lossy AVIF or blurred LQIP candidate. Blog
+and other site imagery retain the lighter lossy pipeline. The researcher and star cat remain secondary guides, while
+each paper's mathematical structure is the primary subject.
 
 ## High-resolution restoration prompt
 
