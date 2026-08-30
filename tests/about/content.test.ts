@@ -10,7 +10,7 @@ const mirror = readFileSync(join(root, 'src/pages/[lang]/about.astro'), 'utf8');
 const siteConfig = readFileSync(join(root, 'config/site.yaml'), 'utf8');
 
 const scholarUrl = 'https://scholar.google.com/citations?user=ld3xCE8AAAAJ&hl=zh-CN&oi=ao';
-const xiaohongshuUrl = 'https://xhslink.cn/m/yYpTrDg2Ku';
+const xiaohongshuUrl = 'https://www.xiaohongshu.com/user/profile/60aa2bc40000000001002d6e';
 const twitterUrls = ['https://x.com/Pyuyi2333', 'https://x.com/Pyuyi233'];
 
 test('about pages use independent localized introductions', () => {

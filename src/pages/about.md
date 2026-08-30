@@ -20,7 +20,7 @@ comments: false
 可以通过以下方式找到我：
 
 - [GitHub](https://github.com/VeraPyuyi)
-- [小红书](https://xhslink.cn/m/yYpTrDg2Ku)
+- [小红书](https://www.xiaohongshu.com/user/profile/60aa2bc40000000001002d6e)
 - [Twitter @Pyuyi2333](https://x.com/Pyuyi2333)
 - [Twitter @Pyuyi233](https://x.com/Pyuyi233)
 - [Google Scholar](https://scholar.google.com/citations?user=ld3xCE8AAAAJ&hl=zh-CN&oi=ao)
