@@ -27,14 +27,19 @@ function widthFromPath(path: string): number {
   return Number(path.match(/-(\d+)\.(?:avif|webp)$/)?.[1] ?? 0);
 }
 
-function revisionFor(source: string): string | undefined {
+function revisionFor(source: string, variants: string[]): string | undefined {
   if (revisionCache.has(source)) return revisionCache.get(source);
   if (!source.startsWith('/')) return undefined;
 
   const sourcePath = join(process.cwd(), 'public', source.slice(1));
-  const revision = existsSync(sourcePath)
-    ? createHash('sha256').update(readFileSync(sourcePath)).digest('hex').slice(0, 12)
-    : undefined;
+  if (!existsSync(sourcePath)) return undefined;
+
+  const hash = createHash('sha256').update(readFileSync(sourcePath));
+  for (const variant of variants) {
+    const variantPath = join(process.cwd(), 'public', variant.slice(1));
+    if (existsSync(variantPath)) hash.update(variant).update(readFileSync(variantPath));
+  }
+  const revision = hash.digest('hex').slice(0, 12);
   revisionCache.set(source, revision);
   return revision;
 }
@@ -57,7 +62,7 @@ export function getResponsiveMedia(source: string): ResponsiveMedia {
   const variants = getManifest()[source] ?? [];
   const webp = variants.filter((path) => path.endsWith('.webp') && !path.endsWith('-lqip.webp'));
   const avif = variants.filter((path) => path.endsWith('.avif'));
-  const revision = revisionFor(source);
+  const revision = revisionFor(source, variants);
   const fallback = webp.sort((a, b) => widthFromPath(a) - widthFromPath(b)).at(-1) ?? source;
   const lqip = variants.find((path) => path.endsWith('-lqip.webp'));
   return {
