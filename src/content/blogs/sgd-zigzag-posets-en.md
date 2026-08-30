@@ -19,13 +19,13 @@ coverAlt: The original blue-and-pink-haired researcher draws a luminous alternat
 order: 300
 ---
 
-Mini-batch gradients are noisy. One batch may push parameters in one direction and the next may push them back. A local training trace can therefore resemble
+Mini-batch gradients are noisy: one batch may push parameters in one direction and the next may push them back, so a local training trace can resemble
 
 $$
 \searrow\nearrow\searrow\nearrow.
 $$
 
-This looks like a zigzag poset, but visual resemblance is not yet mathematics. The first necessary correction is that neural-network parameters live in a high-dimensional space, whereas an order relation requires scalar quantities.
+This resembles the zigzag posets I studied previously, but resemblance alone may not be enough to establish a mathematical connection. The first necessary correction is that neural-network parameters live in a high-dimensional space, whereas an order relation requires scalar quantities.
 
 ## Choose a comparable observable first
 
@@ -43,7 +43,7 @@ $$
 
 become exactly the order event associated with an alternating oriented path—a zigzag or fence poset.
 
-Methods that retain relative order while discarding amplitude are known as ordinal-pattern methods in time-series analysis. Bandt and Pompe systematically used neighboring rank patterns to define permutation entropy. “Analyze SGD through rises and falls” is therefore not a new concept by itself. A potentially new contribution would have to connect optimization-specific parameters to the complete distribution of fence patterns.
+After a quick search, I found that methods retaining relative order while discarding amplitude are known as ordinal-pattern methods in time-series analysis. Bandt and Pompe systematically used neighboring rank patterns to define permutation entropy. Analyzing SGD through rises and falls is therefore not a new concept by itself. A potentially new contribution would have to connect optimization-specific parameters to the complete distribution of fence patterns.
 
 ## From gradient signs to local extrema
 
@@ -93,11 +93,11 @@ $$
 q=2\sin\left[\pi\left(p_{\mathrm{turn}}-\frac12\right)\right].
 $$
 
-This small calculation shows that estimating local dynamics from trajectory shape is more than a metaphor. It does not, however, amount to estimating a real network's Hessian. Whether $v$ remains fixed, the noise is Gaussian, curvature changes slowly, and a window is approximately stationary all matter.
+This small calculation shows that estimating local dynamics from trajectory shape is not merely hand-waving. It does not, however, amount to estimating a real network's Hessian. Whether $v$ remains fixed, the noise is Gaussian, curvature changes slowly, and a window is approximately stationary all matter.
 
 For a second-order recurrence with momentum, a three-point window often reveals only a combination of parameters and cannot separately identify the learning-rate–curvature product and momentum. Four points provide additional sign correlations and may be the smallest identifiable window in the exact model. This remains a developing theoretical direction. Before robustness outside the model and empirical checks are complete, it should be treated as a clue from a tractable model rather than a universal theorem about modern networks.
 
-## What it might provide—and what it cannot replace
+## What it might provide
 
 Ordinal statistics are attractive because they are invariant under monotone rescaling and do not require absolute scales to match across layers. They may help to:
 
@@ -110,7 +110,7 @@ But ordinal data deliberately discard amplitude. Multiplying an entire trajector
 
 Edge-of-Stability experiments have shown that full-batch gradient descent on neural networks can exhibit nonmonotone loss over short timescales while still decreasing over long ones. This establishes that oscillation is not identical to immediate failure. It does not prove that fence patterns in mini-batch SGD arise from the same mechanism. A credible study must compare curvature-driven, noise-driven, and momentum-driven patterns under controlled conditions.
 
-For me, the interesting goal is not another zigzag score but a chain with explicit failure conditions:
+For me, the most interesting goal is to establish a chain with explicit failure conditions:
 
 $$
 \text{local optimization dynamics}

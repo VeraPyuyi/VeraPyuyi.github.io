@@ -19,7 +19,9 @@ coverAlt: The original blue-and-pink-haired researcher adjusts sampling temperat
 order: 200
 ---
 
-“Which sampler do large models use?” sounds like a simple question, but the word *sampling* hides several different random objects. Gaussian distributions appear in only some of them. The prior question should always be: **what exactly are we sampling?**
+I previously worked with a senior colleague at HKUST on numerical simulations, which involved learning about several samplers. That made me wonder about the relationship between samplers used in simulation and those used in deep learning.
+
+“Which sampler do large models use?” sounds like a simple question, but the word *sampling* hides several different random objects. The prior question should always be: **what exactly are we sampling?**
 
 ## Distinguish five kinds of sampling
 
@@ -37,7 +39,7 @@ $$
 p_i(T)=\frac{\exp(z_i/T)}{\sum_j\exp(z_j/T)}.
 $$
 
-This is already a discrete probability distribution. As $T\to0$, it approaches greedy selection; a larger $T$ flattens it. But “more random” does not automatically mean “more meaningfully diverse.” If candidates are structurally similar, raising temperature may add errors rather than new solution strategies.
+This is already a discrete probability distribution. As $T\to0$, it approaches greedy selection, while as $T\to\infty$ it becomes flatter. But “more random” does not automatically mean “more meaningfully diverse.” If candidates are structurally similar, raising temperature may add errors rather than new solution strategies.
 
 ## Training-data sampling decides where the model spends its time
 
@@ -71,7 +73,7 @@ $$
 p_i(T)=\frac{\exp(-E_i/T)}{\sum_j\exp(-E_j/T)},
 $$
 
-which has exactly the form of a discrete Gibbs or Boltzmann distribution. Temperature here is not physical temperature; it controls concentration. The equivalence is useful because it expresses sampling as entropy-regularized optimization. For a probability vector $p$, consider
+which has exactly the form of a discrete Gibbs or Boltzmann distribution. Temperature here is not physical temperature; it controls concentration. This equivalence seems useful because it expresses sampling as entropy-regularized optimization. For a probability vector $p$, consider
 
 $$
 \max_{p\in\Delta}
@@ -80,7 +82,7 @@ $$
 
 with $H(p)=-\sum_i p_i\log p_i$. Its optimizer is softmax: the score term favors strong candidates, while entropy prevents immediate collapse.
 
-The question “Can Maxwell–Boltzmann sampling be used for LLMs?” therefore needs to be separated. The Boltzmann/Gibbs exponential-energy form is already present in softmax. The Maxwell speed distribution adds a $v^2$ factor arising from the volume of three-dimensional velocity space. An LLM has no natural three-dimensional velocity space, so a physical name alone gives no reason for a better token sampler.
+This gives a partial answer to my initial conjecture about applying the Maxwell–Boltzmann distribution to LLMs. The Boltzmann/Gibbs exponential-energy form is already present in softmax. The Maxwell speed distribution adds a $v^2$ factor arising from the volume of three-dimensional velocity space. An LLM has no natural three-dimensional velocity space, so a physical name alone gives no reason for a better token sampler.
 
 If a model actually contains a $d$-dimensional isotropic Gaussian perturbation, its radius naturally follows a $\chi_d$ distribution; Maxwell is simply the $d=3$ case. A distribution should follow from the geometry of the sampled object, not be selected first and justified afterwards.
 
@@ -94,7 +96,7 @@ $$
 
 Trajectories can be redundant, needlessly long, plainly wrong, or structurally novel. Sampling a fixed number $N$ for every prompt is unlikely to be optimal: an easy problem may need one path, while a difficult one may benefit from a larger exploration budget.
 
-As a research model, one could write an entropy-regularized objective
+As a research model, we can write an entropy-regularized objective
 
 $$
 \max_q\;
@@ -116,15 +118,15 @@ This is a modeling language, not a universally validated sampler. Before generat
 
 ## From fixed temperature to state-dependent control
 
-A richer question than “Should temperature be 0.7 or 1.0?” is to let temperature and sampling budget depend on the prompt and current uncertainty:
+At present, it seems that a richer question than “Should temperature be 0.7 or 1.0?” is to let temperature and sampling budget depend on the prompt and current uncertainty:
 
 $$
 T=T(x,\theta,h_t),\qquad N=N(x,\theta,h_t).
 $$
 
-When the model is confident and existing paths agree, generation may stop early. When candidates conflict or verification is unstable, exploration can expand. Such a method should be evaluated at fixed accuracy or utility by measuring total rollout tokens, latency, and training compute—not merely by plotting an interesting new distribution.
+When the model is confident and existing paths agree, generation may stop early. When candidates conflict or verification is unstable, exploration can expand. Such a method should be evaluated at fixed accuracy or utility by measuring whether it reduces total rollout tokens, latency, and training compute.
 
-The most useful gift of statistical mechanics to large-model sampling is therefore not the name of a ready-made distribution. It is a way to put quality and cost into one energy, exploration into entropy, and multiplicity into a density of states. Only when these ideas produce testable compute savings, error bounds, or algorithms do they become more than an analogy.
+The most useful gift of statistical mechanics to large-model sampling is therefore not the name of a ready-made distribution. It is a way to put quality and cost into one energy, exploration into entropy, and multiplicity into a density of states.
 
 ## References
 

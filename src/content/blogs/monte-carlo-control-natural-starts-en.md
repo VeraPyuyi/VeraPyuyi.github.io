@@ -19,9 +19,9 @@ coverAlt: The original blue-and-pink-haired researcher and her star cat guide st
 order: 500
 ---
 
-When I first encountered Monte Carlo control, Basic MC, Exploring Starts, and $\epsilon$-greedy control looked like three unrelated algorithms to memorize. I now find it more useful to see them as three answers to one question: when the environment model is unknown and returns are observed only after an episode, how can we make sure that the state–action pairs worth evaluating are actually visited?
+When I first encountered Monte Carlo control, Basic MC, Exploring Starts, and $\epsilon$-greedy control looked like three unrelated algorithms to memorize, but I later found it more useful to see them as three answers to one question: when the environment model is unknown and returns are observed only after an episode, how can we make sure that the state–action pairs worth evaluating are actually visited?
 
-## One backbone, three exploration mechanisms
+## Three exploration mechanisms
 
 Write an episode as
 
@@ -35,7 +35,7 @@ $$
 G_t=R_{t+1}+\gamma R_{t+2}+\gamma^2R_{t+3}+\cdots.
 $$
 
-Monte Carlo methods use realized complete-trajectory returns to estimate $q_\pi(s,a)$ and then improve the policy. All three variants share this sampling–evaluation–improvement backbone. They differ mainly in where exploration enters.
+Monte Carlo methods use realized complete-trajectory returns to estimate $q_\pi(s,a)$ and then improve the policy. All three methods share this sampling–evaluation–improvement backbone; they differ mainly in where exploration enters.
 
 | Method | How exploration happens | Main limitation |
 | --- | --- | --- |
@@ -43,17 +43,17 @@ Monte Carlo methods use realized complete-trajectory returns to estimate $q_\pi(
 | MC Exploring Starts | Randomize the initial state–action pair, giving every pair a chance to start an episode | Arbitrary initialization is rarely available in the physical world |
 | MC $\epsilon$-greedy | Keep the task's ordinary initialization and randomize actions along the trajectory | Random exploration can be slow, and fixed $\epsilon$ keeps choosing inferior actions forever |
 
-“Basic MC” is not a universally standardized algorithm name. It is best understood as a teaching abstraction that exposes policy evaluation and policy improvement. Sutton and Barto instead organize the classical treatment around Monte Carlo prediction, Exploring Starts, and on-policy control. The durable lesson is not the naming convention but the three different sources of coverage.
+Basic MC is a teaching scaffold for making policy evaluation and policy improvement clear. Sutton and Barto organize the classical treatment around Monte Carlo prediction, Exploring Starts, and on-policy control. What matters most, of course, is how these methods answer the question of where coverage comes from.
 
-## What counts as a natural start?
+## What is a natural start?
 
-An “ordinary entrance” is not a technical term. The precise object is the initial-state distribution supplied by the task:
+The most natural starting point is determined by the initial-state distribution supplied by the environment:
 
 $$
 S_0\sim\rho_0.
 $$
 
-A maze may always begin in one corner, a card game may generate its initial hand through shuffling and dealing, and a robot may normally wake near a charging station. These are natural task initializations, not states selected freely by the learning algorithm.
+A maze may always begin in one corner, a card game may generate its initial hand through shuffling and dealing, and a robot may normally wake near a charging station. All of these belong to the task's own initialization rules rather than states freely chosen by the learning algorithm for exploration.
 
 Exploring Starts changes initialization and asks that
 
@@ -67,7 +67,7 @@ $$
 P_\pi(s'\mid s)=\sum_a\pi(a\mid s)P(s'\mid s,a).
 $$
 
-This makes one limitation explicit: starting naturally does not imply global coverage. If a state is unreachable from the support of $\rho_0$, no amount of $\epsilon$-greedy exploration can cross an edge that the environment does not have.
+This is a useful reminder: starting naturally does not imply global coverage. If a state is unreachable from the support of $\rho_0$, no amount of $\epsilon$-greedy exploration can cross an edge that the environment does not have.
 
 ## $\epsilon$-greedy control as a biased random walk
 
@@ -94,7 +94,7 @@ $$
 
 where $p=1-\epsilon/2$. A reinforcement-learning exploration question has become a classical hitting-probability problem. Hitting times, cover times, and occupation counts offer further Markov-chain descriptions of the same trajectory.
 
-## What might “natural starts” mean as a research direction?
+## What is worth studying?
 
 Exploring Starts buys clean coverage assumptions by outsourcing the difficulty to environment reset. $\epsilon$-greedy avoids arbitrary resets but can spend most of an episode merely travelling toward informative regions. There may be a useful middle ground: choose among a set of starts that the environment genuinely permits, while adapting that distribution toward reachable regions that remain poorly evaluated.
 
@@ -104,14 +104,14 @@ $$
 (S_0,A_0)\sim\mu_k,
 $$
 
-where $\mu_k$ at iteration $k$ is restricted to valid starts but reacts to current visitation deficits. This is a research proposal, not an established convergence result. Turning it into a method would require at least four answers:
+where $\mu_k$ at iteration $k$ is restricted to valid starts but reacts to current visitation deficits. This is a research proposal, not an established convergence result, but I think turning it into a reliable method would require at least four answers:
 
 1. Which reachability assumptions can replace the full-support Exploring Starts condition?
 2. Does adapting the starting distribution introduce a value-estimation bias that cannot be controlled?
 3. Should the objective target state–action coverage, effective updates, or hitting times of strategically important sets?
 4. For long episodes, must resetting be combined with importance weighting or another off-policy correction?
 
-I like this question because it turns exploration from a fixed random switch into a relation among initial distributions, transition geometry, and visitation objectives. Tabular Monte Carlo control may no longer be the main actor in large systems, but it remains a small and unusually clear laboratory in which these questions can be written down without hiding them behind scale.
+I find this question interesting because it turns exploration from a fixed random switch into a relation among initial distributions, transition geometry, and visitation objectives. Tabular Monte Carlo control may no longer be the main actor in large systems, but it remains a small and unusually clear laboratory in which these questions can be written down without hiding them behind scale.
 
 ## References
 

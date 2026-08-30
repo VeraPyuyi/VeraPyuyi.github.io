@@ -19,7 +19,9 @@ coverAlt: The original blue-and-pink-haired researcher balances warm excitatory 
 order: 100
 ---
 
-“Can mathematics prove that attention is completely unnecessary in an SNN?” is an attractive question that is easy to overstate. My view is that explicit $QK^\top$, Softmax, and attention matrices need not be the only way for a spiking network to perform content selection. Yet attention as a computational function—selecting and aggregating relevant history in response to the current query—does not disappear merely because the named module is removed.
+I recently saw a question on X: can mathematics prove that attention is completely unnecessary in an SNN?
+
+It is an attractive question that is easy to overstate. My feeling is that explicit $QK^\top$, Softmax, and attention matrices need not be the only way for a spiking network to perform content selection. Yet attention as a computational function—selecting and aggregating relevant history in response to the current query—does not disappear merely because the named module is removed.
 
 A more defensible research question is:
 
@@ -71,7 +73,7 @@ $$
 +C_4\varepsilon_{\mathrm{delay}}.
 $$
 
-The terms represent transient convergence, query variation, finite-spike approximation, and synaptic delay. This inequality is a target form for a theory, not a result proved in this essay.
+The terms represent transient convergence, query variation, finite-spike approximation, and synaptic delay.
 
 ## Replace nested spike sums with spike measures
 
@@ -113,9 +115,9 @@ $$
 =\sum_{m=0}^{\infty}(\mathcal K D\sigma)^m
 $$
 
-collects repeated trips through the feedback loop into one expression. This language is not intended to erase concrete neuron equations. It supplies a compositional interface for existence, stability, approximation error, and depth.
+collects repeated trips through the feedback loop into one expression. This language can provide a compositional interface for existence, stability, approximation error, and depth.
 
-Boerlin, Machens, and Denève's balanced spiking network offers an important precedent: a spiking network can be derived from a prediction-error objective and made to implement a linear dynamical system. Thus, “spiking dynamics can correspond to optimization” is not a new conjecture. New work must address query-dependent dynamic competition rather than merely restating that SNNs can optimize.
+Boerlin, Machens, and Denève's balanced spiking network offers an important precedent: a spiking network can be derived from a prediction-error objective and made to implement a linear dynamical system. Thus, the idea that spiking dynamics can correspond to optimization is not a new conjecture; new work must address query-dependent dynamic competition rather than merely restating that SNNs can optimize.
 
 ## Context, capacity, and continual-learning limits
 
@@ -127,13 +129,13 @@ $$
 
 the effect of past input is controlled by $e^{A(t-s)}B$. Eigenvalues far from the imaginary axis give stability but rapid forgetting; near-critical dynamics retain memory longer while increasing noise amplification and stability risk.
 
-There is also a capacity problem. Standard attention preserves many historical objects that can be queried separately, whereas a fixed-dimensional state compresses them. If a task requires exact indexed retrieval over arbitrarily long sequences, a finite-precision, fixed-size SNN cannot store all history for free. It must add neurons, synaptic state, timing precision, external memory, or approximation error.
+There also seems to be a capacity problem. Standard attention preserves many historical objects that can be queried separately, whereas a fixed-dimensional state compresses them. If a task requires exact indexed retrieval over arbitrarily long sequences, a finite-precision, fixed-size SNN cannot store all history for free. It must add neurons, synaptic state, timing precision, external memory, or approximation error.
 
-Context and continual learning should also be separated. Fast membrane potentials and synaptic currents may hold context; continual learning changes slower weights while protecting old knowledge. Feedback and inhibition may route inputs into different neural populations, but they do not automatically eliminate catastrophic forgetting.
+From this perspective, context and continual learning are not the same thing either. Fast membrane potentials and synaptic currents may hold context; continual learning changes slower weights while protecting old knowledge. Feedback and inhibition may route inputs into different neural populations, but they do not automatically eliminate catastrophic forgetting.
 
 ## A credible theory needs positive and negative results
 
-The useful destination is not a declaration that attention is obsolete. It is a set of results with visible boundaries:
+Whether attention is obsolete is not the particular point that concerns me most, but the question did make me think about several problems:
 
 1. Which E–I spiking networks approximate entropy-regularized, sparse, or hard attention?
 2. How does error depend on neuron count, firing rate, delay, noise, and query speed?
@@ -143,7 +145,7 @@ The useful destination is not a declaration that attention is obsolete. It is a 
 6. Which indexed or associative-recall tasks force state capacity to grow with sequence length?
 7. How should fast context state be separated from slow continual learning?
 
-The desired “conceptual unbinding” is therefore not the rejection of every existing structure. It is a better descriptive language: place spikes, feedback, competition, and memory inside composable causal operators, then state honestly when attention can be compiled, when it can only be approximated, and when fixed state cannot replace it at all.
+What this direction may really unbind is a certain mode of description: placing spikes, feedback, competition, and memory inside a language of composable causal operators, then explaining when attention can be compiled, when it can be approximated, and when fixed state cannot replace it at all.
 
 ## References
 

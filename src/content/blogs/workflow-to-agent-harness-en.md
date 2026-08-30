@@ -19,9 +19,9 @@ coverAlt: The original blue-and-pink-haired researcher and her star cat repair a
 order: 400
 ---
 
-The last few years have produced many visual tools for agent workflows: drag an LLM, retrieval, branches, tools, and several agents onto a canvas, connect them, and obtain an executable process. These products solve real problems. They also raise a question for me: as models become better at planning for themselves, is “more nodes and nicer arrows” still a sufficiently strong technical contribution?
+The last few years have produced many visual tools for agent workflows: drag an LLM, retrieval, branches, tools, and several agents onto a canvas, connect them, and obtain an executable process. These products solve real problems. But as models become more capable and harnesses more complete, they raise a question for me: when models are increasingly able to plan for themselves, is prompt-based workflow orchestration still worth pursuing?
 
-My provisional answer is: **hand-authored micro-orchestration is becoming a commodity, but workflows are not disappearing. They are moving from the top-level solution algorithm into the set of control primitives provided by an agent harness.**
+After listening to a talk by Professor Wenqiang Lei of SCU at Chasiwu, I raised a related question in our conversation: can natural language serve as a high-level abstraction over programming languages? Although Professor Lei was rather pessimistic, I still want to believe that **prompts can directly orchestrate workflows. This form of orchestration will not disappear; prompt language may instead become a control language inside agent harnesses, including for the currently popular idea of recursive self-improvement.**
 
 ## Separate the four layers first
 
@@ -61,7 +61,7 @@ reason → act → observe
 verify → stop or continue
 ```
 
-A more precise statement is therefore: the model produces local reasoning; the harness organizes the global agent trajectory. Searching, reading a file, running a program, observing failure, compressing context, and planning again form an execution trace. That trace should not be collapsed into the model's internal Chain of Thought.
+A more precise statement is therefore: the model produces local reasoning, while the harness organizes the global agent trajectory—searching, reading a file, running a program, observing failure, compressing context, and planning again all form a single execution trace.
 
 One rough abstraction is
 
@@ -71,7 +71,7 @@ $$
 
 where the model approximately plays the role of policy $\pi_\theta$, while the harness stores state $s_t$, executes $a_t$, and receives a new observation $o_{t+1}$. This does not claim that every agent system is already a well-specified MDP. It only emphasizes that the architecture resembles closed-loop control more than a static chain of prose reasoning.
 
-## Workflows may move from “how” to “what must happen”
+## Workflows may move from how to what must happen
 
 For “find sources, summarize them, and write an answer,” a stronger agent may generate a temporary plan without requiring a user to draw ten nodes. A bank approval, production release, data deletion, or security repair cannot be delegated in the same way. Such processes must state:
 
@@ -109,9 +109,9 @@ The workflow engine may execute a static DAG, a state machine, a durable process
 
 In this view, a workflow is no longer the whole system. It is a structured plan or execution graph that can be generated, inspected, run, paused, recovered, and discarded.
 
-## The questions that still seem worth asking
+## Questions that may truly be worth asking
 
-If the visual editor is removed, what remains of a workflow project? That may be a better test of technical value than the number of node types. Several difficult problems remain:
+The following directions still seem worth thinking about:
 
 1. **Workflow synthesis:** turn a goal, tool set, and constraints into an executable graph rather than a paragraph describing a plan.
 2. **Verification:** establish before execution that dangerous paths are unreachable or that approval nodes cannot be bypassed.
@@ -120,7 +120,7 @@ If the visual editor is removed, what remains of a workflow project? That may be
 5. **Trajectory learning:** learn from successful and failed runs when to expand a plan, invoke an existing workflow, or return control to a person.
 6. **Evaluation:** assess not only the final answer but cost, risk, recoverability, and process evidence.
 
-I therefore do not think that the age of workflows has ended. A more careful conclusion is that connecting fixed micro-steps is increasingly easy to reproduce, while treating workflows as generatable, verifiable, recoverable, and learnable structures inside a harness is only becoming a clearly stated problem.
+Perhaps the more accurate view today is that connecting fixed micro-steps is increasingly easy to reproduce, while treating workflows as generatable, verifiable, recoverable, and learnable structures inside a harness is only becoming a clearly stated problem.
 
 ## References
 
