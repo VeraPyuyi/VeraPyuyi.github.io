@@ -21,5 +21,7 @@ You can find me here:
 
 - [GitHub](https://github.com/VeraPyuyi)
 - [Xiaohongshu](https://xhslink.cn/m/yYpTrDg2Ku)
+- [Twitter @Pyuyi2333](https://x.com/Pyuyi2333)
+- [Twitter @Pyuyi233](https://x.com/Pyuyi233)
 - [Google Scholar](https://scholar.google.com/citations?user=ld3xCE8AAAAJ&hl=zh-CN&oi=ao)
 - [Guestbook](/en/guestbook/)

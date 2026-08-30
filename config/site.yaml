@@ -90,6 +90,16 @@ social:
     url: https://xhslink.cn/m/yYpTrDg2Ku
     icon: ri:book-3-fill
     color: '#ff2442'
+  x_pyuyi2333:
+    label: X (Twitter) @Pyuyi2333
+    url: https://x.com/Pyuyi2333
+    icon: ri:twitter-x-fill
+    color: '#0f1419'
+  x_pyuyi233:
+    label: X (Twitter) @Pyuyi233
+    url: https://x.com/Pyuyi233
+    icon: ri:twitter-x-fill
+    color: '#0f1419'
   # -------------------------------------------------------------------------
   # 以下是更多可选的社交平台配置示例，取消注释并修改即可启用：
   # -------------------------------------------------------------------------
