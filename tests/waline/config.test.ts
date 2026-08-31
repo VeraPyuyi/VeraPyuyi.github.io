@@ -34,11 +34,13 @@ test('Waline rich-media settings require login and disable duplicate page views'
   assert.equal(config.login, 'force');
   assert.equal(config.imageUploader, true);
   assert.equal(config.search, false);
+  assert.equal(config.reaction, false);
   assert.equal(config.pageview, false);
   assert.equal(config.comment, false);
   assert.deepEqual(config.meta, []);
   assert.deepEqual(config.emoji, [...WALINE_EMOJI_PRESETS]);
   assert.equal(WALINE_SITE_DEFAULTS.login, 'force');
+  assert.equal(WALINE_SITE_DEFAULTS.reaction, false);
 });
 
 test('Waline uses stable content IDs across localized routes', () => {

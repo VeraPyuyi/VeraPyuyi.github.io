@@ -452,7 +452,7 @@ comment:
     highlighter: true
     texRenderer: false
     search: false
-    reaction: true
+    reaction: false
     emoji:
       - https://unpkg.com/@waline/emojis@1.2.0/weibo
       - https://unpkg.com/@waline/emojis@1.2.0/bilibili

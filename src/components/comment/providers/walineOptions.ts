@@ -14,7 +14,7 @@ export const WALINE_SITE_DEFAULTS = {
   wordLimit: [1, 2000],
   pageSize: 10,
   search: false,
-  reaction: true,
+  reaction: false,
   commentSorting: 'latest',
   noCopyright: false,
   comment: false,
