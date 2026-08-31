@@ -28,18 +28,25 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
   {
     papers.map((paper, index) => (
       <article
-        class="grid grid-cols-[15rem_1fr] overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur md:grid-cols-1 dark:border-white/10 dark:bg-white/5"
+        class="group flex min-w-0 flex-col overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none dark:border-white/10 dark:bg-white/5"
         data-home-random-item={randomized ? '' : undefined}
         hidden={randomized && index >= visibleLimit}
       >
-        <ResponsiveImage
-          src={paper.cover ?? '/og.png'}
-          alt={(en ? paper.coverAltEn : paper.coverAlt) ?? (en ? 'Pyuyi paper cover' : 'Pyuyi 论文封面')}
-          class="h-full min-h-48 w-full object-cover"
-          pictureClass="h-full min-h-48 w-full"
-          sizes="(max-width: 768px) 100vw, 15rem"
-          loading="lazy"
-        />
+        <a
+          class="relative block aspect-video overflow-hidden bg-gradient-to-br from-pink-200/75 via-violet-100/70 to-sky-200/75"
+          href={localizedPath(`/papers/${paper.id}`, locale)}
+          aria-label={en && paper.titleEn ? paper.titleEn : paper.title}
+        >
+          <ResponsiveImage
+            src={paper.cover ?? '/og.png'}
+            alt={(en ? paper.coverAltEn : paper.coverAlt) ?? (en ? 'Pyuyi paper cover' : 'Pyuyi 论文封面')}
+            class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.025] motion-reduce:transform-none"
+            pictureClass="h-full w-full"
+            sizes="(min-width: 1024px) 60rem, 100vw"
+            loading="lazy"
+          />
+          <span class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/5"></span>
+        </a>
         <div class="space-y-4 p-6">
           <div class="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
             <time datetime={paper.date}>{paper.date}</time>

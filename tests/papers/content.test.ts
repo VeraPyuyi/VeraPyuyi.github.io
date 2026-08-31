@@ -123,11 +123,12 @@ test('paper covers are normalized, responsive, and locally described', async () 
   assert.match(provenance, /style reference only/);
 });
 
-test('paper cover slot sizes follow the configured max-width breakpoint', () => {
+test('paper covers use the full-width blog card treatment without undersized image slots', () => {
   const paperList = readFileSync(join(root, 'src/components/personal/PaperList.astro'), 'utf8');
-  assert.match(paperList, /class="[^"]*grid-cols-\[15rem_1fr\][^"]*md:grid-cols-1[^"]*"/);
-  assert.match(paperList, /sizes="\(max-width: 768px\) 100vw, 15rem"/);
-  assert.doesNotMatch(paperList, /sizes="\(min-width: 768px\) 15rem, 100vw"/);
+  assert.match(paperList, /class="relative block aspect-video overflow-hidden/);
+  assert.match(paperList, /group-hover:scale-\[1\.025\]/);
+  assert.match(paperList, /sizes="\(min-width: 1024px\) 60rem, 100vw"/);
+  assert.doesNotMatch(paperList, /15rem|grid-cols-\[15rem_1fr\]/);
 });
 
 test('Scholar URL uses the exact lowercase profile id and required parameters', () => {
