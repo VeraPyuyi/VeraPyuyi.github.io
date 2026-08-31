@@ -43,6 +43,16 @@ test('Waline rich-media settings require login and disable duplicate page views'
   assert.equal(WALINE_SITE_DEFAULTS.reaction, false);
 });
 
+test('Waline emoji and GIF pickers can escape the editor panel without horizontal overflow', () => {
+  const styles = read('src/styles/components/waline.css');
+
+  assert.match(styles, /\.wl-panel\s*{[^}]*overflow:\s*visible/s);
+  assert.doesNotMatch(styles, /\.wl-panel\s*{[^}]*overflow:\s*hidden/s);
+  assert.match(styles, /\.wl-emoji-popup,\s*\.wl-gif-popup\s*{[^}]*inset-inline-start:\s*0\.5rem/s);
+  assert.match(styles, /\.wl-emoji-popup,\s*\.wl-gif-popup\s*{[^}]*width:\s*min\(calc\(100% - 1rem\), 32rem\)/s);
+  assert.match(styles, /\.wl-emoji-popup,\s*\.wl-gif-popup\s*{[^}]*z-index:\s*20/s);
+});
+
 test('Waline uses stable content IDs across localized routes', () => {
   assert.equal(resolveWalinePath('paper:example', '/papers/example/'), 'paper:example');
   assert.equal(resolveWalinePath('paper:example', '/en/papers/example/'), 'paper:example');
