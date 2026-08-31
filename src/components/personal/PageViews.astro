@@ -1,12 +1,23 @@
 ---
 const code = import.meta.env.PUBLIC_GOATCOUNTER_CODE?.trim() ?? '';
+const statsStart = '2026-08-31';
+const isEnglish = Astro.url.pathname.startsWith('/en/');
+const freshnessNote = isEnglish
+  ? 'GoatCounter public counts may be delayed by up to four hours.'
+  : 'GoatCounter 公开计数最多可能延迟四小时。';
 ---
 
-<p class="text-muted-foreground flex items-center gap-1.5 text-xs" data-page-view-row data-counter-code={code}>
+<p
+  class="text-muted-foreground flex items-center gap-1.5 text-xs"
+  data-page-view-row
+  data-counter-code={code}
+  data-counter-start={statsStart}
+  title={freshnessNote}
+>
   <span aria-hidden="true">✦</span>
-  <span>{Astro.url.pathname.startsWith('/en/') ? 'Views' : '访问'}</span>
+  <span>{isEnglish ? 'Views' : '访问'}</span>
   <span data-page-view-count aria-live="polite">—</span>
-  <span>{Astro.url.pathname.startsWith('/en/') ? 'times' : '次'}</span>
+  <span>{isEnglish ? 'times' : '次'}</span>
 </p>
 
 <script>
@@ -14,17 +25,20 @@ const code = import.meta.env.PUBLIC_GOATCOUNTER_CODE?.trim() ?? '';
     document.querySelectorAll<HTMLElement>('[data-page-view-row]:not([data-ready])').forEach((row) => {
       row.dataset.ready = 'true';
       const code = row.dataset.counterCode;
+      const start = row.dataset.counterStart;
       const target = row.querySelector<HTMLElement>('[data-page-view-count]');
       if (!code || !target) return;
       const rawPath = window.location.pathname.replace(/^\/en(?=\/|$)/, '') || '/';
       const path = rawPath.endsWith('/') && rawPath !== '/' ? rawPath.slice(0, -1) : rawPath;
-      const url = `https://${code}.goatcounter.com/counter/${encodeURIComponent(path)}.json`;
+      const range = start ? `?start=${encodeURIComponent(start)}` : '';
+      const url = `https://${code}.goatcounter.com/counter/${encodeURIComponent(path)}.json${range}`;
       fetch(url)
-        .then((response) => {
-          if (!response.ok) throw new Error(String(response.status));
-          return response.json();
+        .then(async (response) => {
+          const data = (await response.json()) as { count?: string | number; count_unique?: string | number };
+          if (!response.ok && response.status !== 404) throw new Error(String(response.status));
+          return data;
         })
-        .then((data: { count?: string | number; count_unique?: string | number }) => {
+        .then((data) => {
           const value = data.count ?? data.count_unique;
           if (value !== undefined) target.textContent = String(value);
         })
