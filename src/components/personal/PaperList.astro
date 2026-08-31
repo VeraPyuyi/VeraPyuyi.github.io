@@ -28,7 +28,7 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
   {
     papers.map((paper, index) => (
       <article
-        class="grid overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur md:grid-cols-[15rem_1fr] dark:border-white/10 dark:bg-white/5"
+        class="grid grid-cols-[15rem_1fr] overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur md:grid-cols-1 dark:border-white/10 dark:bg-white/5"
         data-home-random-item={randomized ? '' : undefined}
         hidden={randomized && index >= visibleLimit}
       >
@@ -37,7 +37,7 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
           alt={(en ? paper.coverAltEn : paper.coverAlt) ?? (en ? 'Pyuyi paper cover' : 'Pyuyi 论文封面')}
           class="h-full min-h-48 w-full object-cover"
           pictureClass="h-full min-h-48 w-full"
-          sizes="(min-width: 768px) 15rem, 100vw"
+          sizes="(max-width: 768px) 100vw, 15rem"
           loading="lazy"
         />
         <div class="space-y-4 p-6">
