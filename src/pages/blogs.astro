@@ -2,6 +2,7 @@
 import BlogList from '@/components/personal/BlogList.astro';
 import PageChrome from '@/components/personal/PageChrome.astro';
 import { defaultLocale } from '@/i18n';
+import { BLOG_CATEGORIES, getBlogArticles, getBlogCategoryDescription, getBlogCategoryLabel } from '@/lib/blogs';
 
 interface Props {
   locale?: string;
@@ -9,6 +10,9 @@ interface Props {
 
 const { locale = defaultLocale } = Astro.props;
 const en = locale === 'en';
+const categoryCounts = Object.fromEntries(
+  await Promise.all(BLOG_CATEGORIES.map(async (category) => [category, (await getBlogArticles(locale, category)).length])),
+);
 ---
 
 <PageChrome
@@ -20,11 +24,45 @@ const en = locale === 'en';
       : '字句一行行亮起，回应它们的始终只有深夜。'
   }
 >
-  <section aria-labelledby="blog-articles-title" class="space-y-5">
-    <div class="border-b border-black/5 pb-3 dark:border-white/10">
-      <p class="text-primary text-xs font-semibold tracking-[0.2em] uppercase">Essays</p>
-      <h2 id="blog-articles-title" class="mt-1 text-2xl font-bold">{en ? 'Blog essays' : '博客文章'}</h2>
-    </div>
-    <BlogList locale={locale} indexable={false} />
-  </section>
+  <nav class="mb-12 grid gap-4 sm:grid-cols-2" aria-label={en ? 'Blog categories' : '博客分类'}>
+    {
+      BLOG_CATEGORIES.map((category) => (
+        <a
+          class="group rounded-3xl border border-black/5 bg-white/55 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md motion-reduce:transform-none dark:border-white/10 dark:bg-white/5"
+          href={`#${category}`}
+        >
+          <span class="flex items-center justify-between gap-3">
+            <strong class="text-lg">{getBlogCategoryLabel(category)}</strong>
+            <span class="text-primary rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold">
+              {categoryCounts[category]}
+            </span>
+          </span>
+          <span class="text-muted-foreground mt-2 block text-sm leading-6">
+            {getBlogCategoryDescription(category, locale)}
+          </span>
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="space-y-14" data-pagefind-ignore="all">
+    {
+      BLOG_CATEGORIES.map((category) => (
+        <section id={category} aria-labelledby={`${category}-title`} class="scroll-mt-24 space-y-5">
+          <div class="border-b border-black/5 pb-3 dark:border-white/10">
+            <p class="text-primary text-xs font-semibold tracking-[0.2em] uppercase">
+              {en ? 'Blog category' : '博客分类'} · {categoryCounts[category]}
+            </p>
+            <h2 id={`${category}-title`} class="mt-1 text-2xl font-bold">
+              {getBlogCategoryLabel(category)}
+            </h2>
+            <p class="text-muted-foreground mt-2 text-sm leading-6">
+              {getBlogCategoryDescription(category, locale)}
+            </p>
+          </div>
+          <BlogList locale={locale} indexable={false} category={category} />
+        </section>
+      ))
+    }
+  </div>
 </PageChrome>

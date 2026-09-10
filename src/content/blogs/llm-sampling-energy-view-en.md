@@ -5,6 +5,7 @@ publishedAt: "2026-08-26 01:58:33"
 language: en
 translationKey: llm-sampling-energy-view
 routeSlug: llm-sampling-energy-view
+category: inspirations
 keywords:
   - large language model
   - sampling

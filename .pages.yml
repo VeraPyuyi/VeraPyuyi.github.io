@@ -14,7 +14,7 @@ content:
     path: src/content/blogs
     filename: "{routeSlug}-{language}.md"
     view:
-      fields: [title, language, publishedAt, draft]
+      fields: [title, category, language, publishedAt, draft]
       primary: title
       sort: [publishedAt, title]
       default: { sort: publishedAt, order: desc }
@@ -26,6 +26,7 @@ content:
       - { name: language, label: 语言, type: select, required: true, options: { values: [zh, en] } }
       - { name: translationKey, label: 双语内容 ID, type: string, required: true }
       - { name: routeSlug, label: 固定链接, type: string, required: true }
+      - { name: category, label: 博客分类, type: select, required: true, options: { values: [inspirations, learning] } }
       - { name: keywords, label: SEO 关键词, type: string, list: true }
       - { name: draft, label: 草稿, type: boolean }
       - { name: featured, label: 首页精选, type: boolean }

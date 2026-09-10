@@ -5,6 +5,7 @@ publishedAt: "2026-08-21 01:35:36"
 language: en
 translationKey: workflow-to-agent-harness
 routeSlug: workflow-to-agent-harness
+category: inspirations
 keywords:
   - agent harness
   - workflow

@@ -3,7 +3,7 @@ import { Icon } from 'astro-icon/components';
 import readingTime from 'reading-time';
 import ResponsiveImage from '@/components/personal/ResponsiveImage.astro';
 import { defaultLocale, localizedPath } from '@/i18n';
-import { getBlogArticles } from '@/lib/blogs';
+import { type BlogCategory, getBlogArticles, getBlogCategoryLabel } from '@/lib/blogs';
 import { displayDate } from '@/lib/date';
 
 interface Props {
@@ -11,25 +11,40 @@ interface Props {
   limit?: number;
   indexable?: boolean;
   randomized?: boolean;
+  category?: BlogCategory;
 }
 
-const { locale = defaultLocale, limit, indexable = true, randomized = false } = Astro.props;
+const { locale = defaultLocale, limit, indexable = true, randomized = false, category } = Astro.props;
 const en = locale === 'en';
-const allBlogs = await getBlogArticles(locale);
+const allBlogs = await getBlogArticles(locale, category);
 const blogs = randomized || limit === undefined ? allBlogs : allBlogs.slice(0, limit);
 const visibleLimit = limit ?? blogs.length;
 const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pagefind-ignore': 'all' };
 ---
 
-<div
-  class="grid gap-5 lg:grid-cols-2"
-  data-home-random-pool={randomized ? 'blogs' : undefined}
-  data-home-random-limit={randomized ? visibleLimit : undefined}
-  {...pagefindAttributes}
->
+{
+  blogs.length === 0 ? (
+    <div
+      class="rounded-3xl border border-dashed border-black/10 bg-white/35 px-6 py-10 text-center dark:border-white/15 dark:bg-white/[0.03]"
+      {...pagefindAttributes}
+    >
+      <p class="text-muted-foreground text-sm leading-7">
+        {en
+          ? 'The Learning shelf is still taking shape. Its first essay will appear here when it is ready.'
+          : 'Learning 分类还在慢慢整理，第一篇文章写好后会出现在这里。'}
+      </p>
+    </div>
+  ) : (
+    <div
+      class="grid gap-5 lg:grid-cols-2"
+      data-home-random-pool={randomized ? 'blogs' : undefined}
+      data-home-random-limit={randomized ? visibleLimit : undefined}
+      {...pagefindAttributes}
+    >
   {
     blogs.map((entry, index) => {
       const href = localizedPath(`/blogs/${entry.data.routeSlug}`, locale);
+      const categoryHref = `${localizedPath('/blogs', locale)}#${entry.data.category}`;
       const minutes = Math.max(1, Math.ceil(readingTime(entry.body ?? '').minutes));
       return (
         <article
@@ -54,6 +69,12 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
           </a>
           <div class="flex flex-1 flex-col gap-4 p-6">
             <div class="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              <a
+                class="text-primary rounded-full bg-primary/10 px-2.5 py-1 font-semibold hover:bg-primary/15"
+                href={categoryHref}
+              >
+                {getBlogCategoryLabel(entry.data.category)}
+              </a>
               <time datetime={entry.data.publishedAt.toISOString()}>{displayDate.date(entry.data.publishedAt)}</time>
               <span aria-hidden="true">·</span>
               <span>{en ? `${minutes} min read` : `约 ${minutes} 分钟`}</span>
@@ -73,4 +94,6 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
       );
     })
   }
-</div>
+    </div>
+  )
+}

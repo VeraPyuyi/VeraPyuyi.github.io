@@ -36,6 +36,7 @@ const blogArticleCollection = defineCollection({
       language: z.enum(['zh', 'en']),
       translationKey: z.string().min(1),
       routeSlug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+      category: z.enum(['inspirations', 'learning']),
       keywords: z.array(z.string()).default([]),
       draft: z.boolean().default(false),
       featured: z.boolean().default(false),

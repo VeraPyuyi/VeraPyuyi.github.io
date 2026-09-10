@@ -5,6 +5,7 @@ publishedAt: "2026-08-30 15:48:15"
 language: zh
 translationKey: monte-carlo-control-natural-starts
 routeSlug: monte-carlo-control-natural-starts
+category: inspirations
 keywords:
   - Monte Carlo control
   - reinforcement learning

@@ -5,6 +5,7 @@ publishedAt: "2026-08-28 13:07:34"
 language: zh
 translationKey: attention-as-spiking-dynamics
 routeSlug: attention-as-spiking-dynamics
+category: inspirations
 keywords:
   - spiking neural network
   - attention

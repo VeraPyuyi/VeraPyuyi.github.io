@@ -5,6 +5,7 @@ publishedAt: "2026-08-24 02:37:52"
 language: zh
 translationKey: sgd-zigzag-posets
 routeSlug: sgd-zigzag-posets
+category: inspirations
 keywords:
   - stochastic gradient descent
   - zigzag poset

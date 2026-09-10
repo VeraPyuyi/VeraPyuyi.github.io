@@ -1,6 +1,6 @@
 import type { RSSFeedItem } from '@astrojs/rss';
 import { localizedPath } from '@/i18n';
-import { getBlogArticles } from '@/lib/blogs';
+import { getBlogArticles, getBlogCategoryLabel } from '@/lib/blogs';
 import { getPapers } from '@/lib/papers';
 
 function escapeHtml(value: string): string {
@@ -37,7 +37,7 @@ export async function getAggregateRssItems(locale: string): Promise<RSSFeedItem[
       description: entry.data.summary,
       link,
       content: `<p>${escapeHtml(entry.data.summary)}</p><p><a href="${escapeHtml(link)}">${en ? 'Read the essay' : '阅读全文'}</a></p>`,
-      customData: `<guid isPermaLink="false">blog:${escapeHtml(entry.data.translationKey)}</guid>`,
+      customData: `<guid isPermaLink="false">blog:${escapeHtml(entry.data.translationKey)}</guid><category>${getBlogCategoryLabel(entry.data.category)}</category>`,
     };
   });
 

@@ -28,6 +28,7 @@ test('the research essays form five complete bilingual pairs', () => {
     assert.match(data.routeSlug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
     assert.equal(data.translationKey, data.routeSlug);
     assert.ok(['zh', 'en'].includes(data.language));
+    assert.equal(data.category, 'inspirations');
     assert.equal(data.draft, false);
     assert.equal(data.comments, true);
     assert.equal(data.cover, `/uploads/blogs/${data.routeSlug}/cover.png`);
@@ -156,12 +157,34 @@ test('blog routes, shared comments, indexing, and CMS collections are wired expl
   assert.match(rootPage, /data-pagefind-body/);
   assert.match(rootPage, /mathStyles/);
   assert.match(listPage, /<BlogList locale=\{locale\} indexable=\{false\}/);
+  assert.match(listPage, /BLOG_CATEGORIES/);
+  assert.match(listPage, /id=\{category\}/);
+  assert.match(listPage, /category=\{category\}/);
   assert.doesNotMatch(listPage, /BlogSiteList|Independent sites|独立站点/);
   assert.match(listPage, /字句一行行亮起，回应它们的始终只有深夜。/);
   assert.match(listPage, /Lines of words light up one by one; only the night ever answers\./);
   assert.match(blogList, /<ResponsiveImage/);
   assert.match(blogList, /aspect-video/);
+  assert.match(blogList, /getBlogCategoryLabel/);
+  assert.match(rootPage, /data-pagefind-meta="category"/);
   assert.match(pagesCms, /- name: blogs\b/);
   assert.match(pagesCms, /path: src\/content\/blogs/);
+  assert.match(pagesCms, /name: category, label: 博客分类/);
+  assert.match(pagesCms, /values: \[inspirations, learning\]/);
   assert.doesNotMatch(pagesCms, /blogSites|blog-sites|独立博客站点/);
+});
+
+test('blog categories are explicit across content, lists, details, and RSS', () => {
+  const contentConfig = read('src/content.config.ts');
+  const blogLibrary = read('src/lib/blogs.ts');
+  const listPage = read('src/pages/blogs.astro');
+  const rootPage = read('src/pages/blogs/[slug].astro');
+  const rssItems = read('src/lib/rss-items.ts');
+
+  assert.match(contentConfig, /category: z\.enum\(\['inspirations', 'learning'\]\)/);
+  assert.match(blogLibrary, /BLOG_CATEGORIES[^=]*= \['inspirations', 'learning'\]/);
+  assert.match(blogLibrary, /data\.category === category/);
+  assert.match(listPage, /getBlogCategoryDescription/);
+  assert.match(rootPage, /#\$\{entry\.data\.category\}/);
+  assert.match(rssItems, /<category>\$\{getBlogCategoryLabel\(entry\.data\.category\)\}<\/category>/);
 });

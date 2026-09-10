@@ -7,7 +7,7 @@ import readingTime from 'reading-time';
 import { Comment } from '@/components/comment';
 import PageChrome from '@/components/personal/PageChrome.astro';
 import { defaultLocale, localizedPath } from '@/i18n';
-import { getBlogArticle } from '@/lib/blogs';
+import { getBlogArticle, getBlogCategoryLabel } from '@/lib/blogs';
 import { displayDate } from '@/lib/date';
 import { blogRoute } from '../_shared/routes';
 
@@ -25,6 +25,8 @@ const { Content } = await render(entry);
 const en = locale === 'en';
 const minutes = Math.max(1, Math.ceil(readingTime(entry.body ?? '').minutes));
 const publishedDate = displayDate.date(entry.data.publishedAt);
+const categoryLabel = getBlogCategoryLabel(entry.data.category);
+const categoryHref = `${localizedPath('/blogs', locale)}#${entry.data.category}`;
 ---
 
 <PageChrome
@@ -40,6 +42,9 @@ const publishedDate = displayDate.date(entry.data.publishedAt);
 >
   <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/55 p-4 text-sm dark:border-white/10 dark:bg-white/5">
     <div class="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
+      <a class="text-primary rounded-full bg-primary/10 px-2.5 py-1 font-semibold hover:bg-primary/15" href={categoryHref}>
+        {categoryLabel}
+      </a>
       <Icon name="ri:calendar-line" />
       <time datetime={entry.data.publishedAt.toISOString()}>{publishedDate}</time>
       <span aria-hidden="true">·</span>
@@ -52,6 +57,7 @@ const publishedDate = displayDate.date(entry.data.publishedAt);
   </div>
   <article class="blog-content prose dark:prose-invert max-w-none" data-pagefind-body>
     <span class="sr-only" data-pagefind-meta="title">{entry.data.title}</span>
+    <span class="sr-only" data-pagefind-meta="category">{categoryLabel}</span>
     <CustomContent Content={Content} />
   </article>
   {entry.data.comments && <Comment contentId={`blog:${entry.data.translationKey}`} />}
