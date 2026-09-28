@@ -81,6 +81,7 @@ export default function FriendCard({ friend, index }: FriendCardProps) {
       <m.a
         href={friend.url}
         target="_blank"
+        rel="noopener noreferrer"
         ref={cardRef}
         className={cn(
           'friend-card group !no-underline hover:!no-underline relative block h-[200px] w-full cursor-pointer select-none transition-transform duration-300 ease-easeOut',
@@ -119,6 +120,10 @@ export default function FriendCard({ friend, index }: FriendCardProps) {
                   alt={friend.owner}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                   loading="lazy"
+                  referrerPolicy="no-referrer"
+                  onError={(event) => {
+                    if (!event.currentTarget.src.startsWith('data:image/svg+xml')) event.currentTarget.src = DEFAULT_AVATAR;
+                  }}
                 />
               </div>
             </div>

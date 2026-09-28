@@ -130,7 +130,7 @@ social:
 #   - url: 站点地址
 #   - owner: 站长昵称
 #   - desc: 站点描述/简介
-#   - image: 头像图片 URL
+#   - image: 头像图片 URL（留空时使用默认头像）
 #   - color: (可选) 卡片背景色，十六进制格式
 # -----------------------------------------------------------------------------
 friends:
@@ -146,7 +146,19 @@ friends:
         desc: 站点简介 # 站点简介
         image: https://your-blog.com/avatar.jpg # 头像链接
         color: "#ffc0cb" # 主题色（可选）
-  data: [] # 在 Pages CMS 中添加第一个友链
+  data:
+    - site: 兰舟千帆
+      url: https://daodaozi.xyz/
+      owner: 蒋光道
+      desc: 浮生若梦，为欢几何
+      image: https://fan.daodaozi.xyz/imagesfordaodaozi/randomCover/daodaozi1173839515352133.jpg
+      color: "#ffc0cb"
+    - site: 午安大电牛
+      url: https://www.njfu-yangfan.top/
+      owner: 杨帆
+      desc: 我最牛！
+      image: "" # 申请中使用了无效的示例头像，改用站点默认头像
+      color: "#ffc0cb"
 
 # =============================================================================
 # Announcements
