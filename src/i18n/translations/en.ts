@@ -83,6 +83,9 @@ export const uiStrings: UIStrings = {
   // ── Friends ─────────────────────────────────────────────────
   'friends.title': 'Friends',
   'friends.applyTitle': 'Apply for Friend Link',
+  'friends.applyDesc': 'Fill in your site details, copy the preview, and post it in the comments below.',
+  'friends.emptyTitle': 'No friend links yet',
+  'friends.emptyDescription': 'You can apply below. Once your request is reviewed, your site will appear here.',
   'friends.siteName': 'Site Name',
   'friends.siteUrl': 'Site URL',
   'friends.ownerName': 'Name',

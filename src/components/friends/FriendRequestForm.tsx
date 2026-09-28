@@ -1,7 +1,7 @@
 import { friendsIntro } from '@constants/friends-config';
-import { useTranslation } from '@hooks/useTranslation';
 import { useClipboard } from 'foxact/use-clipboard';
 import { useCallback, useState } from 'react';
+import { defaultLocale, type TranslationKey, t as translate } from '@/i18n';
 import SakuraSVG from '../svg/SakuraSvg';
 
 interface FormData {
@@ -13,8 +13,12 @@ interface FormData {
   color: string;
 }
 
-export default function FriendRequestForm() {
-  const { t } = useTranslation();
+interface FriendRequestFormProps {
+  locale?: string;
+}
+
+export default function FriendRequestForm({ locale = defaultLocale }: FriendRequestFormProps) {
+  const t = useCallback((key: TranslationKey) => translate(locale, key), [locale]);
   const [formData, setFormData] = useState<FormData>({
     site: '',
     owner: '',
@@ -27,12 +31,12 @@ export default function FriendRequestForm() {
   const { copied, copy } = useClipboard({ timeout: 2000 });
 
   const generateText = useCallback(() => {
-    return `site: ${formData.site || t('friends.sitePlaceholder')}
-url: ${formData.url || 'https://example.com'}
-owner: ${formData.owner || t('friends.ownerPlaceholder')}
-desc: ${formData.desc || t('friends.descPlaceholder')}
-image: ${formData.image || 'https://example.com/avatar.jpg'}
-color: "${formData.color || '#ffc0cb'}"`;
+    return `site: ${JSON.stringify(formData.site || t('friends.sitePlaceholder'))}
+url: ${JSON.stringify(formData.url || 'https://example.com')}
+owner: ${JSON.stringify(formData.owner || t('friends.ownerPlaceholder'))}
+desc: ${JSON.stringify(formData.desc || t('friends.descPlaceholder'))}
+image: ${JSON.stringify(formData.image || 'https://example.com/avatar.jpg')}
+color: ${JSON.stringify(formData.color || '#ffc0cb')}`;
   }, [formData, t]);
 
   const handleCopy = useCallback(() => {
@@ -52,13 +56,13 @@ color: "${formData.color || '#ffc0cb'}"`;
   );
 
   return (
-    <div className="mb-4 w-full">
+    <div id="friend-application" className="mb-4 w-full scroll-mt-24">
       <div className="relative overflow-hidden rounded-3xl border-2 border-gray-100 bg-white p-6 shadow-sm md:p-3 dark:border-gray-800 dark:bg-gray-900">
         {/* Cute Corner Decor */}
         <div className="absolute -top-6 -right-6 h-24 w-24 rounded-full bg-pink-100/50 dark:bg-pink-900/20" />
         <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-blue-100/50 dark:bg-blue-900/20" />
 
-        <div className="grid grid-cols-2 gap-12 md:grid-cols-1 md:gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
           {/* Left Side: Form */}
           <div className="relative z-10">
             <div className="mb-6">
@@ -66,11 +70,13 @@ color: "${formData.color || '#ffc0cb'}"`;
                 <SakuraSVG className="size-6 animate-spin text-[#FFC0CB] duration-10000" />
                 {t('friends.applyTitle')}
               </h2>
-              <p className="font-medium text-gray-500 text-sm dark:text-gray-400">{friendsIntro.applyDesc}</p>
+              <p className="font-medium text-gray-500 text-sm dark:text-gray-400">
+                {locale === defaultLocale ? friendsIntro.applyDesc || t('friends.applyDesc') : t('friends.applyDesc')}
+              </p>
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="group relative">
                   <label htmlFor="friend-site" className="mb-1.5 block font-bold text-gray-400 text-xs uppercase tracking-wide">
                     {t('friends.siteName')}
@@ -134,7 +140,7 @@ color: "${formData.color || '#ffc0cb'}"`;
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="group relative">
                   <label
                     htmlFor="friend-image"

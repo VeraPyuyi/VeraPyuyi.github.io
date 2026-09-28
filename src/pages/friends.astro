@@ -25,14 +25,16 @@ const description = t(locale, 'friends.title');
     <Cover slot="cover" title={t(locale, 'friends.title')} />
     <HomeSider slot="sider" />
     <div
-      class={`bg-gradient-start shadow-box tablet:shadow-none flex flex-col gap-10 overflow-hidden ${CONTENT_PADDING.standard}`}
+      class={`bg-gradient-start shadow-box tablet:shadow-none flex min-w-0 flex-col gap-10 ${CONTENT_PADDING.standard}`}
     >
       <div class="mt-4">
-        <FriendsGrid client:load />
+        <FriendsGrid locale={locale} client:load />
       </div>
       <div class="mb-4">
-        <FriendRequestForm client:visible />
-        <Comment contentId="page:friends" />
+        <FriendRequestForm locale={locale} client:visible />
+        <div id="friend-comments" class="scroll-mt-24">
+          <Comment contentId="page:friends" />
+        </div>
       </div>
     </div>
   </TwoColumnLayout>

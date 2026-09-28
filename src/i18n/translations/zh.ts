@@ -82,6 +82,9 @@ export const uiStrings = {
   // ── Friends ─────────────────────────────────────────────────
   'friends.title': '友情链接',
   'friends.applyTitle': '申请友链',
+  'friends.applyDesc': '填写站点信息，复制配置后粘贴到下方留言区发送。',
+  'friends.emptyTitle': '这里还没有友链',
+  'friends.emptyDescription': '欢迎申请交换友链。填写下方信息并在留言区发送，确认后会展示在这里。',
   'friends.siteName': '站点名称',
   'friends.siteUrl': '站点地址',
   'friends.ownerName': '昵称',
