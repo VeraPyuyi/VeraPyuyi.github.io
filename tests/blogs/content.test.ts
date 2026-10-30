@@ -14,11 +14,11 @@ function read(path: string): string {
   return readFileSync(join(root, path), 'utf8');
 }
 
-test('the research essays form five complete bilingual pairs', () => {
+test('the research essays form ten complete bilingual pairs', () => {
   const files = readdirSync(blogRoot)
     .filter((name) => /\.(md|mdx)$/.test(name))
     .sort();
-  assert.equal(files.length, 10);
+  assert.equal(files.length, 20);
 
   const pairs = new Map<string, Set<string>>();
   for (const filename of files) {
@@ -34,7 +34,10 @@ test('the research essays form five complete bilingual pairs', () => {
     assert.equal(data.cover, `/uploads/blogs/${data.routeSlug}/cover.png`);
     assert.ok(typeof data.coverAlt === 'string' && data.coverAlt.trim().length > 0);
     assert.ok(Array.isArray(data.keywords) && data.keywords.length > 0);
-    assert.doesNotMatch(content, /cite|chatgpt-content-reference|turn\d+(?:search|view|academia)|\uFFFD/);
+    assert.doesNotMatch(
+      content,
+      /(?:cite|filecite)|chatgpt-content-reference|turn\d+(?:search|view|academia)|sandbox:\/|chatgpt\.com\/(?:c|g)\/|\uFFFD/,
+    );
     assert.equal(
       [...content].some((character) => {
         const codePoint = character.codePointAt(0) ?? 0;
@@ -60,7 +63,7 @@ test('the research essays form five complete bilingual pairs', () => {
     pairs.set(data.translationKey, languages);
   }
 
-  assert.equal(pairs.size, 5);
+  assert.equal(pairs.size, 10);
   for (const languages of pairs.values()) assert.deepEqual([...languages].sort(), ['en', 'zh']);
 });
 
@@ -71,6 +74,11 @@ test('blog publication timestamps match the original conversation creation times
     ['sgd-zigzag-posets', '2026-08-24 02:37:52'],
     ['llm-sampling-energy-view', '2026-08-26 01:58:33'],
     ['attention-as-spiking-dynamics', '2026-08-28 13:07:34'],
+    ['irrational-encoding-agent-memory', '2026-10-29T18:18:30Z'],
+    ['agent-layered-memory', '2026-10-22T10:36:51Z'],
+    ['agent-memory-security', '2026-10-22T10:36:51Z'],
+    ['raptor-graphrag-hierarchy', '2026-10-10T12:54:35Z'],
+    ['potential-functions-latent-topology', '2026-08-31T14:04:43Z'],
   ]);
 
   for (const filename of readdirSync(blogRoot).filter((name) => /\.md$/.test(name))) {
@@ -79,7 +87,7 @@ test('blog publication timestamps match the original conversation creation times
   }
 });
 
-test('bilingual blog covers are normalized, responsive, and locally documented', async () => {
+test('bilingual blog covers retain full-size widescreen sources and documented responsive resources', async () => {
   const files = readdirSync(blogRoot).filter((name) => /\.(md|mdx)$/.test(name));
   const covers = new Map<string, Set<string>>();
   const manifest = JSON.parse(read('public/media-manifest.json')) as Record<string, string[]>;
@@ -91,7 +99,7 @@ test('bilingual blog covers are normalized, responsive, and locally documented',
     covers.set(data.translationKey, pairCovers);
   }
 
-  assert.equal(covers.size, 5);
+  assert.equal(covers.size, 10);
   for (const [slug, pairCovers] of covers) {
     assert.equal(pairCovers.size, 1, `${slug} translations must share one cover`);
     const [cover] = pairCovers;
@@ -99,8 +107,8 @@ test('bilingual blog covers are normalized, responsive, and locally documented',
     const source = join(root, 'public', cover.slice(1));
     assert.ok(existsSync(source), cover);
     const metadata = await sharp(source).metadata();
-    assert.equal(metadata.width, 1600);
-    assert.equal(metadata.height, 900);
+    assert.ok(metadata.width && metadata.width >= 1600, `${slug} must retain a full-size source`);
+    assert.ok(metadata.height && Math.abs(metadata.width / metadata.height - 16 / 9) < 0.005, `${slug} must be 16:9`);
 
     const variants = manifest[cover];
     assert.equal(variants.length, 7);
@@ -111,6 +119,28 @@ test('bilingual blog covers are normalized, responsive, and locally documented',
   assert.match(provenance, /built-in GPT Image/);
   assert.match(provenance, /style reference only/);
   for (const slug of covers.keys()) assert.match(provenance, new RegExp(slug));
+});
+
+test('the selected new essays preserve identical mathematics across their translations', () => {
+  const selected = [
+    'irrational-encoding-agent-memory',
+    'agent-layered-memory',
+    'agent-memory-security',
+    'raptor-graphrag-hierarchy',
+    'potential-functions-latent-topology',
+  ];
+  const formulas = (source: string) =>
+    [...source.matchAll(/\$\$([\s\S]*?)\$\$|\$([^$\n]+)\$/g)].map((match) => (match[1] ?? match[2]).replace(/\s+/g, ''));
+
+  for (const slug of selected) {
+    const zh = matter(read(`src/content/blogs/${slug}-zh.md`));
+    const en = matter(read(`src/content/blogs/${slug}-en.md`));
+    assert.deepEqual(formulas(en.content), formulas(zh.content), `${slug} translations changed the mathematics`);
+    assert.equal(en.data.publishedAt, zh.data.publishedAt);
+    assert.equal(en.data.updatedAt, zh.data.updatedAt);
+    assert.equal(en.data.cover, zh.data.cover);
+    assert.ok(zh.content.length > 1000 && en.content.length > 1000, `${slug} must contain complete essays`);
+  }
 });
 
 test('responsive media URLs include generated bytes in their cache revision', () => {

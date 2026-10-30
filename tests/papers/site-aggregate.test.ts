@@ -46,7 +46,7 @@ test('the homepage uses original bilingual feature copy and only overrides the b
   assert.match(home, /<Cover slot="cover" \/>/);
 });
 
-test('aggregate content contains three papers and five bilingual essays', () => {
+test('aggregate content contains three papers and ten bilingual essays', () => {
   const paperDirectories = readdirSync(join(root, 'src/content/papers'), { withFileTypes: true }).filter((entry) =>
     entry.isDirectory(),
   );
@@ -59,12 +59,22 @@ test('aggregate content contains three papers and five bilingual essays', () => 
     'horizon-uniform-sensitivity',
   ]);
   assert.deepEqual(blogs, [
+    'agent-layered-memory-en.md',
+    'agent-layered-memory-zh.md',
+    'agent-memory-security-en.md',
+    'agent-memory-security-zh.md',
     'attention-as-spiking-dynamics-en.md',
     'attention-as-spiking-dynamics-zh.md',
+    'irrational-encoding-agent-memory-en.md',
+    'irrational-encoding-agent-memory-zh.md',
     'llm-sampling-energy-view-en.md',
     'llm-sampling-energy-view-zh.md',
     'monte-carlo-control-natural-starts-en.md',
     'monte-carlo-control-natural-starts-zh.md',
+    'potential-functions-latent-topology-en.md',
+    'potential-functions-latent-topology-zh.md',
+    'raptor-graphrag-hierarchy-en.md',
+    'raptor-graphrag-hierarchy-zh.md',
     'sgd-zigzag-posets-en.md',
     'sgd-zigzag-posets-zh.md',
     'workflow-to-agent-harness-en.md',

@@ -8,6 +8,24 @@
     "/og-1600.avif",
     "/og-lqip.webp"
   ],
+  "/uploads/blogs/agent-layered-memory/cover.png": [
+    "/media/blogs/agent-layered-memory/cover-480.webp",
+    "/media/blogs/agent-layered-memory/cover-480.avif",
+    "/media/blogs/agent-layered-memory/cover-960.webp",
+    "/media/blogs/agent-layered-memory/cover-960.avif",
+    "/media/blogs/agent-layered-memory/cover-1600.webp",
+    "/media/blogs/agent-layered-memory/cover-1600.avif",
+    "/media/blogs/agent-layered-memory/cover-lqip.webp"
+  ],
+  "/uploads/blogs/agent-memory-security/cover.png": [
+    "/media/blogs/agent-memory-security/cover-480.webp",
+    "/media/blogs/agent-memory-security/cover-480.avif",
+    "/media/blogs/agent-memory-security/cover-960.webp",
+    "/media/blogs/agent-memory-security/cover-960.avif",
+    "/media/blogs/agent-memory-security/cover-1600.webp",
+    "/media/blogs/agent-memory-security/cover-1600.avif",
+    "/media/blogs/agent-memory-security/cover-lqip.webp"
+  ],
   "/uploads/blogs/attention-as-spiking-dynamics/cover.png": [
     "/media/blogs/attention-as-spiking-dynamics/cover-480.webp",
     "/media/blogs/attention-as-spiking-dynamics/cover-480.avif",
@@ -16,6 +34,15 @@
     "/media/blogs/attention-as-spiking-dynamics/cover-1600.webp",
     "/media/blogs/attention-as-spiking-dynamics/cover-1600.avif",
     "/media/blogs/attention-as-spiking-dynamics/cover-lqip.webp"
+  ],
+  "/uploads/blogs/irrational-encoding-agent-memory/cover.png": [
+    "/media/blogs/irrational-encoding-agent-memory/cover-480.webp",
+    "/media/blogs/irrational-encoding-agent-memory/cover-480.avif",
+    "/media/blogs/irrational-encoding-agent-memory/cover-960.webp",
+    "/media/blogs/irrational-encoding-agent-memory/cover-960.avif",
+    "/media/blogs/irrational-encoding-agent-memory/cover-1600.webp",
+    "/media/blogs/irrational-encoding-agent-memory/cover-1600.avif",
+    "/media/blogs/irrational-encoding-agent-memory/cover-lqip.webp"
   ],
   "/uploads/blogs/llm-sampling-energy-view/cover.png": [
     "/media/blogs/llm-sampling-energy-view/cover-480.webp",
@@ -34,6 +61,24 @@
     "/media/blogs/monte-carlo-control-natural-starts/cover-1600.webp",
     "/media/blogs/monte-carlo-control-natural-starts/cover-1600.avif",
     "/media/blogs/monte-carlo-control-natural-starts/cover-lqip.webp"
+  ],
+  "/uploads/blogs/potential-functions-latent-topology/cover.png": [
+    "/media/blogs/potential-functions-latent-topology/cover-480.webp",
+    "/media/blogs/potential-functions-latent-topology/cover-480.avif",
+    "/media/blogs/potential-functions-latent-topology/cover-960.webp",
+    "/media/blogs/potential-functions-latent-topology/cover-960.avif",
+    "/media/blogs/potential-functions-latent-topology/cover-1600.webp",
+    "/media/blogs/potential-functions-latent-topology/cover-1600.avif",
+    "/media/blogs/potential-functions-latent-topology/cover-lqip.webp"
+  ],
+  "/uploads/blogs/raptor-graphrag-hierarchy/cover.png": [
+    "/media/blogs/raptor-graphrag-hierarchy/cover-480.webp",
+    "/media/blogs/raptor-graphrag-hierarchy/cover-480.avif",
+    "/media/blogs/raptor-graphrag-hierarchy/cover-960.webp",
+    "/media/blogs/raptor-graphrag-hierarchy/cover-960.avif",
+    "/media/blogs/raptor-graphrag-hierarchy/cover-1600.webp",
+    "/media/blogs/raptor-graphrag-hierarchy/cover-1600.avif",
+    "/media/blogs/raptor-graphrag-hierarchy/cover-lqip.webp"
   ],
   "/uploads/blogs/sgd-zigzag-posets/cover.png": [
     "/media/blogs/sgd-zigzag-posets/cover-480.webp",
