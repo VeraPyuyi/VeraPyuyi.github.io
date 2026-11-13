@@ -1,5 +1,15 @@
 # Blog cover art
 
+## Learning cover: multi-agent cooperation
+
+`multi-agent-cooperation` shares the original 1672 × 941 PNG at
+`public/uploads/blogs/multi-agent-cooperation/cover.png` across both translations. Generated using built-in GPT Image
+with the Monte Carlo cover as a character and rendering style reference only.
+
+> Use case: stylized-concept. Create a new 16:9 Japanese 2D anime blog cover about the emergence of cooperation in multi-agent systems. Image 1 is a character and rendering style reference only. Retain the original adult researcher's waist-length sapphire-to-lavender-to-pink hair, gold star hairpin, cream blouse, powder-blue cardigan and navy skirt, and her navy star cat. New scene: an evening observatory workshop with a circular tabletop simulation. Four small, clearly distinct robots of equal status coordinate to repair a bridge between two clusters of nodes, passing a tiny golden component from one to the next. Fine glowing connections show a decentralized network with local links. The researcher and cat observe from the side. Make the robots and shared task legible at thumbnail scale. Clean expressive linework and cel shading, cool indigo and teal with soft amber light, crisp shapes. Keep the main action in the middle 70 percent for mobile crops and leave a calm darker region for the web title. No lettering, numerals, logos, watermarks, equations or copied composition.
+
+## Inspirations cover collection
+
 The first five bilingual blog covers were generated on 2026-08-30 with the built-in GPT Image tool. The site's original
 `public/og.png` illustration was supplied as a **style reference only** for the star-cat identity and the broad pastel
 palette; its composition was not edited or reproduced. Every final cover is a newly generated Japanese 2D anime
