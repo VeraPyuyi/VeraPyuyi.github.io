@@ -42,7 +42,7 @@ const {
   description={description}
   siderType={siderType}
   keywords={keywords}
-  openGraph={{ type: contentType, image: cover }}
+  openGraph={{ type: contentType, title, image: cover, imageAlt: coverAlt }}
 >
   {mathStyles && <link slot="head" rel="stylesheet" href="/katex/katex.min.css" />}
   <TwoColumnLayout>

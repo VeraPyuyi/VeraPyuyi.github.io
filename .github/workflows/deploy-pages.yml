@@ -44,6 +44,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Test social card generation and validation
+        run: pnpm exec tsx --test tests/seo/*.test.mjs
+
       - name: Validate content and types
         run: pnpm check
 
@@ -98,6 +101,9 @@ jobs:
       - name: Check generated links and required output
         run: pnpm check:output
 
+      - name: Check generated blog sharing cards
+        run: python3 scripts/check-social-cards.py
+
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
@@ -116,3 +122,14 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
+
+      - name: Checkout social card verifier
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Verify deployed blog cards as Twitterbot
+        timeout-minutes: 5
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: python3 scripts/check-social-cards.py --live "$PAGE_URL" --attempts 5

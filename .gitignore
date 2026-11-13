@@ -44,3 +44,7 @@ pnpm-debug.log*
 
 # Backup files
 backups/
+
+# Recreated by images:build for social sharing
+public/social/
+public/social-images.json

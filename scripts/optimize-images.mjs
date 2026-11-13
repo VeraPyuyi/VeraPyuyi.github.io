@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { extname, join, parse, relative } from 'node:path';
 import sharp from 'sharp';
+import { buildSiteSocialImages } from './build-social-images.mjs';
 
 const root = process.cwd();
 const publicRoot = join(root, 'public');
@@ -66,3 +67,5 @@ for (const source of walk(uploadsRoot).filter((path) => extensions.has(extname(p
 
 writeFileSync(join(publicRoot, 'media-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`[images] optimized ${Object.keys(manifest).length} source image(s); metadata is stripped from generated variants`);
+
+await buildSiteSocialImages(root);

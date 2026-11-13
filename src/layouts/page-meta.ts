@@ -10,6 +10,8 @@ export interface PageOpenGraph {
   description?: string;
   /** Relative paths are resolved against `Astro.site`. */
   image?: string;
+  /** Accessible description of the cover, shared by Open Graph and X cards. */
+  imageAlt?: string;
   type?: 'website' | 'article';
   url?: string;
 }
