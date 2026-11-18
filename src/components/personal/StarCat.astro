@@ -1,0 +1,148 @@
+---
+interface Props {
+  locale: string;
+}
+
+const { locale } = Astro.props;
+const en = locale === 'en';
+
+const lines = en
+  ? [
+      'Plenty of stars on the Whirlpool’s arms are still unread~',
+      'Meow? Is the paper finished yet?',
+      'Head pats yes, belly no.',
+      'Writing late at night? Drink some water.',
+      'I counted every star in all four galaxies.',
+      'I spun the ring around Hoag’s Object with my own tail.',
+    ]
+  : [
+      '涡状星系的旋臂上，还有好多星星没被读过～',
+      '喵？论文写完了吗？',
+      '摸头可以，肚子不行。',
+      '深夜写东西，记得喝水。',
+      '四个星系里的星星，我都数过一遍了。',
+      '霍格天体那一圈光环，是我叼着尾巴转出来的。',
+    ];
+---
+
+<div class="star-cat" data-star-cat data-lines={JSON.stringify(lines)}>
+  <p class="star-cat-bubble" role="status" data-star-cat-bubble>{lines[0]}</p>
+  <button type="button" class="star-cat-button" data-star-cat-button aria-label={en ? 'Poke the star cat' : '戳一下星星猫'}>
+    <img src="/img/star-cat.webp" alt="" width="64" height="64" loading="lazy" decoding="async" />
+  </button>
+</div>
+
+<script>
+  function initStarCats() {
+    document.querySelectorAll<HTMLElement>('[data-star-cat]:not([data-star-cat-ready])').forEach((cat) => {
+      cat.dataset.starCatReady = 'true';
+      const bubble = cat.querySelector<HTMLElement>('[data-star-cat-bubble]');
+      const button = cat.querySelector<HTMLButtonElement>('[data-star-cat-button]');
+      let lines: string[] = [];
+      try {
+        lines = JSON.parse(cat.dataset.lines ?? '[]');
+      } catch {
+        lines = [];
+      }
+      if (!bubble || !button || lines.length === 0) return;
+      let index = 0;
+      button.addEventListener('click', () => {
+        index = (index + 1) % lines.length;
+        bubble.textContent = lines[index];
+        for (const element of [bubble, button]) {
+          element.classList.remove('is-poked');
+          element.getBoundingClientRect();
+          element.classList.add('is-poked');
+        }
+      });
+    });
+  }
+
+  if (document.readyState !== 'loading') initStarCats();
+  document.addEventListener('astro:page-load', initStarCats);
+</script>
+
+<style>
+  .star-cat {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 0.625rem;
+    margin: -0.5rem 0 -0.25rem;
+  }
+
+  .star-cat-bubble {
+    margin-bottom: 2.5rem;
+    max-width: 18rem;
+    border-radius: 1rem 1rem 0.25rem 1rem;
+    background: hsl(var(--background));
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+    color: hsl(var(--foreground));
+    box-shadow:
+      0 4px 6px -1px rgb(0 0 0 / 0.1),
+      0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transform-origin: right bottom;
+  }
+
+  .star-cat-button {
+    flex: none;
+    border-radius: 9999px;
+    padding: 0;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .star-cat-button:hover {
+    transform: translateY(-3px) rotate(-4deg);
+  }
+
+  .star-cat-button:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+  }
+
+  .star-cat-button img {
+    display: block;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 9999px;
+    border: 3px solid hsl(var(--background));
+    object-fit: cover;
+    box-shadow: 0 0 0.75rem var(--color-pink-a3);
+  }
+
+  .star-cat-bubble.is-poked {
+    animation: star-cat-bubble 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .star-cat-button.is-poked img {
+    animation: star-cat-hop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes star-cat-bubble {
+    from {
+      opacity: 0;
+      transform: scale(0.85) translateY(6px);
+    }
+  }
+
+  @keyframes star-cat-hop {
+    40% {
+      transform: translateY(-10px) rotate(-8deg);
+    }
+  }
+
+  :global(html.motion-off) .star-cat * {
+    animation: none !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .star-cat-button,
+    .star-cat-bubble,
+    .star-cat-button img {
+      animation: none !important;
+      transition: none;
+    }
+  }
+</style>

@@ -13,12 +13,12 @@ export function getBlogCategoryLabel(category: BlogCategory): string {
 export function getBlogCategoryDescription(category: BlogCategory, locale = defaultLocale): string {
   if (category === 'inspirations') {
     return locale === 'en'
-      ? 'Ideas, conjectures, and research questions that are still taking shape.'
-      : '记录灵感、猜想，以及还没有完全想明白的研究念头。';
+      ? 'Thoughts that have not taken shape yet get their coordinates written down here first.'
+      : '还没长出形状的念头，先在这里记下坐标。';
   }
   return locale === 'en'
-    ? 'Reading notes, methods, and knowledge gathered along the way.'
-    : '整理学习过程中的读书笔记、方法理解与知识脉络。';
+    ? 'Copying down the lamps that others have lit, one by one, until I can find the way myself.'
+    : '把别人点亮的灯一盏盏抄下来，直到自己也认得路。';
 }
 
 function compareArticles(left: BlogArticleEntry, right: BlogArticleEntry): number {

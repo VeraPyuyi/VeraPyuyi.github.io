@@ -283,10 +283,10 @@ export const uiStrings: UIStrings = {
 
   // ── 404 ─────────────────────────────────────────────────────
   'notFound.title': 'Page Not Found',
-  'notFound.description': 'The page you are looking for does not exist',
+  'notFound.description': 'The star you are looking for is not on this map',
   'notFound.backHome': 'Back to Home',
   'notFound.browsePosts': 'View All Articles',
-  'notFound.message': 'Meow? The page was eaten~',
+  'notFound.message': 'This star has not lit up yet: perhaps it is still on its way, perhaps it only ever lived in a daydream.',
 
   // ── Category Stats ────────────────────────────────────────
 
