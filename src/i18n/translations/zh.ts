@@ -281,10 +281,10 @@ export const uiStrings = {
 
   // ── 404 ─────────────────────────────────────────────────────
   'notFound.title': '页面未找到',
-  'notFound.description': '你访问的页面不存在',
+  'notFound.description': '你要找的那颗星，不在这张星图上',
   'notFound.backHome': '返回首页',
   'notFound.browsePosts': '查看全部文章',
-  'notFound.message': '喵？页面被吃掉了~',
+  'notFound.message': '这颗星还没有亮起来——也许还在路上，也许只存在于想象里。',
 
   // ── Category Stats ────────────────────────────────────────
 

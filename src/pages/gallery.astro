@@ -14,7 +14,7 @@ const albums = (await getCollection('albums'))
   .sort((a, b) => (b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0));
 ---
 
-<PageChrome locale={locale} title={en ? 'Photo Wall' : '照片墙'} description={en ? 'Public, captioned photos arranged into responsive albums.' : '把可以公开的照片整理成相册；每张图片都带有替代文字。'}>
+<PageChrome locale={locale} title={en ? 'Photo Wall' : '照片墙'} description={en ? 'When the shutter closes, the light finally has somewhere to stay.' : '快门落下的那一刻，光终于有了去处。'}>
   <div class="space-y-10" data-pagefind-body>
     {albums.map((album) => (
       <section class="space-y-4">

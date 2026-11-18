@@ -79,7 +79,12 @@ const starColor = (kind: GalaxyKind, group?: string): string => {
 
 const galaxies: {
   kind: GalaxyKind;
+  /** The section this galaxy stands for. */
+  section: string;
+  /** A real galaxy whose shape this one borrows. */
   name: string;
+  /** Why the name fits, shown on hover. */
+  note: string;
   type: string;
   quote: string;
   href: string;
@@ -91,8 +96,12 @@ const galaxies: {
 }[] = [
   {
     kind: 'blogs',
-    name: en ? 'Blog galaxy' : '博客星系',
-    type: en ? 'Grand-design spiral · inspiration arm, learning arm' : 'Grand-design spiral · 灵感臂 / 学习臂',
+    section: en ? 'Blogs' : '博客',
+    name: en ? 'Whirlpool Galaxy' : '涡状星系',
+    note: en
+      ? 'Its arms keep winding back to the centre, the way every essay circles back to its first question.'
+      : '旋臂一圈圈绕回中心，像每篇文字最后都绕回最初那个问题。',
+    type: en ? 'M51 · grand-design spiral · inspiration arm, learning arm' : 'M51 · grand-design spiral · 灵感臂 / 学习臂',
     quote: en
       ? 'Lines of words light up one by one; only the night ever answers.'
       : '字句一行行亮起，回应它们的始终只有深夜。',
@@ -105,8 +114,12 @@ const galaxies: {
   },
   {
     kind: 'papers',
-    name: en ? 'Paper galaxy' : '论文星系',
-    type: 'Barred spiral',
+    section: en ? 'Papers' : '论文',
+    name: 'NGC 1300',
+    note: en
+      ? 'A straight bar runs through the core and the arms unfurl from its ends: the rigorous skeleton comes first, then the argument can spread.'
+      : '一根笔直的棒穿过核心，旋臂从棒端舒展开——先有严格的骨架，推论才能伸展。',
+    type: 'barred spiral · Eridanus',
     quote: en
       ? 'The proof reaches the end of the page; the one seeking answers still stands alone before the unknown.'
       : '证明抵达纸页尽头，求解的人仍独自站在未知之前。',
@@ -119,8 +132,12 @@ const galaxies: {
   },
   {
     kind: 'photos',
-    name: en ? 'Photo wall' : '照片墙',
-    type: 'Ring galaxy',
+    section: en ? 'Photo wall' : '照片墙',
+    name: en ? 'Hoag’s Object' : '霍格天体',
+    note: en
+      ? 'Almost nothing lies between its core and its ring, like the long silence just beyond a photograph.'
+      : '核心与光环之间几乎空无一物，像照片之外那段漫长的寂静。',
+    type: 'ring galaxy · Serpens',
     quote: en
       ? 'Photographs keep the world’s light; beyond the frame, only a long silence remains.'
       : '照片替世界保存了光，镜头之外却只剩漫长的寂静。',
@@ -133,8 +150,12 @@ const galaxies: {
   },
   {
     kind: 'moments',
-    name: en ? 'Moments' : '生活动态',
-    type: 'Irregular galaxy',
+    section: en ? 'Moments' : '生活动态',
+    name: en ? 'Small Magellanic Cloud' : '小麦哲伦云',
+    note: en
+      ? 'It keeps no fixed shape, yet it never leaves the Milky Way’s side, much like ordinary days.'
+      : '没有固定的形状，却一直陪在银河身边，像日子。',
+    type: 'SMC · dwarf irregular · Tucana',
     quote: en
       ? 'Days pass slowly by; no one knows the thoughts that were never spoken.'
       : '日子从身旁缓慢经过，无人知晓那些未说出口的心事。',
@@ -172,8 +193,8 @@ const starPath =
       <p class="galaxy-lead">
         {
           en
-            ? `Each section is a galaxy and each of its ${total} bright stars is a piece of writing or a moment. Hover a galaxy to stop it turning.`
-            : `每个板块是一个星系，${total} 颗亮星是文字和生活。把鼠标停在星系上，它会停下来让你看清楚。`
+            ? `Four galaxies, each turning at its own pace. Each of the ${total} stars was once a night spent on a question. Rest your cursor on one and it will pause for you.`
+            : `四个星系，各自按自己的速度旋转；${total} 颗星，每一颗都曾是一个和问题待在一起的夜晚。停在星系上，它会为你停一停。`
         }
       </p>
     </div>
@@ -240,7 +261,13 @@ const starPath =
           <div class="galaxy-text">
             <div>
               <h3>
-                <a class="galaxy-enter" href={galaxy.href}>
+                <span class="galaxy-section">{galaxy.section}</span>
+                <a
+                  class="galaxy-enter"
+                  href={galaxy.href}
+                  title={galaxy.note}
+                  aria-label={en ? `${galaxy.section}: ${galaxy.name}` : `${galaxy.section}：${galaxy.name}`}
+                >
                   {galaxy.name}
                   <Icon name="ri:arrow-right-line" aria-hidden="true" />
                 </a>
@@ -248,6 +275,7 @@ const starPath =
               </h3>
               <p class="galaxy-type">{galaxy.type}</p>
               <p class="galaxy-quote">{galaxy.quote}</p>
+              <p class="galaxy-note">{galaxy.note}</p>
             </div>
             <div class="galaxy-info" role="status" data-galaxy-info>
               {galaxy.newest ? (
@@ -627,6 +655,16 @@ const starPath =
     font-weight: 700;
   }
 
+  .galaxy-section {
+    border-radius: 9999px;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+    font-weight: 400;
+    color: var(--accent);
+  }
+
   .galaxy-count {
     white-space: nowrap;
     font-size: 0.8125rem;
@@ -652,6 +690,21 @@ const starPath =
     font-size: 0.8125rem;
     line-height: 1.25rem;
     color: #c3c8e8;
+  }
+
+  .galaxy-note {
+    display: none;
+    margin-top: 0.5rem;
+    border-left: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+    padding-left: 0.625rem;
+    font-size: 0.8125rem;
+    line-height: 1.3rem;
+    color: #dfe2f5;
+  }
+
+  /* The big blog cell has room to say why the name fits; the small cells keep it as a hover note. */
+  .galaxy-cell[data-galaxy-cell='blogs'] .galaxy-note {
+    display: block;
   }
 
   .galaxy-enter {
