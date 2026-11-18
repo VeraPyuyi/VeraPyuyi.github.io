@@ -1,0 +1,770 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import { localizedPath } from '@/i18n';
+import { getBlogArticles } from '@/lib/blogs';
+import { displayDate } from '@/lib/date';
+import { type GalaxyItem, type GalaxyKind, placeGalaxyItems } from '@/lib/galaxy';
+import { getPapers } from '@/lib/papers';
+
+interface Props {
+  locale: string;
+}
+
+const { locale } = Astro.props;
+const en = locale === 'en';
+
+const blogs = await getBlogArticles(locale);
+const papers = getPapers();
+const albums = (await getCollection('albums')).filter(
+  (entry) => entry.data.language === 'zh' || entry.data.language === locale,
+);
+const moments = (await getCollection('moments')).filter(
+  (entry) => !entry.data.draft && (entry.data.language === 'zh' || entry.data.language === locale),
+);
+
+/** First readable line of a moment, without Markdown links or emphasis. */
+function momentTitle(body: string | undefined): string {
+  const text = (body ?? '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[*_`>#]/g, '')
+    .trim();
+  const firstSentence = text.split(/(?<=[。！？.!?])/)[0] ?? text;
+  return firstSentence.length > 40 ? `${firstSentence.slice(0, 40)}…` : firstSentence || (en ? 'A moment' : '一段日常');
+}
+
+const itemsByKind: Record<GalaxyKind, GalaxyItem[]> = {
+  blogs: blogs.map((entry) => ({
+    id: `blog-${entry.data.routeSlug}`,
+    href: localizedPath(`/blogs/${entry.data.routeSlug}`, locale),
+    title: entry.data.title,
+    date: displayDate.date(entry.data.publishedAt),
+    group: entry.data.category,
+  })),
+  papers: papers.map((paper) => ({
+    id: `paper-${paper.id}`,
+    href: localizedPath(`/papers/${paper.id}`, locale),
+    title: en && paper.titleEn ? paper.titleEn : paper.title,
+    date: paper.date,
+  })),
+  photos: albums.flatMap((album) =>
+    album.data.photos.map((photo, index) => ({
+      id: `photo-${album.id}-${index}`,
+      href: localizedPath('/gallery', locale),
+      title: `${album.data.name} · ${photo.alt}`,
+      date: displayDate.date(photo.date ?? album.data.date ?? new Date()),
+    })),
+  ),
+  moments: moments.map((entry) => ({
+    id: `moment-${entry.id}`,
+    href: localizedPath('/moments', locale),
+    title: momentTitle(entry.body),
+    date: displayDate.date(entry.data.date),
+  })),
+};
+
+const kindLabel = (kind: GalaxyKind, group?: string): string => {
+  if (kind === 'blogs') return group === 'learning' ? (en ? 'Learning' : '学习') : en ? 'Inspiration' : '灵感';
+  if (kind === 'papers') return en ? 'Paper' : '论文';
+  if (kind === 'photos') return en ? 'Photo' : '照片';
+  return en ? 'Moment' : '生活';
+};
+
+const starColor = (kind: GalaxyKind, group?: string): string => {
+  if (kind === 'blogs') return group === 'learning' ? '#b8e6fe' : '#fccee8';
+  if (kind === 'papers') return '#ffd27a';
+  if (kind === 'photos') return '#fef3c6';
+  return '#b8e6fe';
+};
+
+const galaxies: {
+  kind: GalaxyKind;
+  name: string;
+  type: string;
+  quote: string;
+  href: string;
+  accent: string;
+  canvas: number;
+  tilt: number;
+  seconds: number;
+  star: number;
+}[] = [
+  {
+    kind: 'blogs',
+    name: en ? 'Blog galaxy' : '博客星系',
+    type: en ? 'Grand-design spiral · inspiration arm, learning arm' : 'Grand-design spiral · 灵感臂 / 学习臂',
+    quote: en
+      ? 'Lines of words light up one by one; only the night ever answers.'
+      : '字句一行行亮起，回应它们的始终只有深夜。',
+    href: localizedPath('/blogs', locale),
+    accent: '#fccee8',
+    canvas: 1000,
+    tilt: 50,
+    seconds: 150,
+    star: 17,
+  },
+  {
+    kind: 'papers',
+    name: en ? 'Paper galaxy' : '论文星系',
+    type: 'Barred spiral',
+    quote: en
+      ? 'The proof reaches the end of the page; the one seeking answers still stands alone before the unknown.'
+      : '证明抵达纸页尽头，求解的人仍独自站在未知之前。',
+    href: localizedPath('/papers', locale),
+    accent: '#ffd27a',
+    canvas: 640,
+    tilt: 60,
+    seconds: 190,
+    star: 22,
+  },
+  {
+    kind: 'photos',
+    name: en ? 'Photo wall' : '照片墙',
+    type: 'Ring galaxy',
+    quote: en
+      ? 'Photographs keep the world’s light; beyond the frame, only a long silence remains.'
+      : '照片替世界保存了光，镜头之外却只剩漫长的寂静。',
+    href: localizedPath('/gallery', locale),
+    accent: '#fef3c6',
+    canvas: 640,
+    tilt: 40,
+    seconds: 120,
+    star: 20,
+  },
+  {
+    kind: 'moments',
+    name: en ? 'Moments' : '生活动态',
+    type: 'Irregular galaxy',
+    quote: en
+      ? 'Days pass slowly by; no one knows the thoughts that were never spoken.'
+      : '日子从身旁缓慢经过，无人知晓那些未说出口的心事。',
+    href: localizedPath('/moments', locale),
+    accent: '#b8e6fe',
+    canvas: 640,
+    tilt: 28,
+    seconds: 240,
+    star: 19,
+  },
+];
+
+const placed = galaxies.map((galaxy) => {
+  const stars = placeGalaxyItems(galaxy.kind, itemsByKind[galaxy.kind]);
+  const newest = stars.find((star) => star.newest);
+  return { ...galaxy, stars, newest };
+});
+const total = placed.reduce((sum, galaxy) => sum + galaxy.stars.length, 0);
+const starPath =
+  'M12 1.5c.6 5.2 2.3 8.3 10.5 10.5C14.3 14.2 12.6 17.3 12 22.5 11.4 17.3 9.7 14.2 1.5 12 9.7 9.8 11.4 6.7 12 1.5z';
+---
+
+<section
+  class="galaxy-hub"
+  aria-labelledby="galaxy-title"
+  data-galaxy-hub
+  data-locale={locale}
+  data-pagefind-ignore="all"
+>
+  <div class="galaxy-sky" aria-hidden="true"></div>
+  <div class="galaxy-head">
+    <div>
+      <p class="galaxy-eyebrow"><span class="galaxy-index">01</span>FOUR GALAXIES</p>
+      <h2 id="galaxy-title" class="font-chill-round">{en ? 'Four galaxies in a small universe' : '小宇宙里的四个星系'}</h2>
+      <p class="galaxy-lead">
+        {
+          en
+            ? `Each section is a galaxy and each of its ${total} bright stars is a piece of writing or a moment. Hover a galaxy to stop it turning.`
+            : `每个板块是一个星系，${total} 颗亮星是文字和生活。把鼠标停在星系上，它会停下来让你看清楚。`
+        }
+      </p>
+    </div>
+    <div class="galaxy-actions">
+      <span class="galaxy-moon" data-galaxy-moon title={en ? 'Tonight’s real moon phase' : '今晚的真实月相'}>
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20">
+          <defs><clipPath id="galaxy-moon-clip"><circle cx="10" cy="10" r="8"></circle></clipPath></defs>
+          <circle cx="10" cy="10" r="8" fill="#3a4170"></circle>
+          <g clip-path="url(#galaxy-moon-clip)">
+            <circle cx="10" cy="10" r="8" fill="#fff1c4"></circle>
+            <circle data-galaxy-moon-shadow cx="10" cy="10" r="8.6" fill="#3a4170"></circle>
+          </g>
+        </svg>
+        <span data-galaxy-moon-label>{en ? 'Tonight' : '今晚'}</span>
+      </span>
+      <button type="button" class="galaxy-wish" data-galaxy-wish>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path d={starPath} fill="#ffd27a"></path></svg>
+        {en ? 'Let the star cat pick one for me' : '让星星猫替我摘一颗'}
+      </button>
+    </div>
+  </div>
+
+  <div class="galaxy-grid">
+    {
+      placed.map((galaxy) => (
+        <article
+          class="galaxy-cell"
+          data-galaxy-cell={galaxy.kind}
+          style={`grid-area:${galaxy.kind};--accent:${galaxy.accent}`}
+        >
+          <div class="galaxy-stage">
+            <div
+              class="galaxy-disk"
+              style={`--tilt:${galaxy.tilt}deg;--dur:${galaxy.seconds}s`}
+            >
+              <canvas
+                data-galaxy-canvas={galaxy.kind}
+                width={galaxy.canvas}
+                height={galaxy.canvas}
+                aria-hidden="true"
+              />
+              {galaxy.stars.map((star) => (
+                <a
+                  class:list={['galaxy-star', star.newest && 'is-newest']}
+                  href={star.href}
+                  style={`left:${star.x}%;top:${star.y}%`}
+                  data-galaxy-star
+                  data-title={star.title}
+                  data-date={star.date}
+                  data-kind={kindLabel(galaxy.kind, star.group)}
+                  aria-label={
+                    en
+                      ? `${kindLabel(galaxy.kind, star.group)}: ${star.title}, ${star.date}`
+                      : `${kindLabel(galaxy.kind, star.group)}：${star.title}，${star.date}`
+                  }
+                >
+                  <svg aria-hidden="true" width={galaxy.star} height={galaxy.star} viewBox="0 0 24 24">
+                    <path d={starPath} fill={starColor(galaxy.kind, star.group)} />
+                  </svg>
+                </a>
+              ))}
+            </div>
+          </div>
+          <div class="galaxy-text">
+            <div>
+              <h3>
+                <a class="galaxy-enter" href={galaxy.href}>
+                  {galaxy.name}
+                  <Icon name="ri:arrow-right-line" aria-hidden="true" />
+                </a>
+                <span class="galaxy-count">{en ? `${galaxy.stars.length} stars` : `${galaxy.stars.length} 颗星`}</span>
+              </h3>
+              <p class="galaxy-type">{galaxy.type}</p>
+              <p class="galaxy-quote">{galaxy.quote}</p>
+            </div>
+            <div class="galaxy-info" role="status" data-galaxy-info>
+              {galaxy.newest ? (
+                <>
+                  <p class="galaxy-info-head" data-galaxy-info-head>
+                    {en ? 'Newest' : '最新'} · {kindLabel(galaxy.kind, galaxy.newest.group)} · {galaxy.newest.date}
+                  </p>
+                  <p class="galaxy-info-title" data-galaxy-info-title>
+                    {galaxy.newest.title}
+                  </p>
+                </>
+              ) : (
+                <p class="galaxy-info-title">{en ? 'No stars here yet.' : '这里还没有星星。'}</p>
+              )}
+            </div>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  import { paintGalaxy } from '@/lib/galaxy-paint';
+  import { type GalaxyKind, MOON_PHASE_NAMES, MOON_PHASE_NAMES_EN, moonPhase } from '@/lib/galaxy';
+
+  const KINDS = new Set<GalaxyKind>(['blogs', 'papers', 'photos', 'moments']);
+
+  function setInfo(cell: Element, head: string, title: string) {
+    const headEl = cell.querySelector('[data-galaxy-info-head]');
+    const titleEl = cell.querySelector('[data-galaxy-info-title]');
+    if (headEl) headEl.textContent = head;
+    if (titleEl) titleEl.textContent = title;
+  }
+
+  function initGalaxyHub() {
+    const hub = document.querySelector<HTMLElement>('[data-galaxy-hub]:not([data-galaxy-ready])');
+    if (!hub) return;
+    hub.dataset.galaxyReady = 'true';
+    const en = hub.dataset.locale === 'en';
+
+    hub.querySelectorAll<HTMLCanvasElement>('canvas[data-galaxy-canvas]').forEach((canvas) => {
+      const kind = canvas.dataset.galaxyCanvas as GalaxyKind;
+      if (!KINDS.has(kind)) return;
+      try {
+        paintGalaxy(canvas, kind);
+      } catch {
+        canvas.hidden = true;
+      }
+    });
+
+    const { phase, index, illumination } = moonPhase(Date.now());
+    const shadow = hub.querySelector('[data-galaxy-moon-shadow]');
+    shadow?.setAttribute('cx', (phase < 0.5 ? 10 - 32 * phase : 10 + 32 * (1 - phase)).toFixed(2));
+    const moonLabel = hub.querySelector('[data-galaxy-moon-label]');
+    if (moonLabel) {
+      moonLabel.textContent = en ? `Tonight · ${MOON_PHASE_NAMES_EN[index]}` : `今晚 · ${MOON_PHASE_NAMES[index]}`;
+    }
+    const lit = Math.round(illumination * 100);
+    hub.querySelector('[data-galaxy-moon]')?.setAttribute('title', en ? `Real moon phase · ${lit}% lit` : `真实月相 · 照亮 ${lit}%`);
+
+    const stars = [...hub.querySelectorAll<HTMLAnchorElement>('[data-galaxy-star]')];
+    const focusStar = (star: HTMLAnchorElement, picked = false) => {
+      const cell = star.closest('[data-galaxy-cell]');
+      if (!cell) return;
+      cell.querySelectorAll('.galaxy-star.is-on').forEach((other) => other.classList.remove('is-on'));
+      star.classList.add('is-on');
+      const prefix = picked ? (en ? 'Picked by the star cat' : '星星猫替你摘的') : en ? 'Looking at' : '注视中';
+      setInfo(cell, `${prefix} · ${star.dataset.kind} · ${star.dataset.date}`, star.dataset.title ?? '');
+    };
+    for (const star of stars) {
+      star.addEventListener('pointerenter', () => focusStar(star));
+      star.addEventListener('focus', () => focusStar(star));
+    }
+
+    hub.querySelector('[data-galaxy-wish]')?.addEventListener('click', () => {
+      if (stars.length === 0) return;
+      const previous = hub.querySelector('.galaxy-star.is-picked');
+      const pool = stars.filter((star) => star !== previous);
+      const pick = pool[Math.floor(Math.random() * pool.length)] ?? stars[0];
+      previous?.classList.remove('is-picked');
+      hub.querySelectorAll('.galaxy-cell.is-wished').forEach((cell) => cell.classList.remove('is-wished'));
+      // Restart the flash animation even when the same star class is re-added.
+      pick.getBoundingClientRect();
+      pick.classList.add('is-picked');
+      pick.closest('.galaxy-cell')?.classList.add('is-wished');
+      focusStar(pick, true);
+    });
+  }
+
+  if (document.readyState !== 'loading') initGalaxyHub();
+  document.addEventListener('astro:page-load', initGalaxyHub);
+</script>
+
+<style>
+  .galaxy-hub {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.75rem;
+    color: #f2f2f7;
+    background: radial-gradient(120% 90% at 85% 0%, #2e3468 0%, #1f2448 40%, #12152b 100%);
+    box-shadow:
+      0 30px 60px -20px rgb(18 21 43 / 0.6),
+      inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  }
+
+  .galaxy-sky {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 28% 72%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 46% 34%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 63% 12%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 78% 58%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 90% 26%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 8% 88%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 55% 92%, #fff 50%, transparent 51%),
+      radial-gradient(60% 50% at 15% 40%, rgb(233 83 106 / 0.16), transparent 70%),
+      radial-gradient(55% 45% at 85% 10%, rgb(57 162 219 / 0.18), transparent 70%);
+    opacity: 0.8;
+    animation: galaxy-twinkle 6s ease-in-out infinite alternate;
+  }
+
+  .galaxy-head {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 2rem 2rem 0.5rem;
+  }
+
+  .galaxy-eyebrow {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: #ffd27a;
+  }
+
+  .galaxy-index {
+    font-family: 'Paper Latin Modern', 'Latin Modern Roman', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    color: #a7add6;
+  }
+
+  .galaxy-head h2 {
+    margin-top: 0.375rem;
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    font-weight: 700;
+  }
+
+  .galaxy-lead {
+    margin-top: 0.5rem;
+    max-width: 36rem;
+    font-size: 0.875rem;
+    line-height: 1.4rem;
+    color: #c3c8e8;
+  }
+
+  .galaxy-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.625rem;
+  }
+
+  .galaxy-moon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.75rem;
+    padding: 0 0.875rem 0 0.625rem;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.06);
+    border: 1px solid rgb(255 255 255 / 0.12);
+    font-size: 0.8125rem;
+  }
+
+  .galaxy-wish {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.75rem;
+    padding: 0 1.125rem;
+    border-radius: 9999px;
+    border: 1px solid rgb(255 210 122 / 0.55);
+    background: rgb(255 210 122 / 0.1);
+    color: #fff1c4;
+    font-size: 0.875rem;
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+  }
+
+  .galaxy-wish:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 1px rgb(255 210 122 / 0.6),
+      0 0 22px rgb(255 210 122 / 0.35);
+  }
+
+  .galaxy-wish:focus-visible,
+  .galaxy-enter:focus-visible,
+  .galaxy-star:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  .galaxy-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-template-areas:
+      'blogs papers'
+      'blogs photos'
+      'blogs moments';
+    gap: 0.875rem;
+    padding: 1.25rem 1.25rem 1.5rem;
+  }
+
+  .galaxy-cell {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    border-radius: 1.375rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: rgb(255 255 255 / 0.035);
+    padding: 0.75rem;
+    transition:
+      background 0.4s,
+      border-color 0.4s,
+      box-shadow 0.5s;
+  }
+
+  .galaxy-cell:hover {
+    background: rgb(255 255 255 / 0.055);
+    border-color: rgb(255 255 255 / 0.16);
+  }
+
+  .galaxy-cell.is-wished {
+    box-shadow:
+      0 0 0 1px rgb(255 210 122 / 0.55),
+      inset 0 0 60px rgb(255 210 122 / 0.14);
+  }
+
+  .galaxy-cell[data-galaxy-cell='blogs'] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Blog galaxy: title on top, the spiral in the middle, the status line underneath. */
+  .galaxy-cell[data-galaxy-cell='blogs'] .galaxy-text {
+    display: contents;
+  }
+
+  .galaxy-cell[data-galaxy-cell='blogs'] .galaxy-stage {
+    order: 1;
+    perspective: 1800px;
+  }
+
+  .galaxy-cell[data-galaxy-cell='blogs'] .galaxy-info {
+    order: 2;
+  }
+
+  .galaxy-stage {
+    position: relative;
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 8.5rem;
+    height: 8rem;
+    perspective: 1100px;
+  }
+
+  .galaxy-cell[data-galaxy-cell='blogs'] .galaxy-stage {
+    width: 100%;
+    height: auto;
+    min-height: 22rem;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .galaxy-disk {
+    position: relative;
+    width: 8.5rem;
+    aspect-ratio: 1;
+    transform-style: preserve-3d;
+    animation: galaxy-spin var(--dur) linear infinite;
+  }
+
+  .galaxy-cell[data-galaxy-cell='blogs'] .galaxy-disk {
+    width: min(108%, 38rem);
+    flex: none;
+  }
+
+  .galaxy-disk canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .galaxy-star {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.125rem;
+    height: 2.125rem;
+    margin: -1.0625rem 0 0 -1.0625rem;
+    border-radius: 9999px;
+    animation: galaxy-counter var(--dur) linear infinite;
+  }
+
+  .galaxy-star svg {
+    filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.65));
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .galaxy-star:hover svg,
+  .galaxy-star.is-on svg {
+    transform: scale(1.5);
+  }
+
+  .galaxy-star.is-on {
+    background: radial-gradient(circle, rgb(255 255 255 / 0.2), transparent 70%);
+  }
+
+  .galaxy-star.is-newest::after {
+    content: '';
+    position: absolute;
+    inset: 0.45rem;
+    border-radius: 9999px;
+    border: 1px solid rgb(255 255 255 / 0.8);
+    animation: galaxy-pulse 2.4s ease-out infinite;
+  }
+
+  .galaxy-star.is-picked svg {
+    animation: galaxy-flash 1.4s ease-out 1;
+  }
+
+  .galaxy-cell:hover .galaxy-disk,
+  .galaxy-cell:hover .galaxy-star,
+  .galaxy-cell:focus-within .galaxy-disk,
+  .galaxy-cell:focus-within .galaxy-star {
+    animation-play-state: paused;
+  }
+
+  .galaxy-text {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .galaxy-text h3 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.625rem;
+    font-size: 1.0625rem;
+    line-height: 1.5rem;
+    font-weight: 700;
+  }
+
+  .galaxy-count {
+    white-space: nowrap;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: #c3c8e8;
+  }
+
+  .galaxy-type {
+    margin-top: 0.125rem;
+    font-family: 'Paper Latin Modern', 'Latin Modern Roman', serif;
+    font-style: italic;
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+
+  .galaxy-quote {
+    display: -webkit-box;
+    margin-top: 0.375rem;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+    color: #c3c8e8;
+  }
+
+  .galaxy-enter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #fff;
+    transition: color 0.2s;
+  }
+
+  .galaxy-enter:hover {
+    color: var(--accent);
+  }
+
+  .galaxy-info {
+    min-height: 2.75rem;
+    border-radius: 0.875rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: rgb(10 12 28 / 0.55);
+    padding: 0.5rem 0.75rem;
+    backdrop-filter: blur(8px);
+  }
+
+  .galaxy-info-head {
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+  }
+
+  .galaxy-info-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  @keyframes galaxy-spin {
+    from {
+      transform: rotateX(var(--tilt)) rotateZ(0deg);
+    }
+    to {
+      transform: rotateX(var(--tilt)) rotateZ(360deg);
+    }
+  }
+
+  @keyframes galaxy-counter {
+    from {
+      transform: rotateZ(0deg) rotateX(calc(var(--tilt) * -1));
+    }
+    to {
+      transform: rotateZ(-360deg) rotateX(calc(var(--tilt) * -1));
+    }
+  }
+
+  @keyframes galaxy-pulse {
+    from {
+      transform: scale(0.6);
+      opacity: 0.9;
+    }
+    to {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+
+  @keyframes galaxy-flash {
+    30% {
+      filter: brightness(2.4) drop-shadow(0 0 14px #fff);
+    }
+  }
+
+  @keyframes galaxy-twinkle {
+    from {
+      opacity: 0.55;
+    }
+    to {
+      opacity: 0.95;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .galaxy-grid {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'blogs' 'papers' 'photos' 'moments';
+    }
+
+    .galaxy-cell[data-galaxy-cell='blogs'] .galaxy-stage {
+      min-height: 16rem;
+    }
+  }
+
+  /* Keep the tilt but stop the turning when visitors ask for less motion. */
+  :global(html.motion-off) .galaxy-disk,
+  :global(html.motion-off) .galaxy-star,
+  :global(html.motion-off) .galaxy-sky {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .galaxy-disk,
+    .galaxy-star,
+    .galaxy-sky,
+    .galaxy-star.is-newest::after {
+      animation-play-state: paused;
+    }
+
+    .galaxy-wish,
+    .galaxy-star svg {
+      transition: none;
+    }
+  }
+</style>

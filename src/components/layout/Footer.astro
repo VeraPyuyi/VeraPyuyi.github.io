@@ -20,6 +20,8 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
 const stats = await getSiteStats();
 const currentYear = new Date().getFullYear();
 const startYear = siteConfig?.startYear ?? currentYear;
+/** The site's first light: the first album entry, 2026-08-26 18:00 (Asia/Shanghai). */
+const SITE_FIRST_LIGHT = '2026-08-26T18:00:00+08:00';
 ---
 
 <footer class={cn('mt-auto pb-6', className)}>
@@ -88,6 +90,18 @@ const startYear = siteConfig?.startYear ?? currentYear;
       </span>
     </div>
 
+    <!-- Uptime since the site's first light -->
+    <p
+      class="text-muted-foreground text-xs opacity-75"
+      data-site-uptime
+      data-born={SITE_FIRST_LIGHT}
+      data-locale={locale}
+      hidden
+    >
+      {locale === 'en' ? 'This little universe has been running for ' : '这片小宇宙已经运行了 '}
+      <span class="font-medium tabular-nums" data-site-uptime-value></span>
+    </p>
+
     <!-- ICP Filing -->
     {icpConfig && (
       <div class="text-muted-foreground/80 text-xs">
@@ -123,6 +137,31 @@ const startYear = siteConfig?.startYear ?? currentYear;
     </div>
   </div>
 </footer>
+
+<script>
+  import { formatUptime } from '@/lib/galaxy';
+
+  let uptimeTimer: number | undefined;
+
+  function startUptime() {
+    window.clearInterval(uptimeTimer);
+    const element = document.querySelector<HTMLElement>('[data-site-uptime]');
+    const value = element?.querySelector('[data-site-uptime-value]');
+    const born = Date.parse(element?.dataset.born ?? '');
+    if (!element || !value || Number.isNaN(born)) return;
+    const locale = element.dataset.locale ?? 'zh';
+    const tick = () => {
+      value.textContent = formatUptime(Date.now() - born, locale);
+    };
+    tick();
+    element.hidden = false;
+    uptimeTimer = window.setInterval(tick, 1000);
+  }
+
+  if (document.readyState !== 'loading') startUptime();
+  document.addEventListener('astro:page-load', startUptime);
+  document.addEventListener('astro:before-swap', () => window.clearInterval(uptimeTimer));
+</script>
 
 <style>
   .footer-link {

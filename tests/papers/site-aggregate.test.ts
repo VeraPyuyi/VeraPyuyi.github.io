@@ -27,7 +27,7 @@ test('the all-posts index is composed only from reusable paper and blog lists', 
 
 test('the homepage uses original bilingual feature copy and only overrides the browser title', () => {
   const home = read('src/pages/index.astro');
-  const featureHub = read('src/components/personal/FeatureHub.astro');
+  const galaxyHub = read('src/components/personal/GalaxyHub.astro');
   const quotes = [
     '证明抵达纸页尽头，求解的人仍独自站在未知之前。',
     '字句一行行亮起，回应它们的始终只有深夜。',
@@ -39,7 +39,8 @@ test('the homepage uses original bilingual feature copy and only overrides the b
     'Days pass slowly by; no one knows the thoughts that were never spoken.',
   ];
 
-  for (const quote of quotes) assert.ok(featureHub.includes(quote), quote);
+  for (const quote of quotes) assert.ok(galaxyHub.includes(quote), quote);
+  assert.match(home, /<GalaxyHub locale=\{locale\} \/>/);
   assert.ok(home.includes("const browserTitle = 'Pyuyi’s Home';"));
   assert.match(home, /title=\{browserTitle\}/);
   assert.match(home, /openGraph=\{\{ title: seoConfig\.title \}\}/);

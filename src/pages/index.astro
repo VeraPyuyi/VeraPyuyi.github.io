@@ -7,9 +7,10 @@ import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
 import { Icon } from 'astro-icon/components';
 import BlogList from '@/components/personal/BlogList.astro';
-import FeatureHub from '@/components/personal/FeatureHub.astro';
+import GalaxyHub from '@/components/personal/GalaxyHub.astro';
 import HomeRandomizer from '@/components/personal/HomeRandomizer.astro';
 import PaperList from '@/components/personal/PaperList.astro';
+import StarCat from '@/components/personal/StarCat.astro';
 import Divider from '@/components/ui/divider';
 import { defaultLocale, localizedPath } from '@/i18n';
 
@@ -30,7 +31,7 @@ const browserTitle = 'Pyuyi’s Home';
     <div
       class={`bg-gradient-start shadow-box tablet:shadow-none flex flex-col gap-4 overflow-hidden  ${CONTENT_PADDING.standard}`}
     >
-      <FeatureHub locale={locale} />
+      <GalaxyHub locale={locale} />
       <Divider>{en ? 'Latest papers' : '近期论文'}</Divider>
       <PaperList locale={locale} limit={2} indexable={false} randomized />
       <a
@@ -41,6 +42,7 @@ const browserTitle = 'Pyuyi’s Home';
         <Icon name="ri:arrow-right-line" />
       </a>
       <Divider>{en ? 'Blogs' : '博客'}</Divider>
+      <StarCat locale={locale} />
       <BlogList locale={locale} limit={2} indexable={false} randomized />
       <a
         class="text-primary ml-auto inline-flex items-center gap-1 text-sm font-semibold hover:underline"

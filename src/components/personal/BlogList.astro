@@ -48,7 +48,8 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
       const minutes = Math.max(1, Math.ceil(readingTime(entry.body ?? '').minutes));
       return (
         <article
-          class="group flex min-w-0 flex-col overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none dark:border-white/10 dark:bg-white/5"
+          class="group relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none dark:border-white/10 dark:bg-white/5"
+          data-tilt-card
           data-home-random-item={randomized ? '' : undefined}
           hidden={randomized && index >= visibleLimit}
         >
@@ -90,6 +91,7 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
               {en ? 'Read the essay' : '阅读全文'}
             </a>
           </div>
+          <span class="card-sheen" aria-hidden="true"></span>
         </article>
       );
     })
@@ -97,3 +99,70 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
     </div>
   )
 }
+
+<script>
+  const MAX_TILT = { x: 6, y: 8 };
+
+  function motionAllowed(): boolean {
+    return (
+      window.matchMedia('(pointer: fine)').matches &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+      !document.documentElement.classList.contains('motion-off')
+    );
+  }
+
+  function initTiltCards() {
+    document.querySelectorAll<HTMLElement>('[data-tilt-card]:not([data-tilt-ready])').forEach((card) => {
+      card.dataset.tiltReady = 'true';
+      card.addEventListener('pointermove', (event) => {
+        if (!motionAllowed()) return;
+        const rect = card.getBoundingClientRect();
+        const px = (event.clientX - rect.left) / rect.width;
+        const py = (event.clientY - rect.top) / rect.height;
+        const rotateX = ((0.5 - py) * MAX_TILT.x).toFixed(2);
+        const rotateY = ((px - 0.5) * MAX_TILT.y).toFixed(2);
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        card.style.setProperty('--sheen-x', `${(px * 100).toFixed(1)}%`);
+        card.style.setProperty('--sheen-y', `${(py * 100).toFixed(1)}%`);
+        card.style.setProperty('--sheen-angle', `${(110 + (px - 0.5) * 30).toFixed(0)}deg`);
+        card.classList.add('is-tilting');
+      });
+      card.addEventListener('pointerleave', () => {
+        card.style.transform = '';
+        card.classList.remove('is-tilting');
+      });
+    });
+  }
+
+  if (document.readyState !== 'loading') initTiltCards();
+  document.addEventListener('astro:page-load', initTiltCards);
+</script>
+
+<style>
+  [data-tilt-card] {
+    transition-property: translate, transform, box-shadow;
+    transition-duration: 0.25s;
+  }
+
+  .card-sheen {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    mix-blend-mode: soft-light;
+    background:
+      radial-gradient(circle at var(--sheen-x, 50%) var(--sheen-y, 50%), rgb(255 255 255 / 0.75), transparent 45%),
+      linear-gradient(
+        var(--sheen-angle, 110deg),
+        transparent 30%,
+        rgb(252 206 232 / 0.55) 45%,
+        rgb(184 230 254 / 0.55) 55%,
+        transparent 70%
+      );
+    transition: opacity 0.3s;
+  }
+
+  .is-tilting .card-sheen {
+    opacity: 1;
+  }
+</style>

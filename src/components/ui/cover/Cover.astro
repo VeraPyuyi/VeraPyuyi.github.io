@@ -34,6 +34,13 @@ const copyFailedLabel = t(locale, 'common.copyFailed');
   data-paper-font={paperFontProfile}
 >
   <div class="absolute inset-0 h-full bg-black/40"></div>
+  {
+    !title && (
+      <div class="cover-sky pointer-events-none absolute inset-0" aria-hidden="true">
+        <span class="cover-shooting-star"></span>
+      </div>
+    )
+  }
   <div
     class:list={[
       'absolute inset-0 flex flex-col items-center justify-center px-5 text-white',
@@ -71,6 +78,15 @@ const copyFailedLabel = t(locale, 'common.copyFailed');
         </h1>
       ) : (
         <>
+          <p
+            class="cover-greeting mb-5 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-1.5 text-sm backdrop-blur-sm"
+            data-cover-greeting
+            data-locale={locale}
+            hidden
+          >
+            <Icon name="ri:moon-clear-fill" class="size-4 text-amber-200" aria-hidden="true" />
+            <span data-cover-greeting-text></span>
+          </p>
           <h2 class="shadow-text font-chill-round text-5xl/[1.2]">{siteConfig?.alternate}</h2>
           <h1 class="shadow-text font-chill-round mt-3 text-5xl/[1.2] font-bold tracking-widest">{siteConfig?.title}</h1>
           <p class="shadow-text mt-5 text-sm">= {siteConfig?.subtitle} =</p>
@@ -122,3 +138,98 @@ const copyFailedLabel = t(locale, 'common.copyFailed');
   installCoverCopyButtons();
   document.addEventListener('astro:page-load', installCoverCopyButtons);
 </script>
+
+<script>
+  import { dayPart } from '@/lib/galaxy';
+
+  const GREETINGS = {
+    zh: {
+      morning: '早安，晨光照进小宇宙了',
+      afternoon: '午后好，今天也在认真观测',
+      evening: '晚上好，星星陆续亮起来了',
+      night: '夜深了，星星都醒着',
+    },
+    en: {
+      morning: 'Good morning, dawn is reaching the little universe',
+      afternoon: 'Good afternoon, still observing carefully today',
+      evening: 'Good evening, the stars are coming out',
+      night: 'It’s late, and every star is awake',
+    },
+  } as const;
+
+  function showCoverGreeting() {
+    document.querySelectorAll<HTMLElement>('[data-cover-greeting]').forEach((element) => {
+      const text = element.querySelector('[data-cover-greeting-text]');
+      if (!text) return;
+      const table = element.dataset.locale === 'en' ? GREETINGS.en : GREETINGS.zh;
+      text.textContent = table[dayPart(new Date().getHours())];
+      element.hidden = false;
+    });
+  }
+
+  if (document.readyState !== 'loading') showCoverGreeting();
+  document.addEventListener('astro:page-load', showCoverGreeting);
+</script>
+
+<style>
+  .cover-sky {
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 22%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 22% 48%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 34% 16%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 8% 64%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 40% 38%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 28% 72%, #fff 50%, transparent 51%);
+    animation: cover-twinkle 4.5s ease-in-out infinite alternate;
+  }
+
+  .cover-shooting-star {
+    position: absolute;
+    top: 14%;
+    right: 10%;
+    width: 9rem;
+    height: 2px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, transparent, #fff);
+    filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.9));
+    opacity: 0;
+    transform-origin: right center;
+    animation: cover-shoot 9s linear 2s infinite;
+  }
+
+  @keyframes cover-twinkle {
+    from {
+      opacity: 0.35;
+    }
+    to {
+      opacity: 0.9;
+    }
+  }
+
+  @keyframes cover-shoot {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) rotate(152deg);
+    }
+    2% {
+      opacity: 1;
+    }
+    12%,
+    100% {
+      opacity: 0;
+      transform: translate(-35rem, 19rem) rotate(152deg);
+    }
+  }
+
+  :global(html.motion-off) .cover-sky,
+  :global(html.motion-off) .cover-shooting-star {
+    animation: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cover-sky,
+    .cover-shooting-star {
+      animation: none;
+    }
+  }
+</style>

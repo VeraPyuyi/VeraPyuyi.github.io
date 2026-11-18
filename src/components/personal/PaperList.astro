@@ -16,6 +16,11 @@ const en = locale === 'en';
 const allPapers = getPapers();
 const papers = randomized || limit === undefined ? allPapers : allPapers.slice(0, limit);
 const visibleLimit = limit ?? papers.length;
+const issueNumbers = new Map(
+  [...allPapers]
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
+    .map((paper, index) => [paper.id, `No. ${String(index + 1).padStart(2, '0')}`]),
+);
 const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pagefind-ignore': 'all' };
 ---
 
@@ -49,6 +54,7 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
         </a>
         <div class="space-y-4 p-6">
           <div class="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+            <span class="paper-issue">{issueNumbers.get(paper.id)}</span>
             <time datetime={paper.date}>{paper.date}</time>
             <span>{paper.authors.join(', ')}</span>
           </div>
@@ -88,3 +94,37 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
     ))
   }
 </div>
+
+<style>
+  .paper-issue {
+    font-family: 'Paper Latin Modern', 'Latin Modern Roman', Georgia, serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    background: linear-gradient(100deg, #9a6b1f 0%, #d6a53f 30%, #fff1c4 45%, #d6a53f 60%, #9a6b1f 100%);
+    background-size: 220% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: paper-issue-shimmer 6s ease-in-out infinite;
+  }
+
+  @keyframes paper-issue-shimmer {
+    0%,
+    100% {
+      background-position: 100% 0;
+    }
+    50% {
+      background-position: 0 0;
+    }
+  }
+
+  :global(html.motion-off) .paper-issue {
+    animation: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .paper-issue {
+      animation: none;
+    }
+  }
+</style>
