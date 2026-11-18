@@ -20,6 +20,7 @@ import CodeBlockFullscreen from '@components/markdown/CodeBlockFullscreen';
 import DiagramFullscreen from '@components/markdown/DiagramFullscreen';
 import ImageLightbox from '@components/markdown/ImageLightbox';
 import SettingsPanel from '@components/settings/SettingsPanel';
+import WarpOverlay from '@components/personal/WarpOverlay.astro';
 import { Toaster } from '@components/ui/sonner';
 import { bgmConfig } from '@constants/site-config';
 
@@ -54,4 +55,5 @@ const { siderType } = Astro.props;
   <Toaster client:idle />
   <AnnouncementProvider />
   <CodePenEmbed />
+  <WarpOverlay />
 </div>

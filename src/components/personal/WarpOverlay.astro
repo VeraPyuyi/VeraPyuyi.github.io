@@ -1,0 +1,224 @@
+---
+/**
+ * Full-screen "hyperspace jump" played when a galaxy star is clicked.
+ * The canvas persists across client-side navigations, so the jump starts on the
+ * homepage, keeps streaking while the next page loads, and settles on arrival.
+ * Anything can start it with: window.dispatchEvent(new CustomEvent('pyuyi:warp', { detail }))
+ * where detail = { href, x, y, color? } in viewport pixels.
+ */
+---
+
+<canvas id="pyuyi-warp" class="pyuyi-warp" aria-hidden="true" transition:persist="pyuyi-warp"></canvas>
+
+<script>
+  import { navigate } from 'astro:transitions/client';
+
+  interface WarpDetail {
+    href: string;
+    x: number;
+    y: number;
+    color?: string;
+  }
+
+  interface Streak {
+    angle: number;
+    dist: number;
+    speed: number;
+    width: number;
+    color: string;
+  }
+
+  type Phase = 'idle' | 'launch' | 'cruise' | 'arrive';
+
+  const LAUNCH_MS = 760;
+  const ARRIVE_MS = 650;
+  const MAX_CRUISE_MS = 4500;
+  const PALETTE = ['#ffffff', '#ffffff', '#dbe9ff', '#b8e6fe', '#fccee8', '#ffd27a'];
+
+  const warpWindow = window as Window & { __pyuyiWarp?: boolean };
+  warpWindow.__pyuyiWarp = true;
+
+  let phase: Phase = 'idle';
+  let canvas: HTMLCanvasElement | null = null;
+  let ctx: CanvasRenderingContext2D | null = null;
+  let streaks: Streak[] = [];
+  let origin = { x: 0, y: 0 };
+  let accent = '#ffd27a';
+  let startedAt = 0;
+  let cruiseAt = 0;
+  let arriveAt = 0;
+  let lastFrame = 0;
+  let arrived = false;
+  let raf = 0;
+
+  const easeInCubic = (t: number) => t * t * t;
+  const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
+  const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+
+  function resize() {
+    if (!canvas) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(window.innerWidth * dpr);
+    canvas.height = Math.round(window.innerHeight * dpr);
+    ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function spawn(near: boolean): Streak {
+    const reach = Math.hypot(window.innerWidth, window.innerHeight) / 2;
+    return {
+      angle: Math.random() * Math.PI * 2,
+      dist: near ? Math.random() * reach * 0.08 : Math.random() * reach * 0.6,
+      speed: 0.5 + Math.random() * 0.9,
+      width: 0.6 + Math.random() * 1.6,
+      color: Math.random() < 0.18 ? accent : PALETTE[Math.floor(Math.random() * PALETTE.length)],
+    };
+  }
+
+  function finish() {
+    phase = 'idle';
+    cancelAnimationFrame(raf);
+    if (canvas) canvas.style.opacity = '0';
+    ctx?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    streaks = [];
+  }
+
+  function frame(now: number) {
+    if (!ctx || !canvas || phase === 'idle') return;
+    const dt = Math.min(0.05, Math.max(0, now - lastFrame) / 1000);
+    lastFrame = now;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const reach = Math.hypot(width, height) / 2;
+
+    let velocity = 1;
+    let backdrop = 0.94;
+    let center = { x: width / 2, y: height / 2 };
+
+    if (phase === 'launch') {
+      const p = Math.min(1, Math.max(0, now - startedAt) / LAUNCH_MS);
+      velocity = easeInCubic(p);
+      backdrop = 0.94 * easeOutCubic(Math.min(1, p * 2.2));
+      const turn = easeInOut(Math.min(1, p * 1.4));
+      center = { x: origin.x + (width / 2 - origin.x) * turn, y: origin.y + (height / 2 - origin.y) * turn };
+      if (p >= 1) {
+        phase = 'cruise';
+        cruiseAt = now;
+      }
+    } else if (phase === 'cruise') {
+      if ((arrived && now - cruiseAt > 260) || now - cruiseAt > MAX_CRUISE_MS) {
+        phase = 'arrive';
+        arriveAt = now;
+      }
+    } else if (phase === 'arrive') {
+      const p = Math.min(1, Math.max(0, now - arriveAt) / ARRIVE_MS);
+      velocity = 1 - easeOutCubic(p);
+      backdrop = 0.94 * (1 - p) ** 1.6;
+      if (p >= 1) {
+        finish();
+        return;
+      }
+    }
+
+    ctx.clearRect(0, 0, width, height);
+    const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, reach);
+    glow.addColorStop(0, `rgba(46, 52, 104, ${backdrop})`);
+    glow.addColorStop(1, `rgba(10, 12, 30, ${backdrop})`);
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
+
+    // Launch ring from the star that was clicked.
+    const sinceStart = Math.max(0, now - startedAt);
+    if (sinceStart < 600) {
+      const p = sinceStart / 600;
+      ctx.strokeStyle = accent;
+      ctx.globalAlpha = (1 - p) * 0.9;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(origin.x, origin.y, 6 + easeOutCubic(p) * 90, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.lineCap = 'round';
+    for (let i = 0; i < streaks.length; i++) {
+      const streak = streaks[i];
+      const before = streak.dist;
+      streak.dist += (velocity * streak.speed * reach * 1.4 + streak.dist * velocity * 2.6) * dt;
+      if (streak.dist > reach * 1.1) {
+        if (phase === 'arrive') continue;
+        streaks[i] = spawn(true);
+        continue;
+      }
+      const tail = Math.max(before, streak.dist - (velocity * streak.dist * 0.42 + 1.5));
+      const fade = Math.min(1, streak.dist / (reach * 0.25));
+      ctx.strokeStyle = streak.color;
+      ctx.globalAlpha = fade * (0.35 + 0.65 * Math.max(velocity, phase === 'arrive' ? 0.2 : 0));
+      ctx.lineWidth = streak.width * (0.6 + (streak.dist / reach) * 1.4);
+      ctx.beginPath();
+      ctx.moveTo(center.x + Math.cos(streak.angle) * tail, center.y + Math.sin(streak.angle) * tail);
+      ctx.lineTo(center.x + Math.cos(streak.angle) * streak.dist, center.y + Math.sin(streak.angle) * streak.dist);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // A soft flash as the jump begins, and again as we drop out of it.
+    const flashAt = phase === 'arrive' ? (now - arriveAt) / 260 : (sinceStart - LAUNCH_MS * 0.85) / 260;
+    if (flashAt > 0 && flashAt < 1) {
+      ctx.fillStyle = `rgba(255, 245, 230, ${(1 - flashAt) * (phase === 'arrive' ? 0.18 : 0.32)})`;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    raf = requestAnimationFrame(frame);
+  }
+
+  function start(detail: WarpDetail) {
+    if (phase !== 'idle') return;
+    canvas = document.getElementById('pyuyi-warp') as HTMLCanvasElement | null;
+    ctx = canvas?.getContext('2d') ?? null;
+    if (!canvas || !ctx) {
+      window.location.assign(detail.href);
+      return;
+    }
+    resize();
+    accent = detail.color || '#ffd27a';
+    origin = { x: detail.x, y: detail.y };
+    streaks = Array.from({ length: Math.round(Math.min(520, (window.innerWidth * window.innerHeight) / 2600)) }, () =>
+      spawn(false),
+    );
+    arrived = false;
+    phase = 'launch';
+    startedAt = performance.now();
+    lastFrame = startedAt;
+    canvas.style.opacity = '1';
+    raf = requestAnimationFrame(frame);
+
+    window.setTimeout(() => {
+      navigate(detail.href).catch(() => window.location.assign(detail.href));
+    }, LAUNCH_MS * 0.9);
+  }
+
+  window.addEventListener('pyuyi:warp', (event) => {
+    const detail = (event as CustomEvent<WarpDetail>).detail;
+    if (detail?.href) start(detail);
+  });
+  window.addEventListener('resize', () => {
+    if (phase !== 'idle') resize();
+  });
+  document.addEventListener('astro:page-load', () => {
+    arrived = true;
+  });
+</script>
+
+<style>
+  .pyuyi-warp {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    opacity: 0;
+    /* Its own view-transition group keeps the streaks on top while the page swaps underneath. */
+    view-transition-name: pyuyi-warp;
+  }
+</style>
