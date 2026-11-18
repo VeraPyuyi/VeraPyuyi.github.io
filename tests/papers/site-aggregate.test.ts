@@ -46,7 +46,7 @@ test('the homepage uses original bilingual feature copy and only overrides the b
   assert.match(home, /<Cover slot="cover" \/>/);
 });
 
-test('aggregate content contains three papers and eleven bilingual blog articles', () => {
+test('aggregate content contains three papers and twelve bilingual blog articles', () => {
   const paperDirectories = readdirSync(join(root, 'src/content/papers'), { withFileTypes: true }).filter((entry) =>
     entry.isDirectory(),
   );
@@ -73,6 +73,8 @@ test('aggregate content contains three papers and eleven bilingual blog articles
     'monte-carlo-control-natural-starts-zh.md',
     'multi-agent-cooperation-en.md',
     'multi-agent-cooperation-zh.md',
+    'physics-of-deep-learning-free-energy-en.md',
+    'physics-of-deep-learning-free-energy-zh.md',
     'potential-functions-latent-topology-en.md',
     'potential-functions-latent-topology-zh.md',
     'raptor-graphrag-hierarchy-en.md',

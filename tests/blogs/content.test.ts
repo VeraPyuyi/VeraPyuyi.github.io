@@ -14,12 +14,13 @@ function read(path: string): string {
   return readFileSync(join(root, path), 'utf8');
 }
 
-test('published blogs form eleven complete bilingual pairs across the two categories', () => {
+test('published blogs form twelve complete bilingual pairs across the two categories', () => {
   const files = readdirSync(blogRoot)
     .filter((name) => /\.(md|mdx)$/.test(name))
     .sort();
-  assert.equal(files.length, 22);
+  assert.equal(files.length, 24);
 
+  const learningArticles = new Set(['multi-agent-cooperation', 'physics-of-deep-learning-free-energy']);
   const pairs = new Map<string, Set<string>>();
   for (const filename of files) {
     const source = readFileSync(join(blogRoot, filename), 'utf8');
@@ -28,7 +29,7 @@ test('published blogs form eleven complete bilingual pairs across the two catego
     assert.match(data.routeSlug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
     assert.equal(data.translationKey, data.routeSlug);
     assert.ok(['zh', 'en'].includes(data.language));
-    assert.equal(data.category, data.routeSlug === 'multi-agent-cooperation' ? 'learning' : 'inspirations');
+    assert.equal(data.category, learningArticles.has(data.routeSlug) ? 'learning' : 'inspirations');
     assert.equal(data.draft, false);
     assert.equal(data.comments, true);
     assert.equal(data.cover, `/uploads/blogs/${data.routeSlug}/cover.png`);
@@ -63,7 +64,7 @@ test('published blogs form eleven complete bilingual pairs across the two catego
     pairs.set(data.translationKey, languages);
   }
 
-  assert.equal(pairs.size, 11);
+  assert.equal(pairs.size, 12);
   for (const languages of pairs.values()) assert.deepEqual([...languages].sort(), ['en', 'zh']);
 });
 
@@ -80,6 +81,7 @@ test('blog publication timestamps match the source conversation or publication d
     ['raptor-graphrag-hierarchy', '2026-10-10T12:54:35Z'],
     ['potential-functions-latent-topology', '2026-08-31T14:04:43Z'],
     ['multi-agent-cooperation', '2026-11-13T09:26:28Z'],
+    ['physics-of-deep-learning-free-energy', '2026-11-18'],
   ]);
 
   for (const filename of readdirSync(blogRoot).filter((name) => /\.md$/.test(name))) {
@@ -100,7 +102,7 @@ test('bilingual blog covers retain full-size widescreen sources and documented r
     covers.set(data.translationKey, pairCovers);
   }
 
-  assert.equal(covers.size, 11);
+  assert.equal(covers.size, 12);
   for (const [slug, pairCovers] of covers) {
     assert.equal(pairCovers.size, 1, `${slug} translations must share one cover`);
     const [cover] = pairCovers;
@@ -130,6 +132,7 @@ test('the selected articles preserve equivalent mathematics across their transla
     'raptor-graphrag-hierarchy',
     'potential-functions-latent-topology',
     'multi-agent-cooperation',
+    'physics-of-deep-learning-free-energy',
   ];
   const formulas = (source: string) =>
     [...source.matchAll(/\$\$([\s\S]*?)\$\$|\$([^$\n]+)\$/g)].map((match) =>

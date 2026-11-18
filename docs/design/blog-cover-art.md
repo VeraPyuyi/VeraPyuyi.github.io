@@ -1,5 +1,14 @@
 # Blog cover art
 
+## Learning cover for the free energy essay
+
+The Chinese and English editions share the original 1672 × 941 PNG at
+`public/uploads/blogs/physics-of-deep-learning-free-energy/cover.png`. The built-in GPT Image tool used the Monte Carlo
+cover as a character and style reference only. The glass terrain illustrates how a narrow minimum can carry
+less probability mass than a broad basin. The beads are an illustration of that distinction.
+
+> Original wide 16:9 landscape Learning blog cover, polished Japanese 2D anime editorial key visual. Use the reference only for the original adult researcher's identity, sapphire to lavender to pink long hair, gold star hairpin, cream blouse, powder-blue cardigan and the small navy star cat. A new scene in a quiet university physics demonstration hall in cool early morning light. The main subject is a beautiful physical cutaway landscape sculpture made of stacked translucent sea-glass topographic contours, its silhouette clearly showing two neighboring wells separated by a saddle: one very deep and narrow with only a few warm amber beads, the other wide and shallower, holding a much larger ensemble of identical amber beads spread across its basin. One thin luminous trajectory winds down across the contours toward the wide basin. Make the narrow depth, wide area and relative occupancy immediately legible; emphasize the sculpture like a science museum exhibit, with a low oblique near-side view. The curious blue-pink-haired researcher and navy star cat observe it from the far side, secondary to the scientific subject. Crisp fine ink lines, confident cel shading, gentle mint, pale lavender and warm amber against dark indigo; natural light and clear silhouettes. Calm lower edge, center-safe framing for header crops. No letters, numbers, signage, equations, titles, logos, watermarks, inset panels or copied composition.
+
 ## Learning cover: multi-agent cooperation
 
 `multi-agent-cooperation` shares the original 1672 × 941 PNG at
