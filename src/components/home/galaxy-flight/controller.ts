@@ -20,6 +20,7 @@ import {
 import { blackHoleFrame, invert } from '@/lib/galaxy-flight/black-hole';
 import type { Vec3 } from '@/lib/galaxy-flight/scene';
 import { resolveDeepLink } from './deep-link';
+import { createOverscrollPull } from './overscroll';
 import { paintIntro } from './intro';
 import { loadModels } from './model-loader';
 import { createGalaxyRenderer, type ParticleLayer } from './renderer';
@@ -86,6 +87,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   }));
   const last = ROUTE.length - 1;
   let orbitClock = 0;
+  const overscroll = createOverscrollPull();
   const galaxies: GalaxyState[] = GALAXY_PLACEMENTS.map((placement) => ({
     matrix: galaxyModelMatrix(placement),
     drift: galaxyDrift(0, 0),
@@ -184,6 +186,9 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     const pose = cameraAt(progress, aspect, [nudge.x * 1.1, -nudge.y * 0.7]);
     let eye = pose.eye;
     let target = pose.target;
+    // Pushing past either end of the route eases the camera towards that object instead of bouncing the page.
+    overscroll.update(dt);
+    if (!still && overscroll.amount > 0) eye = mix(eye, ROUTE[Math.round(progress)].center, overscroll.amount * 0.24);
     if (warp) {
       const k = easeInOut(clamp((now - warp.start) / WARP_CAMERA_MS));
       eye = mix(warp.eye, warp.point, k * 0.86);
@@ -470,6 +475,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   return () => {
     cancelAnimationFrame(raf);
     window.clearTimeout(deepLinkTimer);
+    overscroll.stop();
     models?.stop();
     resizeObserver.disconnect();
     window.removeEventListener('keydown', onKey);
