@@ -1,12 +1,12 @@
 ---
-import HomeSider from '@components/layout/HomeSider.astro';
-import Cover from '@components/ui/cover/Cover.astro';
-import type { HomeSiderType } from '@constants/enum';
-import { CONTENT_PADDING } from '@constants/layout';
+/**
+ * Frame for the blog's own pages (lists, posts, papers, gallery, moments, guestbook): the shared
+ * night-to-dawn SkyPage. Articles get a compact hero with their cover pinned in the sky and a
+ * table-of-contents rail; the `art` and `meta` slots pass through to the hero.
+ */
+import { HomeSiderType } from '@constants/enum';
 import { siteConfig } from '@constants/site-config';
-import Layout from '@layouts/Layout.astro';
-import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
-import SkyPlate from '@/components/sky/SkyPlate.astro';
+import SkyPage from '@/components/sky/SkyPage.astro';
 import type { SkyObject } from '@/lib/sky-catalog';
 
 interface Props {
@@ -21,8 +21,10 @@ interface Props {
   keywords?: string[];
   contentType?: 'website' | 'article';
   mathStyles?: boolean;
-  /** The object on the homepage star map this page belongs to; shown as the header caption. */
+  /** The object on the homepage star map this page belongs to: its caption and hero art. */
   sky?: SkyObject;
+  /** Caption for pages that are not a stop on the flight. */
+  plate?: string;
 }
 
 const {
@@ -38,49 +40,30 @@ const {
   contentType = 'website',
   mathStyles = false,
   sky,
+  plate,
 } = Astro.props;
+const article = contentType === 'article' || Boolean(cover);
 ---
 
-<Layout
+<SkyPage
   locale={locale}
   title={`${title} | ${siteConfig.title}`}
+  heading={title}
   description={description}
+  showDescription={showDescription}
+  object={sky}
+  plate={plate}
+  image={cover}
+  imageAlt={coverAlt}
+  compact={article}
+  toc={siderType === HomeSiderType.POST}
+  paperFontProfile={paperFontProfile}
   siderType={siderType}
   keywords={keywords}
-  openGraph={{ type: contentType, title, image: cover, imageAlt: coverAlt }}
+  contentType={contentType}
 >
   {mathStyles && <link slot="head" rel="stylesheet" href="/katex/katex.min.css" />}
-  <TwoColumnLayout>
-    <Cover
-      slot="cover"
-      title={title}
-      compact
-      image={cover}
-      imageAlt={coverAlt}
-      paperFontProfile={paperFontProfile}
-    />
-    <HomeSider slot="sider" type={siderType} />
-    <div
-      class={`shadow-box bg-gradient-start flex min-w-0 w-full max-w-full flex-col gap-8 overflow-x-clip ${CONTENT_PADDING.standard}`}
-      data-paper-font={paperFontProfile}
-    >
-      <header class="space-y-3 border-b border-black/5 pb-6 dark:border-white/10">
-        {
-          sky ? (
-            <SkyPlate object={sky} locale={locale} />
-          ) : (
-            <p class="text-primary text-xs font-semibold tracking-[0.24em] uppercase">Pyuyi's log</p>
-          )
-        }
-        <h1
-          class:list={['font-chill-round text-3xl font-bold tracking-wide', paperFontProfile && 'paper-page-heading']}
-          data-paper-heading-fit={paperFontProfile ? 'page' : undefined}
-        >
-          {title}
-        </h1>
-        {showDescription && <p class="text-muted-foreground max-w-3xl leading-7">{description}</p>}
-      </header>
-      <slot />
-    </div>
-  </TwoColumnLayout>
-</Layout>
+  {Astro.slots.has('art') && <slot name="art" slot="art" />}
+  {Astro.slots.has('meta') && <slot name="meta" slot="meta" />}
+  <slot />
+</SkyPage>

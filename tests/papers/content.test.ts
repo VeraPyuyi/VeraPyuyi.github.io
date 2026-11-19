@@ -162,12 +162,12 @@ test('paper web fonts are self-hosted with license files', () => {
 
 test('paper headings prefer one line while retaining a readable wrapping fallback', () => {
   const paperPage = readFileSync(join(root, 'src/pages/papers/[slug].astro'), 'utf8');
-  const pageChrome = readFileSync(join(root, 'src/components/personal/PageChrome.astro'), 'utf8');
+  const skyHero = readFileSync(join(root, 'src/components/sky/SkyHero.astro'), 'utf8');
   const cover = readFileSync(join(root, 'src/components/ui/cover/Cover.astro'), 'utf8');
 
   assert.match(cover, /data-paper-heading-fit=\{paperFontProfile \? 'cover' : undefined\}/);
   assert.match(cover, /data-paper-heading-text=\{paperFontProfile \? '' : undefined\}/);
-  assert.match(pageChrome, /data-paper-heading-fit=\{paperFontProfile \? 'page' : undefined\}/);
+  assert.match(skyHero, /data-paper-heading-fit=\{paperFontProfile \? 'page' : undefined\}/);
   assert.match(paperPage, /text\.scrollWidth <= text\.clientWidth \+ 1 \? 'single' : 'wrapped'/);
   assert.match(paperPage, /heading\.style\.removeProperty\('font-size'\)/);
   assert.match(paperPage, /heading\.style\.fontSize = `\$\{fittedSize\.toFixed\(2\)\}px`/);

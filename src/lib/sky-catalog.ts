@@ -98,3 +98,14 @@ export function lightDays(published: Date | number, now: number = Date.now()): n
   const start = typeof published === 'number' ? published : published.getTime();
   return Math.max(0, Math.floor((now - start) / 86_400_000));
 }
+
+/** A piece of writing drawn as a star on the posts page's chart (src/components/sky/StarChart.astro). */
+export interface ChartStar {
+  title: string;
+  href: string;
+  date: Date;
+  /** Constellation it belongs to. */
+  group: 'papers' | 'inspirations' | 'learning';
+  /** Rough length of the piece, in characters; sets the star's size. */
+  weight: number;
+}

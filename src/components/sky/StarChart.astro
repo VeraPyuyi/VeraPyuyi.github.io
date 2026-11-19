@@ -1,0 +1,232 @@
+---
+/**
+ * Everything ever written, as a strip of star chart: each post a star placed by its date and
+ * sized by its length, coloured as on the homepage. Posts of the same kind are joined into a
+ * constellation in the order they were written. Hover or focus a star to read its name.
+ */
+import type { ChartStar } from '@/lib/sky-catalog';
+
+interface Props {
+  stars: ChartStar[];
+  locale: string;
+}
+
+const { stars, locale } = Astro.props;
+const en = locale === 'en';
+const WIDTH = 640;
+const HEIGHT = 340;
+const GROUPS = {
+  papers: { color: '#ffd27a', band: [58, 120], name: en ? 'Probatio' : '证明座' },
+  inspirations: { color: '#f7a8c8', band: [150, 230], name: en ? 'Inspiratio' : '灵感座' },
+  learning: { color: '#8fd3f7', band: [205, 285], name: en ? 'Disciplina' : '学习座' },
+} as const;
+
+const times = stars.map((star) => star.date.getTime());
+const first = Math.min(...times);
+const last = Math.max(...times);
+const span = Math.max(1, last - first);
+const xOf = (time: number) => 40 + ((time - first) / span) * (WIDTH - 80);
+/** A stable pseudo-random 0–1 from a title, so each star keeps its place in the sky. */
+const hash = (text: string) => {
+  let value = 2166136261;
+  for (const char of text) value = Math.imul(value ^ char.charCodeAt(0), 16777619);
+  return ((value >>> 0) % 10_000) / 10_000;
+};
+
+const placed = stars
+  .map((star) => {
+    const [low, high] = GROUPS[star.group].band;
+    const x = xOf(star.date.getTime());
+    return {
+      ...star,
+      x,
+      y: low + hash(star.title) * (high - low),
+      r: Math.min(6, Math.max(2.2, 1.6 + Math.sqrt(star.weight) / 26)),
+      anchor: x > WIDTH * 0.72 ? 'end' : x < WIDTH * 0.28 ? 'start' : 'middle',
+      delay: (hash(`${star.title}!`) * 6).toFixed(2),
+    };
+  })
+  .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+const constellations = (Object.keys(GROUPS) as ChartStar['group'][]).map((group) => {
+  const members = placed.filter((star) => star.group === group);
+  return { group, members, path: members.map((star) => `${star.x.toFixed(1)},${star.y.toFixed(1)}`).join(' ') };
+});
+
+// One tick per month across the span, labelled like a chart's right-ascension scale.
+const ticks: { x: number; label: string }[] = [];
+const cursor = new Date(first);
+cursor.setUTCDate(1);
+while (cursor.getTime() <= last + 1) {
+  if (cursor.getTime() >= first) {
+    ticks.push({
+      x: xOf(cursor.getTime()),
+      label: `${String(cursor.getUTCFullYear()).slice(2)}.${String(cursor.getUTCMonth() + 1).padStart(2, '0')}`,
+    });
+  }
+  cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+}
+---
+
+<figure class="star-chart">
+  <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-labelledby="star-chart-caption">
+    <g class="star-chart-grid" aria-hidden="true">
+      {[90, 170, 250].map((y) => <line x1="20" x2={WIDTH - 20} y1={y} y2={y} />)}
+      {ticks.map((tick) => <line x1={tick.x} x2={tick.x} y1="30" y2={HEIGHT - 36} />)}
+    </g>
+    <g class="star-chart-ticks" aria-hidden="true">
+      {ticks.map((tick) => <text x={tick.x} y={HEIGHT - 14}>{tick.label}</text>)}
+    </g>
+    {
+      constellations.map(({ group, members, path }) =>
+        members.length ? (
+          <g style={`--star:${GROUPS[group].color}`}>
+            {members.length > 1 && <polyline class="star-chart-line" points={path} />}
+            <text
+              class="star-chart-name"
+              x={members[members.length - 1].x}
+              y={members[members.length - 1].y - 14}
+              text-anchor="end"
+              aria-hidden="true"
+            >
+              {GROUPS[group].name}
+            </text>
+          </g>
+        ) : null,
+      )
+    }
+    {
+      placed.map((star) => (
+        <a class="star-chart-star" href={star.href} style={`--star:${GROUPS[star.group].color};--delay:${star.delay}s`}>
+          <title>{star.title}</title>
+          <circle class="star-chart-halo" cx={star.x} cy={star.y} r={star.r * 3.2} />
+          <circle class="star-chart-core" cx={star.x} cy={star.y} r={star.r} />
+          <text class="star-chart-label" x={star.x} y={star.y - star.r - 9} text-anchor={star.anchor}>
+            {star.title.length > 22 ? `${star.title.slice(0, 22)}…` : star.title}
+          </text>
+        </a>
+      ))
+    }
+  </svg>
+  <figcaption id="star-chart-caption" class="star-chart-caption">
+    {
+      en
+        ? `Star chart of everything written: ${stars.length} stars by date and length, joined into three constellations.`
+        : `全部文字的星图：${stars.length} 颗星按时间排开、按篇幅定亮度，连成三座星座。`
+    }
+  </figcaption>
+</figure>
+
+<style>
+  .star-chart {
+    width: min(58vw, 44rem);
+    pointer-events: auto;
+  }
+
+  .star-chart svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .star-chart-grid line {
+    stroke: rgb(200 200 255 / 0.08);
+    stroke-width: 1;
+  }
+
+  .star-chart-ticks text {
+    fill: rgb(220 220 255 / 0.45);
+    font-family: Georgia, serif;
+    font-size: 10px;
+    font-style: italic;
+    text-anchor: middle;
+  }
+
+  .star-chart-line {
+    fill: none;
+    stroke: var(--star);
+    stroke-dasharray: 2 4;
+    stroke-opacity: 0.45;
+    stroke-width: 1;
+  }
+
+  .star-chart-name {
+    fill: var(--star);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    opacity: 0.75;
+  }
+
+  .star-chart-halo {
+    fill: var(--star);
+    opacity: 0.12;
+  }
+
+  .star-chart-core {
+    fill: #fffaf2;
+    filter: drop-shadow(0 0 3px var(--star)) drop-shadow(0 0 7px var(--star));
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: star-chart-twinkle 4.8s ease-in-out var(--delay) infinite;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .star-chart-label {
+    fill: #fff;
+    font-size: 12px;
+    opacity: 0;
+    paint-order: stroke;
+    stroke: rgb(5 6 26 / 0.85);
+    stroke-width: 3px;
+    transition: opacity 0.25s ease;
+  }
+
+  .star-chart-star:hover .star-chart-core,
+  .star-chart-star:focus-visible .star-chart-core {
+    transform: scale(1.7);
+  }
+
+  .star-chart-star:hover .star-chart-label,
+  .star-chart-star:focus-visible .star-chart-label {
+    opacity: 1;
+  }
+
+  .star-chart-star:focus-visible {
+    outline: none;
+  }
+
+  .star-chart-caption {
+    margin-top: 0.4rem;
+    color: rgb(220 220 255 / 0.5);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-align: right;
+  }
+
+  @keyframes star-chart-twinkle {
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .star-chart {
+      width: 100%;
+    }
+
+    .star-chart-caption {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .star-chart-core {
+      animation: none;
+    }
+  }
+</style>

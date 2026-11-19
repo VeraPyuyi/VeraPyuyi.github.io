@@ -1,0 +1,316 @@
+/* Inner pages: night at the top (SkyHero), dawn below for reading (src/components/sky/SkyPage.astro). */
+.sky-page {
+  --night: #05061a;
+  --dawn-top: #f2e4f1;
+  background: var(--gradient-bg-end);
+}
+
+.dark .sky-page {
+  --dawn-top: #0c0e27;
+  background: var(--gradient-bg-start);
+}
+
+/* The reading area picks up exactly where the hero's sky ends, then settles into daylight. */
+.sky-dawn {
+  background: linear-gradient(180deg, var(--dawn-top) 0, #f8f0f7 12rem, #f7f8fc 34rem, var(--gradient-bg-end) 60rem);
+}
+
+.dark .sky-dawn {
+  background: linear-gradient(180deg, var(--dawn-top) 0, #12142f 24rem, var(--gradient-bg-start) 60rem);
+}
+
+/* ---- Hero ---- */
+.sky-hero {
+  --sky-scroll: 0;
+  position: relative;
+  display: flex;
+  min-height: min(46rem, 88vh);
+  padding: clamp(6rem, 14vh, 9rem) clamp(1.5rem, 7vw, 7rem) clamp(9rem, 20vh, 12rem);
+  align-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(55% 50% at 70% 42%, rgb(78 66 160 / 0.32), transparent 70%),
+    linear-gradient(180deg, var(--night) 0%, #0a0c28 50%, #1b1e50 68%, #5f5799 82%, #c3add6 93%, var(--dawn-top) 100%);
+  color: #f4f2ff;
+}
+
+.dark .sky-hero {
+  background:
+    radial-gradient(55% 50% at 70% 42%, rgb(78 66 160 / 0.32), transparent 70%),
+    linear-gradient(180deg, var(--night) 0%, #0a0c28 62%, var(--dawn-top) 100%);
+}
+
+.sky-hero.is-compact {
+  min-height: min(32rem, 70vh);
+  padding-top: clamp(6rem, 12vh, 7.5rem);
+  padding-bottom: clamp(7rem, 15vh, 9rem);
+}
+
+/* Seeded starfield; a third of the stars twinkle on their own clocks. */
+.sky-hero-stars {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 88%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 88%);
+}
+
+.sky-star {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 calc(var(--size) * 2.5) rgb(255 255 255 / 0.55);
+  opacity: var(--opacity);
+}
+
+.sky-star.is-warm {
+  background: #ffe1b5;
+  box-shadow: 0 0 calc(var(--size) * 2.5) rgb(255 210 150 / 0.55);
+}
+
+.sky-star.is-twinkling {
+  animation: sky-twinkle var(--duration) ease-in-out var(--delay) infinite;
+}
+
+@keyframes sky-twinkle {
+  0%,
+  100% {
+    opacity: var(--opacity);
+  }
+
+  45% {
+    opacity: 0.08;
+  }
+
+  55% {
+    opacity: calc(var(--opacity) * 1.15);
+  }
+}
+
+/* The object itself, floating like on the homepage, sinking a little as the page scrolls. */
+.sky-hero-art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: flex;
+  padding-right: clamp(0rem, 4vw, 5rem);
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+  transform: translate3d(0, calc(var(--sky-scroll) * 14%), 0) scale(calc(1 - var(--sky-scroll) * 0.1));
+}
+
+.sky-hero-galaxy {
+  width: min(60vw, 54rem);
+  height: auto;
+  -webkit-mask-image: radial-gradient(closest-side, #000 60%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 60%, transparent 100%);
+  animation: sky-float 15s ease-in-out infinite;
+}
+
+.is-compact .sky-hero-galaxy {
+  width: min(48vw, 40rem);
+  opacity: 0.55;
+}
+
+@keyframes sky-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate3d(0, -1.6%, 0) rotate(0.8deg);
+  }
+}
+
+/* A post's own cover, pinned in the sky like a photographic plate. */
+.sky-hero-photo {
+  position: absolute;
+  top: 50%;
+  right: clamp(1.5rem, 7vw, 7rem);
+  width: min(34vw, 30rem);
+  aspect-ratio: 16 / 9;
+  border-radius: 1.5rem;
+  object-fit: cover;
+  box-shadow:
+    0 30px 80px -24px rgb(0 0 0 / 0.75),
+    0 0 0 1px rgb(255 255 255 / 0.14),
+    0 0 70px rgb(150 130 255 / 0.25);
+  transform: translateY(-50%) rotate(1.6deg);
+}
+
+.sky-hero-text {
+  position: relative;
+  max-width: min(40rem, 52vw);
+  opacity: calc(1 - var(--sky-scroll) * 1.3);
+  transform: translate3d(0, calc(var(--sky-scroll) * -2.5rem), 0);
+  text-shadow: 0 2px 22px rgb(5 6 26 / 0.85);
+}
+
+.sky-hero-text .sky-plate {
+  color: #f7c6dd;
+}
+
+.sky-hero-plate {
+  color: #f7c6dd;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+}
+
+.sky-hero-title {
+  margin-top: 1.1rem;
+  color: #fff;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: 0.04em;
+}
+
+.is-compact .sky-hero-title {
+  font-size: clamp(2rem, 3.6vw, 3.1rem);
+}
+
+.sky-hero-note {
+  max-width: 34rem;
+  margin-top: 1.25rem;
+  color: rgb(232 230 255 / 0.8);
+  font-size: clamp(1rem, 1.4vw, 1.12rem);
+  line-height: 1.9;
+}
+
+.sky-hero-meta {
+  display: flex;
+  margin-top: 1.4rem;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.4rem;
+  color: rgb(232 230 255 / 0.72);
+  font-size: 0.85rem;
+}
+
+.sky-hero-meta a {
+  color: #f7c6dd;
+  font-weight: 600;
+}
+
+.sky-hero-meta a:hover {
+  text-decoration: underline;
+}
+
+/* ---- Body: no card, no side column; a slim contents rail on articles ---- */
+.sky-body {
+  display: grid;
+  width: 100%;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 1.5rem clamp(1.25rem, 5vw, 3rem) 5rem;
+  gap: 3rem;
+}
+
+.sky-body-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Articles read in one measured column; lists and galleries use the full width. */
+.is-article .sky-body-main > * {
+  width: 100%;
+  max-width: 74ch;
+  margin-inline: auto;
+}
+
+.sky-toc {
+  display: none;
+}
+
+@media (min-width: 1280px) {
+  .sky-body.has-toc {
+    max-width: 86rem;
+    grid-template-columns: minmax(0, 1fr) 15rem;
+  }
+
+  .sky-toc {
+    position: sticky;
+    top: 6rem;
+    display: block;
+    max-height: calc(100vh - 8rem);
+    overflow: auto;
+    align-self: start;
+    font-size: 0.85rem;
+    scrollbar-width: none;
+  }
+}
+
+.sky-toc-label {
+  margin-bottom: 0.75rem;
+  color: hsl(var(--primary));
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+}
+
+/* A section heading in the atlas voice: small catalogue line above a rounded title. */
+.sky-section-kicker {
+  color: hsl(var(--primary));
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+}
+
+@media (max-width: 768px) {
+  .sky-hero {
+    padding: 6.5rem 1.25rem 8rem;
+  }
+
+  .sky-hero-art {
+    padding-right: 0;
+    justify-content: center;
+    opacity: 0.5;
+  }
+
+  .sky-hero-galaxy {
+    width: 130vw;
+    max-width: none;
+  }
+
+  .sky-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Art you can touch (the star chart, the ring of photos, the Local Group) moves below the title. */
+  .sky-hero-art:has(.star-chart, .hoag, .local-group) {
+    position: relative;
+    inset: auto;
+    order: 2;
+    margin-top: 2.5rem;
+    padding: 0;
+    opacity: 1;
+  }
+
+  .sky-hero-photo {
+    display: none;
+  }
+
+  .sky-hero-text {
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-star.is-twinkling,
+  .sky-hero-galaxy {
+    animation: none;
+  }
+}
+
+html.motion-off .sky-star.is-twinkling,
+html.motion-off .sky-hero-galaxy {
+  animation: none;
+}

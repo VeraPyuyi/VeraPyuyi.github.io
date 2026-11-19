@@ -4,8 +4,10 @@ import { Icon } from 'astro-icon/components';
 import BlogList from '@/components/personal/BlogList.astro';
 import PageChrome from '@/components/personal/PageChrome.astro';
 import PaperList from '@/components/personal/PaperList.astro';
+import StarChart from '@/components/sky/StarChart.astro';
 import { defaultLocale, localizedPath } from '@/i18n';
 import { getPapers } from '@/lib/papers';
+import type { ChartStar } from '@/lib/sky-catalog';
 
 interface Props {
   locale?: string;
@@ -14,7 +16,25 @@ interface Props {
 const { locale = defaultLocale } = Astro.props;
 const en = locale === 'en';
 const paperCount = getPapers().length;
-const blogCount = (await getCollection('blogs')).filter((entry) => entry.data.language === locale && !entry.data.draft).length;
+const blogs = (await getCollection('blogs')).filter((entry) => entry.data.language === locale && !entry.data.draft);
+const blogCount = blogs.length;
+const chartStars: ChartStar[] = [
+  ...getPapers().map((paper) => ({
+    title: en && paper.titleEn ? paper.titleEn : paper.title,
+    href: localizedPath(`/papers/${paper.id}`, locale),
+    date: new Date(paper.date),
+    group: 'papers' as const,
+    // A paper is long; its abstract stands in for its weight.
+    weight: paper.abstract.length * 12,
+  })),
+  ...blogs.map((entry) => ({
+    title: entry.data.title,
+    href: localizedPath(`/blogs/${entry.data.routeSlug}`, locale),
+    date: entry.data.publishedAt,
+    group: entry.data.category,
+    weight: entry.body?.length ?? 2000,
+  })),
+];
 ---
 
 <PageChrome
@@ -22,13 +42,15 @@ const blogCount = (await getCollection('blogs')).filter((entry) => entry.data.la
   title={en ? 'All Posts' : '全部文章'}
   description={en ? 'Rigour and reverie, side by side: some pages are written for proofs, some for the small hours.' : '严谨与随想并排放着：有些写给证明，有些写给深夜。'}
   showDescription={false}
+  plate={en ? `Star catalogue · ${chartStars.length} entries` : `星表 · 共 ${chartStars.length} 颗`}
 >
+  <StarChart slot="art" stars={chartStars} locale={locale} />
   <div class="space-y-12" data-pagefind-ignore="all">
     <section aria-labelledby="all-papers-title" class="space-y-5">
-      <div class="flex flex-wrap items-end justify-between gap-3 border-b border-black/5 pb-3 dark:border-white/10">
+      <div class="flex flex-wrap items-end justify-between gap-3 ">
         <div>
-          <p class="text-primary text-xs font-semibold tracking-[0.2em] uppercase">Papers · {paperCount}</p>
-          <h2 id="all-papers-title" class="mt-1 text-2xl font-bold">{en ? 'Papers' : '论文'}</h2>
+          <p class="sky-section-kicker">{en ? 'Probatio' : '证明座'} · {paperCount}</p>
+          <h2 id="all-papers-title" class="font-chill-round mt-1 text-2xl font-bold">{en ? 'Papers' : '论文'}</h2>
         </div>
         <a class="text-primary inline-flex items-center gap-1 text-sm font-semibold hover:underline" href={localizedPath('/papers', locale)}>
           {en ? 'Papers only' : '只看论文'}
@@ -39,10 +61,10 @@ const blogCount = (await getCollection('blogs')).filter((entry) => entry.data.la
     </section>
 
     <section aria-labelledby="all-blogs-title" class="space-y-5">
-      <div class="flex flex-wrap items-end justify-between gap-3 border-b border-black/5 pb-3 dark:border-white/10">
+      <div class="flex flex-wrap items-end justify-between gap-3 ">
         <div>
-          <p class="text-primary text-xs font-semibold tracking-[0.2em] uppercase">Blogs · {blogCount}</p>
-          <h2 id="all-blogs-title" class="mt-1 text-2xl font-bold">{en ? 'Blogs' : '博客'}</h2>
+          <p class="sky-section-kicker">{en ? 'Inspiratio & Disciplina' : '灵感座 · 学习座'} · {blogCount}</p>
+          <h2 id="all-blogs-title" class="font-chill-round mt-1 text-2xl font-bold">{en ? 'Blogs' : '博客'}</h2>
         </div>
         <a class="text-primary inline-flex items-center gap-1 text-sm font-semibold hover:underline" href={localizedPath('/blogs', locale)}>
           {en ? 'Blogs only' : '只看博客'}

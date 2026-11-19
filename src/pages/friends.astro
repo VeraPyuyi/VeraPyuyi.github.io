@@ -1,13 +1,11 @@
 ---
 import FriendRequestForm from '@components/friends/FriendRequestForm';
 import FriendsGrid from '@components/friends/FriendsGrid';
-import HomeSider from '@components/layout/HomeSider.astro';
-import Cover from '@components/ui/cover/Cover.astro';
-import { CONTENT_PADDING } from '@constants/layout';
+import { friendsData } from '@constants/friends-config';
 import { siteConfig } from '@constants/site-config';
-import Layout from '@layouts/Layout.astro';
-import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
 import { Comment } from '@/components/comment';
+import LocalGroup from '@/components/sky/LocalGroup.astro';
+import SkyPage from '@/components/sky/SkyPage.astro';
 import { defaultLocale, t } from '@/i18n';
 
 interface Props {
@@ -16,26 +14,29 @@ interface Props {
 
 // Root pages render the default locale; `[lang]/` mirrors pass their locale in explicitly.
 const { locale = defaultLocale } = Astro.props;
-const title = `${t(locale, 'friends.title')} | ${siteConfig.title}`;
-const description = t(locale, 'friends.title');
+const en = locale === 'en';
+const heading = t(locale, 'friends.title');
 ---
 
-<Layout locale={locale} title={title} description={description}>
-  <TwoColumnLayout>
-    <Cover slot="cover" title={t(locale, 'friends.title')} />
-    <HomeSider slot="sider" />
-    <div
-      class={`bg-gradient-start shadow-box tablet:shadow-none flex min-w-0 flex-col gap-10 ${CONTENT_PADDING.standard}`}
-    >
-      <div class="mt-4">
-        <FriendsGrid locale={locale} client:load />
-      </div>
-      <div class="mb-4">
-        <FriendRequestForm locale={locale} client:visible />
-        <div id="friend-comments" class="scroll-mt-24">
-          <Comment contentId="page:friends" />
-        </div>
+<SkyPage
+  locale={locale}
+  title={`${heading} | ${siteConfig.title}`}
+  heading={heading}
+  plate={en ? `Local Group · ${friendsData.length + 1} galaxies` : `本星系群 · ${friendsData.length + 1} 个星系`}
+  description={
+    en
+      ? 'Galaxies are rarely alone: the ones close enough feel each other’s pull and drift through the dark together.'
+      : '星系很少独自存在。离得够近的，会感到彼此的引力，在黑暗里结伴漂流。'
+  }
+>
+  <LocalGroup slot="art" friends={friendsData} locale={locale} />
+  <div class="flex flex-col gap-12">
+    <FriendsGrid locale={locale} client:load />
+    <div>
+      <FriendRequestForm locale={locale} client:visible />
+      <div id="friend-comments" class="scroll-mt-24">
+        <Comment contentId="page:friends" />
       </div>
     </div>
-  </TwoColumnLayout>
-</Layout>
+  </div>
+</SkyPage>

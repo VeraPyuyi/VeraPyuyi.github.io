@@ -1,6 +1,7 @@
 ---
 import BlogList from '@/components/personal/BlogList.astro';
 import PageChrome from '@/components/personal/PageChrome.astro';
+import ArmGlyph from '@/components/sky/ArmGlyph.astro';
 import { defaultLocale } from '@/i18n';
 import { BLOG_CATEGORIES, getBlogArticles, getBlogCategoryDescription, getBlogCategoryLabel } from '@/lib/blogs';
 
@@ -10,6 +11,11 @@ interface Props {
 
 const { locale = defaultLocale } = Astro.props;
 const en = locale === 'en';
+// M51's two arms carry the two kinds of writing, in the colours their stars have on the homepage.
+const ARMS = {
+  inspirations: { number: 1 as const, roman: 'I', color: '#f7a8c8' },
+  learning: { number: 2 as const, roman: 'II', color: '#8fd3f7' },
+};
 const categoryCounts = Object.fromEntries(
   await Promise.all(BLOG_CATEGORIES.map(async (category) => [category, (await getBlogArticles(locale, category)).length])),
 );
@@ -25,41 +31,37 @@ const categoryCounts = Object.fromEntries(
       : '字句一行行亮起，回应它们的始终只有深夜。'
   }
 >
-  <nav class="mb-12 grid gap-4 sm:grid-cols-2" aria-label={en ? 'Blog categories' : '博客分类'}>
+  <nav class="blog-arms" aria-label={en ? 'Blog categories' : '博客分类'}>
     {
       BLOG_CATEGORIES.map((category) => (
-        <a
-          class="group rounded-3xl border border-black/5 bg-white/55 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md motion-reduce:transform-none dark:border-white/10 dark:bg-white/5"
-          href={`#${category}`}
-        >
-          <span class="flex items-center justify-between gap-3">
-            <strong class="text-lg">{getBlogCategoryLabel(category)}</strong>
-            <span class="text-primary rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold">
-              {categoryCounts[category]}
+        <a class="blog-arm group" href={`#${category}`}>
+          <ArmGlyph arm={ARMS[category].number} color={ARMS[category].color} class="blog-arm-glyph" />
+          <span>
+            <span class="sky-section-kicker">
+              {en ? 'Arm' : '旋臂'} {ARMS[category].roman} · {en ? `${categoryCounts[category]} stars` : `${categoryCounts[category]} 颗星`}
             </span>
-          </span>
-          <span class="text-muted-foreground mt-2 block text-sm leading-6">
-            {getBlogCategoryDescription(category, locale)}
+            <strong class="font-chill-round mt-1 block text-xl">{getBlogCategoryLabel(category)}</strong>
+            <span class="text-muted-foreground mt-1 block text-sm leading-6">{getBlogCategoryDescription(category, locale)}</span>
           </span>
         </a>
       ))
     }
   </nav>
 
-  <div class="space-y-14" data-pagefind-ignore="all">
+  <div class="space-y-16" data-pagefind-ignore="all">
     {
       BLOG_CATEGORIES.map((category) => (
-        <section id={category} aria-labelledby={`${category}-title`} class="scroll-mt-24 space-y-5">
-          <div class="border-b border-black/5 pb-3 dark:border-white/10">
-            <p class="text-primary text-xs font-semibold tracking-[0.2em] uppercase">
-              {en ? 'Blog category' : '博客分类'} · {categoryCounts[category]}
-            </p>
-            <h2 id={`${category}-title`} class="mt-1 text-2xl font-bold">
-              {getBlogCategoryLabel(category)}
-            </h2>
-            <p class="text-muted-foreground mt-2 text-sm leading-6">
-              {getBlogCategoryDescription(category, locale)}
-            </p>
+        <section id={category} aria-labelledby={`${category}-title`} class="scroll-mt-24 space-y-6">
+          <div class="flex items-center gap-4">
+            <ArmGlyph arm={ARMS[category].number} color={ARMS[category].color} class="size-10 shrink-0" />
+            <div>
+              <p class="sky-section-kicker">
+                {en ? 'Arm' : '旋臂'} {ARMS[category].roman} · {categoryCounts[category]}
+              </p>
+              <h2 id={`${category}-title`} class="font-chill-round mt-1 text-2xl font-bold">
+                {getBlogCategoryLabel(category)}
+              </h2>
+            </div>
           </div>
           <BlogList locale={locale} indexable={false} category={category} />
         </section>
@@ -67,3 +69,35 @@ const categoryCounts = Object.fromEntries(
     }
   </div>
 </PageChrome>
+
+<style>
+  .blog-arms {
+    display: grid;
+    margin-bottom: 1.5rem;
+    gap: 1.5rem 3rem;
+  }
+
+  @media (min-width: 640px) {
+    .blog-arms {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .blog-arm {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.1rem;
+  }
+
+  .blog-arm :global(.blog-arm-glyph) {
+    width: 3.5rem;
+    height: 3.5rem;
+    flex: none;
+    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .blog-arm:hover :global(.blog-arm-glyph),
+  .blog-arm:focus-visible :global(.blog-arm-glyph) {
+    transform: rotate(-40deg) scale(1.08);
+  }
+</style>

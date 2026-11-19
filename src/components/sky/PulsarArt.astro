@@ -1,0 +1,130 @@
+---
+/**
+ * PSR B1919+21, the first pulsar ever found (1967) and at first logged as "LGM-1", a possible
+ * signal from little green men. Two beams sweep the dark; the core flashes on the pulsar's real
+ * period of 1.337 seconds.
+ */
+---
+
+<div class="pulsar" aria-hidden="true">
+  <div class="pulsar-glow"></div>
+  <div class="pulsar-beams"></div>
+  <div class="pulsar-rings">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+  <div class="pulsar-core"></div>
+</div>
+
+<style>
+  .pulsar {
+    --period: 1.337s;
+    position: relative;
+    width: min(46vw, 38rem);
+    aspect-ratio: 1;
+  }
+
+  .pulsar-glow {
+    position: absolute;
+    inset: 18%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgb(150 190 255 / 0.32), rgb(120 110 220 / 0.12) 45%, transparent 70%);
+  }
+
+  /* Two opposite cones of light on a slow wheel. */
+  .pulsar-beams {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgb(180 210 255 / 0.5) 8deg,
+      transparent 16deg,
+      transparent 180deg,
+      rgb(247 198 221 / 0.45) 188deg,
+      transparent 196deg,
+      transparent 360deg
+    );
+    -webkit-mask-image: radial-gradient(circle, #000 0, rgb(0 0 0 / 0.7) 30%, transparent 70%);
+    mask-image: radial-gradient(circle, #000 0, rgb(0 0 0 / 0.7) 30%, transparent 70%);
+    rotate: -8deg;
+    animation: pulsar-sweep calc(var(--period) * 6) linear infinite;
+    filter: blur(2px);
+  }
+
+  /* Each pulse leaves a ring travelling outwards, like the signal reaching us. */
+  .pulsar-rings span {
+    position: absolute;
+    inset: 4%;
+    border: 1px solid rgb(200 220 255 / 0.55);
+    border-radius: 50%;
+    opacity: 0;
+    animation: pulsar-ring calc(var(--period) * 3) cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+  }
+
+  .pulsar-rings span:nth-child(2) {
+    animation-delay: var(--period);
+  }
+
+  .pulsar-rings span:nth-child(3) {
+    animation-delay: calc(var(--period) * 2);
+  }
+
+  .pulsar-core {
+    position: absolute;
+    inset: 48.6%;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow:
+      0 0 10px 3px #fff,
+      0 0 40px 10px rgb(170 200 255 / 0.8),
+      0 0 120px 30px rgb(140 150 255 / 0.35);
+    animation: pulsar-beat var(--period) ease-out infinite;
+  }
+
+  @keyframes pulsar-sweep {
+    to {
+      rotate: 352deg;
+    }
+  }
+
+  @keyframes pulsar-ring {
+    0% {
+      scale: 0.08;
+      opacity: 0.8;
+    }
+
+    100% {
+      scale: 1;
+      opacity: 0;
+    }
+  }
+
+  @keyframes pulsar-beat {
+    0% {
+      scale: 1.9;
+      filter: brightness(1.6);
+    }
+
+    18% {
+      scale: 1;
+      filter: brightness(1);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .pulsar {
+      width: 110vw;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pulsar-beams,
+    .pulsar-rings span,
+    .pulsar-core {
+      animation: none;
+    }
+  }
+</style>

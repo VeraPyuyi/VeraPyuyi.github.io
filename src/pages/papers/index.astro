@@ -17,5 +17,66 @@ const en = locale === 'en';
   title={en ? 'Papers' : '论文'}
   description={en ? 'Every Q.E.D. is a small stake driven into the edge of the unknown.' : '每一个“证毕”，都是在未知的边界上钉下的一枚小小界桩。'}
 >
-  <PaperList locale={locale} />
+  {/* NGC 1300's bar: the papers hang along one straight, glowing spine, like the rigorous skeleton arguments grow from. */}
+  <div class="paper-bar">
+    <PaperList locale={locale} />
+  </div>
 </PageChrome>
+
+<style>
+  .paper-bar {
+    position: relative;
+    padding-left: 2.25rem;
+  }
+
+  .paper-bar::before {
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    left: 0.45rem;
+    width: 2px;
+    border-radius: 2px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(255 210 122 / 0.85) 8%,
+      rgb(255 236 200 / 0.95) 50%,
+      rgb(255 210 122 / 0.85) 92%,
+      transparent
+    );
+    box-shadow: 0 0 14px rgb(255 200 110 / 0.55);
+    content: '';
+  }
+
+  /* Each paper is a knot of light on the bar. */
+  .paper-bar :global(article) {
+    position: relative;
+  }
+
+  .paper-bar :global(article)::before {
+    position: absolute;
+    top: 1.4rem;
+    left: -2.25rem;
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fffaf0 0 28%, #ffd27a 45%, transparent 72%);
+    box-shadow: 0 0 16px rgb(255 205 120 / 0.8);
+    content: '';
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .paper-bar :global(article:hover)::before {
+    transform: scale(1.5);
+  }
+
+  @media (max-width: 640px) {
+    .paper-bar {
+      padding-left: 1.6rem;
+    }
+
+    .paper-bar :global(article)::before {
+      left: -1.6rem;
+    }
+  }
+</style>

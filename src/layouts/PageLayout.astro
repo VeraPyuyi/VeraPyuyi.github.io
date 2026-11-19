@@ -1,15 +1,15 @@
 ---
+/**
+ * Layout for standalone Markdown pages (about, music) on the night-to-dawn SkyPage frame. The
+ * about page sits at Sgr A*, the last stop of the homepage flight: there the girl and her star cat
+ * lean out over the edge of the night to watch the black hole.
+ */
 import CustomContent from '@components/common/CustomContent.astro';
-import HomeSider from '@components/layout/HomeSider.astro';
-import Cover from '@components/ui/cover/Cover.astro';
-import { CONTENT_PADDING } from '@constants/layout';
 import { seoConfig } from '@constants/site-config';
 import { Comment } from '@/components/comment';
-import SkyPlate from '@/components/sky/SkyPlate.astro';
+import SkyPage from '@/components/sky/SkyPage.astro';
 import { getLocaleFromUrl } from '@/i18n';
 import type { SkyObject } from '@/lib/sky-catalog';
-import Layout from './Layout.astro';
-import TwoColumnLayout from './TwoColumnLayout.astro';
 
 export interface Props {
   frontmatter: {
@@ -18,7 +18,7 @@ export interface Props {
     coverTitle?: string;
     comments?: boolean;
     commentId?: string;
-    /** Object on the homepage star map this page belongs to, shown as a caption above the text. */
+    /** Object on the homepage star map this page belongs to: its caption and hero art. */
     sky?: SkyObject;
   };
 }
@@ -26,22 +26,119 @@ export interface Props {
 const { frontmatter } = Astro.props;
 const showComments = frontmatter.comments ?? true;
 const locale = getLocaleFromUrl(Astro.url.pathname);
+const description = frontmatter.description ?? '';
 ---
 
-<Layout title={`${frontmatter.title} | ${seoConfig.title}`} description={frontmatter.description}>
-  <TwoColumnLayout>
-    <Cover slot="cover" title={frontmatter.coverTitle ?? frontmatter.title} />
-    <HomeSider slot="sider" />
-    <div
-      class={`shadow-box bg-gradient-start mx-0 flex min-w-0 w-full max-w-full flex-col gap-8 overflow-x-clip ${CONTENT_PADDING.standard}`}
-    >
-      {frontmatter.sky && <SkyPlate object={frontmatter.sky} locale={locale} />}
-      <div class="prose dark:prose-invert" data-pagefind-body>
-        <CustomContent>
-          <slot />
-        </CustomContent>
+<SkyPage
+  locale={locale}
+  title={`${frontmatter.title} | ${seoConfig.title}`}
+  heading={frontmatter.coverTitle ?? frontmatter.title}
+  description={description}
+  object={frontmatter.sky}
+>
+  {
+    frontmatter.sky === 'hole' && (
+      <div slot="art" class="about-sky">
+        <img class="about-hole" src="/img/sky/hole-hero.webp" alt="" width="1200" height="667" decoding="async" />
+        <img class="about-girl" src="/img/sky/about-girl.webp" alt="" width="522" height="340" decoding="async" />
+        <img class="about-cat" src="/img/sky/about-cat.webp" alt="" width="178" height="143" decoding="async" />
       </div>
-      {showComments && <Comment contentId={frontmatter.commentId} />}
-    </div>
-  </TwoColumnLayout>
-</Layout>
+    )
+  }
+  <div class="prose dark:prose-invert mx-auto max-w-[74ch]" data-pagefind-body>
+    <CustomContent>
+      <slot />
+    </CustomContent>
+  </div>
+  {
+    showComments && (
+      <div class="mx-auto mt-12 max-w-[74ch]">
+        <Comment contentId={frontmatter.commentId} />
+      </div>
+    )
+  }
+</SkyPage>
+
+<style>
+  .about-sky {
+    position: absolute;
+    inset: 0;
+  }
+
+  .about-hole {
+    position: absolute;
+    top: 8%;
+    right: -4%;
+    width: min(64vw, 60rem);
+    -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+    animation: about-float 18s ease-in-out infinite;
+  }
+
+  /* She leans on the line where night turns to dawn, chin in hand, facing the hole. */
+  .about-girl,
+  .about-cat {
+    position: absolute;
+    bottom: 0;
+    -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent);
+    mask-image: linear-gradient(to bottom, #000 82%, transparent);
+  }
+
+  .about-girl {
+    right: 36%;
+    width: min(30vw, 24rem);
+  }
+
+  .about-cat {
+    right: 26%;
+    width: min(9vw, 7rem);
+    animation: about-cat 7s ease-in-out infinite;
+  }
+
+  @keyframes about-float {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+
+    50% {
+      translate: 0 -1.5%;
+    }
+  }
+
+  @keyframes about-cat {
+    0%,
+    100% {
+      rotate: 0deg;
+    }
+
+    50% {
+      rotate: -3deg;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .about-hole {
+      top: 4%;
+      right: -30%;
+      width: 150vw;
+    }
+
+    .about-girl {
+      right: 18%;
+      width: 64vw;
+    }
+
+    .about-cat {
+      right: 2%;
+      width: 18vw;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .about-hole,
+    .about-cat {
+      animation: none;
+    }
+  }
+</style>
