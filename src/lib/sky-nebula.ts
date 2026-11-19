@@ -1,309 +1,412 @@
 /**
- * The nebulae behind the inner pages, as SVG markup (pure: same environment, same sky).
+ * The nebulae behind the inner pages, as particles (pure: same environment, same sky).
  *
- * Every sky is built like a photograph of a star-forming region, the Pillars of Creation in
- * particular: glowing gas in blue, white and pink (with one accent colour per page) and, in front
- * of it, sculpted columns of cold dust. The columns are lit from one side, so they have volume:
- * their outline is torn by displaced noise, their surface is shaded with diffuse lighting over a
- * noise height map, a halo of evaporating gas glows round their edges, and their tips burn
- * bright where young stars are switching on. Each page keeps a signature feature of its own
- * galaxy (planetary rings, cirrus veils, a jet, the Milky Way, a supernova shell, far galaxies).
+ * Built like the homepage galaxies: fine grains of light and soft puffs, laid down by fractal noise.
+ * Every sky is modelled on a star-forming region, the Pillars of Creation in particular: glowing gas
+ * in blue, white and pink (with one accent colour per page) and, rising through it, tall columns of
+ * denser gas. The columns are crowds of particles, blue on their shaded flank and pink and white
+ * where they face the light, with bright grains thick on the lit skin and the tips. Nothing is
+ * dark: the whole sky is light. Each page keeps a signature feature of its own galaxy (planetary
+ * rings, cirrus veils, a jet, the Milky Way, a supernova shell, far galaxies, spiked young stars).
  *
- * The field is 1600 × 2600 user units, drawn taller than the screen so it can glide as the page
- * scrolls; the columns stand in the side margins, clear of the reading panel.
+ * Particles live in a 1600 × 2600 field, taller than the screen so it can glide as the page
+ * scrolls; the columns stand in the side margins, clear of the reading panel. The result is a flat
+ * list in draw order, each particle x, y, radius, alpha and colour index; all of it adds light.
  */
 
 import { createRandom, type Random } from './galaxy-flight/particles';
 import type { SkyEnvironment } from './sky-catalog';
 
-interface Cloud {
-  x: number;
-  y: number;
-  rx: number;
-  ry: number;
-  color: string;
-  /** Noise scale: smaller gives larger wisps. */
-  frequency: number;
-  strength: number;
-  turn?: number;
-  /** `filament` keeps only the noise's veins (cirrus, shock fronts); `dust` darkens. */
-  kind?: 'haze' | 'filament' | 'dust';
-  /** `ring` keeps only a band round the centre (planetary nebulae, supernova shells). */
-  shape?: 'ellipse' | 'ring';
+export const NEBULA_FIELD = { width: 1600, height: 2600 } as const;
+export const NEBULA_STRIDE = 5;
+
+export interface NebulaParticles {
+  colors: string[];
+  /** x, y, radius, alpha, colour index; NEBULA_STRIDE numbers per particle. */
+  data: Float32Array;
 }
 
-interface Palette {
-  /** Glowing gas, from the base blue, white and pink plus the page's accent. */
-  gas: string[];
-  /** Colour of the lit edges and halos of the dust columns. */
-  rim: string;
-  /** The columns' sunlit flank. */
-  lit: string;
+type Spot = [x: number, y: number, rx: number, ry: number];
+
+interface Feature {
+  kind: 'cloud' | 'ring' | 'filament' | 'jet' | 'band';
+  at: Spot;
+  color: string;
+  turn?: number;
+  count: number;
 }
 
 interface Environment {
-  palette: Palette;
-  /** Signature clouds of the page's own galaxy, drawn between the gas and the columns. */
-  features: Cloud[];
+  /** Glowing gas: the base blue, white and pink, then the page's accent. */
+  gas: string[];
+  /** Light on the columns' lit flanks and tips. */
+  rim: string;
+  features: Feature[];
   sparkles?: number;
   galaxies?: number;
 }
 
 const WHITE = '#eef2ff';
-const BLUE = '#60a5fa';
-const PINK = '#f472b6';
-
-const cloud = (
-  [x, y, rx, ry]: [number, number, number, number],
-  color: string,
-  frequency: number,
-  strength: number,
-  extra: Partial<Cloud> = {},
-): Cloud => ({ x, y, rx, ry, color, frequency, strength, ...extra });
+const BLUE = '#7aa7ff';
+const PINK = '#f58cc4';
+const COLUMN_BLUE = '#8aa4ff';
+const COLUMN_LILAC = '#c9a6f0';
+const COLUMN_PINK = '#ffc4e4';
 
 const ENVIRONMENTS: Record<SkyEnvironment, Environment> = {
   // M51: hydrogen glowing rose, the classic pillar sky.
-  rose: { palette: { gas: [PINK, BLUE, WHITE, '#c084fc'], rim: '#ffc2e2', lit: '#f5b8d6' }, features: [] },
-  // NGC 1300: blue reflection haze round spiked young stars, a little gold dust.
+  rose: { gas: [PINK, BLUE, WHITE, '#c084fc'], rim: '#ffd3ea', features: [] },
+  // NGC 1300: blue reflection haze round spiked young stars, a little gold.
   gold: {
-    palette: { gas: [BLUE, WHITE, PINK, '#fcd34d'], rim: '#ffe7b8', lit: '#e8d2b0' },
-    features: [cloud([1480, 1250, 380, 300], '#7dd3fc', 0.0022, 0.7)],
+    gas: [BLUE, WHITE, PINK, '#f6c66a'],
+    rim: '#ffecc8',
+    features: [{ kind: 'cloud', at: [1480, 1250, 360, 300], color: '#9ad8ff', count: 3000 }],
     sparkles: 7,
   },
   // Hoag's Object: planetary nebulae, rings of gas round dying stars.
   ring: {
-    palette: { gas: [BLUE, WHITE, PINK, '#2dd4bf'], rim: '#b9f3ff', lit: '#c3d8f5' },
+    gas: [BLUE, WHITE, PINK, '#3fd9c4'],
+    rim: '#c6f6ff',
     features: [
-      cloud([1450, 1250, 300, 300], '#5eead4', 0.004, 0.9, { shape: 'ring' }),
-      cloud([1450, 1250, 200, 200], '#bfdbfe', 0.003, 0.55),
-      cloud([150, 2050, 200, 200], '#f9a8d4', 0.005, 0.85, { shape: 'ring' }),
+      { kind: 'ring', at: [1450, 1250, 300, 300], color: '#5eead4', count: 4000 },
+      { kind: 'cloud', at: [1450, 1250, 170, 170], color: '#bfdbfe', count: 1200 },
+      { kind: 'ring', at: [150, 2050, 190, 190], color: '#f9a8d4', count: 2600 },
     ],
   },
   // The Small Magellanic Cloud: long cirrus veils between the columns.
   cloud: {
-    palette: { gas: [BLUE, WHITE, PINK, '#a78bfa'], rim: '#dcd3ff', lit: '#d6c8f0' },
+    gas: [BLUE, WHITE, PINK, '#a78bfa'],
+    rim: '#e2d9ff',
     features: [
-      cloud([170, 1300, 460, 150], '#a5f3fc', 0.006, 0.85, { kind: 'filament', turn: 32 }),
-      cloud([1430, 2150, 460, 150], '#f9a8d4', 0.006, 0.8, { kind: 'filament', turn: -28 }),
+      { kind: 'filament', at: [170, 1300, 460, 150], color: '#a5f3fc', turn: 32, count: 4000 },
+      { kind: 'filament', at: [1430, 2150, 460, 150], color: '#f9a8d4', turn: -28, count: 4000 },
     ],
   },
   // Sgr A*: the disk's blue and rose, and the jet fired from the hole's pole.
   disk: {
-    palette: { gas: [BLUE, PINK, WHITE, '#818cf8'], rim: '#c9dcff', lit: '#cdb8e8' },
-    features: [
-      cloud([1470, 1300, 60, 560], '#bfdbfe', 0.009, 0.95, { kind: 'filament', turn: 6 }),
-      cloud([1470, 1300, 140, 600], '#818cf8', 0.004, 0.5, { turn: 6 }),
-    ],
+    gas: [BLUE, PINK, WHITE, '#8b8cf8'],
+    rim: '#d3e2ff',
+    features: [{ kind: 'jet', at: [1470, 1300, 60, 560], color: '#c7dcff', turn: 6, count: 4500 }],
   },
-  // The star chart: the Milky Way crossing the sky, split by its dark rift.
+  // The star chart: the Milky Way crossing the sky.
   milkyway: {
-    palette: { gas: [BLUE, WHITE, PINK, '#fde68a'], rim: '#fff1d6', lit: '#e9dcc8' },
+    gas: [BLUE, WHITE, PINK, '#fde68a'],
+    rim: '#fff1d6',
     features: [
-      cloud([800, 1300, 1700, 230], '#dbe4ff', 0.004, 0.7, { turn: 62 }),
-      cloud([800, 1300, 1500, 110], '#fde68a', 0.0055, 0.45, { turn: 62 }),
-      cloud([800, 1300, 1500, 60], '#05040f', 0.007, 0.9, { kind: 'dust', turn: 62 }),
+      { kind: 'band', at: [800, 1300, 1700, 220], color: '#dbe4ff', turn: 62, count: 9000 },
+      { kind: 'band', at: [800, 1300, 1500, 100], color: '#fde68a', turn: 62, count: 3000 },
     ],
   },
   // The pulsar: the torn shell of the supernova that made it.
   remnant: {
-    palette: { gas: [BLUE, PINK, WHITE, '#f87171'], rim: '#ffc9c9', lit: '#e8b9c2' },
+    gas: [BLUE, PINK, WHITE, '#f87171'],
+    rim: '#ffd0d0',
     features: [
-      cloud([1450, 1250, 360, 340], '#fb7185', 0.009, 0.9, { kind: 'filament', shape: 'ring' }),
-      cloud([1450, 1250, 260, 250], '#5eead4', 0.0035, 0.55),
+      { kind: 'ring', at: [1450, 1250, 360, 340], color: '#fb7185', count: 5000 },
+      { kind: 'cloud', at: [1450, 1250, 250, 240], color: '#5eead4', count: 1800 },
     ],
   },
   // The Local Group: far galaxies scattered between the columns.
-  group: { palette: { gas: [BLUE, WHITE, PINK, '#a78bfa'], rim: '#e4d9ff', lit: '#d4c9ee' }, features: [], galaxies: 22 },
+  group: { gas: [BLUE, WHITE, PINK, '#a78bfa'], rim: '#e6dcff', features: [], galaxies: 22 },
 };
 
-const rgb = (hex: string) => [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16) / 255);
-const f = (value: number) => value.toFixed(1);
-
-/** Colour matrix turning noise into tinted, thresholded alpha. Filaments keep only the brightest veins. */
-function cloudMatrix(item: Cloud): string {
-  const [r, g, b] = rgb(item.color);
-  const gain = item.kind === 'filament' ? 4.6 : 3.1;
-  const cut = item.kind === 'filament' ? 1.95 : 1.0;
-  const alpha = `${(gain * item.strength).toFixed(2)} 0 0 0 ${(-cut * item.strength).toFixed(2)}`;
-  return `0 0 0 0 ${r.toFixed(3)} 0 0 0 0 ${g.toFixed(3)} 0 0 0 0 ${b.toFixed(3)} ${alpha}`;
-}
-
-function cloudSvg(item: Cloud, id: string, seed: number): { defs: string; body: string } {
-  const reach = Math.max(item.rx, item.ry);
-  const turn = item.turn ? ` transform="rotate(${item.turn} ${item.x} ${item.y})"` : '';
-  const type = item.kind === 'filament' ? 'turbulence' : 'fractalNoise';
-  return {
-    defs:
-      `<filter id="${id}-n" x="0" y="0" width="100%" height="100%"><feTurbulence type="${type}" baseFrequency="${item.frequency}" numOctaves="5" seed="${seed}"/>` +
-      `<feColorMatrix type="matrix" values="${cloudMatrix(item)}"/></filter>` +
-      `<mask id="${id}-m"><ellipse cx="${item.x}" cy="${item.y}" rx="${item.rx}" ry="${item.ry}" fill="url(#sky-shape-${item.shape ?? 'ellipse'})"${turn}/></mask>`,
-    body: `<rect x="${item.x - reach}" y="${item.y - reach}" width="${reach * 2}" height="${reach * 2}" filter="url(#${id}-n)" mask="url(#${id}-m)"/>`,
+/** Smooth fractal value noise in about [0, 1], seeded. */
+function createNoise(seed: number) {
+  const hash = (x: number, y: number) => {
+    let h = Math.imul(x, 374761393) ^ Math.imul(y, 668265263) ^ Math.imul(seed, 2246822519);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  };
+  const value = (x: number, y: number) => {
+    const ix = Math.floor(x);
+    const iy = Math.floor(y);
+    const fx = x - ix;
+    const fy = y - iy;
+    const u = fx * fx * (3 - 2 * fx);
+    const v = fy * fy * (3 - 2 * fy);
+    const top = hash(ix, iy) + (hash(ix + 1, iy) - hash(ix, iy)) * u;
+    const bottom = hash(ix, iy + 1) + (hash(ix + 1, iy + 1) - hash(ix, iy + 1)) * u;
+    return top + (bottom - top) * v;
+  };
+  return (x: number, y: number) => {
+    let sum = 0;
+    let amplitude = 0.5;
+    let frequency = 1;
+    for (let octave = 0; octave < 5; octave++) {
+      sum += amplitude * value(x * frequency, y * frequency);
+      frequency *= 2.03;
+      amplitude *= 0.5;
+    }
+    return sum / 0.97;
   };
 }
 
-interface Column {
-  path: string;
-  tip: [number, number];
-  width: number;
+type Noise = ReturnType<typeof createNoise>;
+const smooth = (edge0: number, edge1: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+};
+
+interface Sink {
+  add(x: number, y: number, r: number, alpha: number, color: string): void;
+}
+
+function createSink(): Sink & { build(): NebulaParticles } {
+  const colors: string[] = [];
+  const index = new Map<string, number>();
+  const data: number[] = [];
+  return {
+    add(x, y, r, alpha, color) {
+      let at = index.get(color);
+      if (at === undefined) {
+        at = colors.length;
+        colors.push(color);
+        index.set(color, at);
+      }
+      data.push(x, y, r, alpha, at);
+    },
+    build: () => ({ colors, data: Float32Array.from(data) }),
+  };
+}
+
+/** Light particles: mostly fine grains, some soft puffs, as in the galaxy models. */
+function emit(sink: Sink, random: Random, x: number, y: number, color: string, weight: number) {
+  if (random.next() < 0.6) sink.add(x, y, random.between(0.7, 2.1), random.between(0.1, 0.32) * weight, color);
+  else sink.add(x, y, random.between(8, 30), random.between(0.03, 0.075) * weight, color);
 }
 
 /**
- * One dust column rising from (x, base): a wavering spine that leans and tapers, with a lumpy
- * head. The outline is kept smooth here; the filter tears it into ragged edges.
+ * Gas inside an ellipse, laid down where the noise is dense. `ring` keeps a band round the edge,
+ * `filament` and `jet` keep the noise's ridges (veils, shock fronts).
  */
-function column(random: Random, x: number, base: number, height: number, width: number, lean: number): Column {
-  const phase = random.between(0, Math.PI * 2);
-  const steps = 22;
-  const left: string[] = [];
-  const right: string[] = [];
-  for (let step = 0; step <= steps; step++) {
-    const t = step / steps;
-    const cx = x + lean * height * t ** 1.3 + Math.sin(t * 4.2 + phase) * width * 0.18;
-    const cy = base - height * t;
-    const half = (width / 2) * (1.25 - 0.55 * t) * (1 + 0.12 * Math.sin(t * 9 + phase * 1.7));
-    left.push(`${f(cx - half)},${f(cy)}`);
-    right.unshift(`${f(cx + half)},${f(cy)}`);
+function gas(sink: Sink, random: Random, noise: Noise, feature: Feature) {
+  const [cx, cy, rx, ry] = feature.at;
+  const turn = ((feature.turn ?? 0) * Math.PI) / 180;
+  const cos = Math.cos(turn);
+  const sin = Math.sin(turn);
+  const veined = feature.kind === 'filament' || feature.kind === 'jet';
+  const scale = veined ? 0.012 : 0.006;
+  let placed = 0;
+  for (let tries = 0; placed < feature.count && tries < feature.count * 14; tries++) {
+    const u = random.between(-1, 1);
+    const v = random.between(-1, 1);
+    const radius = Math.hypot(u, v);
+    if (radius > 1) continue;
+    const shape = feature.kind === 'ring' ? smooth(0.5, 0.78, radius) * (1 - smooth(0.82, 1, radius)) : 1 - radius * radius;
+    const x = cx + u * rx * cos - v * ry * sin;
+    const y = cy + u * rx * sin + v * ry * cos;
+    const n = noise(x * scale, y * scale);
+    const density = veined ? (1 - Math.abs(n * 2 - 1)) ** 4 : smooth(0.38, 0.72, n);
+    if (random.next() > shape * density) continue;
+    placed++;
+    emit(sink, random, x, y, feature.color, feature.kind === 'jet' ? 1.4 : 1);
   }
-  const tipX = x + lean * height + Math.sin(4.2 + phase) * width * 0.18;
-  const tipY = base - height;
-  const head = width * random.between(0.32, 0.42);
-  // Round, slightly lumpy head joining the two flanks.
-  const crown = `Q${f(tipX - head * 1.1)},${f(tipY - head * 1.25)} ${f(tipX)},${f(tipY - head * 1.1)} Q${f(tipX + head * 1.2)},${f(tipY - head)} `;
-  const path = `M${left.join(' L')} ${crown}${right.join(' L')} Z`;
-  return { path, tip: [tipX, tipY - head * 0.5], width };
 }
 
 /**
- * A group of two or three columns standing in one margin, like the Pillars of Creation: the
- * tallest in the middle, all leaning a little towards the page, lit from the page's side.
+ * A group of two or three columns rising from `base` in one margin, leaning a little towards the
+ * page and lit from its side. Bright grains crowd the lit flank, the tops and the tips, with a halo
+ * boiling off them. Returns where the brightest gas behind them sits.
  */
-function pillars(random: Random, id: string, side: 'left' | 'right', base: number, palette: Palette, seed: number) {
-  const count = random.next() < 0.5 ? 2 : 3;
+function pillars(
+  glow: Sink,
+  random: Random,
+  noise: Noise,
+  [side, base]: ['left' | 'right', number],
+  rim: string,
+  palette: string[],
+): [number, number] {
+  const skin = [rim, '#ffffff', palette[0], palette[1], rim];
+  const body = [COLUMN_BLUE, COLUMN_LILAC, COLUMN_PINK];
   const toward = side === 'left' ? 1 : -1;
-  const anchor = side === 'left' ? random.between(60, 150) : random.between(1450, 1540);
-  const columns: Column[] = [];
-  for (let index = 0; index < count; index++) {
-    const tall = index === 1 || count === 2 ? 1 : 0.7;
-    const height = random.between(520, 760) * tall;
-    const width = random.between(85, 140) * (0.75 + 0.25 * tall);
-    const x = anchor + toward * (index * random.between(85, 120) - 40);
-    columns.push(column(random, x, base + random.between(0, 60), height, width, toward * random.between(0.06, 0.2)));
+  const anchor = side === 'left' ? random.between(70, 150) : random.between(1450, 1530);
+  const count = random.next() < 0.5 ? 2 : 3;
+  let light: [number, number] = [anchor, base - 500];
+  for (let column = 0; column < count; column++) {
+    const tall = column === 1 || count === 2 ? 1 : 0.68;
+    const height = random.between(560, 780) * tall;
+    const width = random.between(90, 140) * (0.75 + 0.25 * tall);
+    const x0 = anchor + toward * (column * random.between(90, 125) - 40);
+    const lean = toward * random.between(0.06, 0.18);
+    const phase = random.between(0, Math.PI * 2);
+    const head = width * 0.45;
+    const spine = (t: number) =>
+      x0 + lean * height * Math.min(t, 1) ** 1.3 + Math.sin(Math.min(t, 1) * 4.2 + phase) * width * 0.18;
+    // Half-width: a tapering, wavering trunk, then a round head above t = 1.
+    const half = (t: number) => {
+      if (t <= 1) return (width / 2) * (1.25 - 0.55 * t) * (1 + 0.12 * Math.sin(t * 9 + phase * 1.7));
+      const above = ((t - 1) * height) / head;
+      return above >= 1 ? -1 : width * 0.35 * Math.sqrt(1 - above * above);
+    };
+    const top = base - height - head;
+    if (tall === 1) light = [spine(1) + toward * 60, top + 120];
+    const samples = Math.round(height * width * 0.16);
+    for (let index = 0; index < samples; index++) {
+      const y = random.between(top - 20, base + 40);
+      const t = (base - y) / height;
+      const cx = spine(t);
+      const x = cx + random.between(-1, 1) * width * 1.1;
+      // Ragged edge: the noise pushes the outline in and out.
+      const edge = Math.abs(x - cx) - half(t) + (noise(x * 0.018, y * 0.018) - 0.5) * width * 0.9;
+      const fade = smooth(base + 60, base - 280, y);
+      const lit = (x - cx) * toward > -width * 0.1 || t > 0.97;
+      if (edge < 0) {
+        // The column is a dense cloud of light: blue on the shaded flank, lilac through the middle,
+        // pink and white where it faces the stars that light it. Brightness rises towards the lit
+        // side, so it reads as a lit volume rather than a flat shape.
+        const shade = Math.max(-1, Math.min(1, ((x - cx) * toward) / Math.max(8, half(t))));
+        const tone = shade < -0.2 ? body[0] : shade < 0.45 ? body[1] : body[2];
+        const bright = 0.55 + 0.45 * (shade + 1) * 0.5;
+        glow.add(x, y, random.between(8, 18), random.between(0.05, 0.1) * bright * fade, tone);
+        glow.add(
+          x + random.normal() * 4,
+          y + random.normal() * 4,
+          random.between(0.7, 2),
+          random.between(0.14, 0.36) * bright * fade,
+          tone,
+        );
+        // The lit skin: dense bright grains where starlight eats into the column.
+        if (lit && edge > -16 * (1 + noise(y * 0.03, x * 0.03))) {
+          for (let grain = 0; grain < 3; grain++) {
+            const gx = x + random.normal() * 3;
+            const gy = y + random.normal() * 3;
+            glow.add(
+              gx,
+              gy,
+              random.between(0.6, 1.7),
+              random.between(0.3, 0.7) * fade,
+              skin[Math.floor(random.next() * skin.length)],
+            );
+          }
+        }
+      } else if (lit && edge < 26) {
+        // Gas boiling off the lit flank.
+        glow.add(x, y, random.between(6, 18), random.between(0.03, 0.07) * fade, skin[Math.floor(random.next() * skin.length)]);
+      }
+    }
+    // Bright tips where young stars switch on.
+    const tipX = spine(1);
+    const tipY = base - height - head * 0.6;
+    for (let index = 0; index < 220; index++) {
+      const angle = random.between(0, Math.PI * 2);
+      const r = Math.abs(random.normal()) * width * 0.35;
+      glow.add(
+        tipX + Math.cos(angle) * r,
+        tipY + Math.sin(angle) * r * 0.8,
+        random.between(0.6, 1.8),
+        random.between(0.25, 0.7),
+        '#ffffff',
+      );
+    }
+    glow.add(tipX, tipY, width * 0.9, 0.12, rim);
+    glow.add(tipX + random.between(-8, 8), tipY + random.between(0, 14), 2.6, 1, '#ffffff');
   }
-  const top = Math.min(...columns.map((item) => item.tip[1])) - 160;
-  const left = Math.min(...columns.map((item) => item.tip[0])) - 260;
-  const box = { x: left, y: top, w: 560, h: base + 100 - top };
-  // Light falls from the page's side: the flank facing the reading panel is lit.
-  const azimuth = side === 'left' ? -40 : -140;
-  const [x1, x2] = side === 'left' ? [0, 1] : [1, 0];
-  const defs =
-    `<linearGradient id="${id}-fill" x1="${x1}" y1="0" x2="${x2}" y2="0">` +
-    `<stop offset="0" stop-color="#0c0816"/><stop offset="0.4" stop-color="#2e1b2e"/><stop offset="0.66" stop-color="#63404f"/>` +
-    `<stop offset="0.86" stop-color="#b48aa6"/><stop offset="1" stop-color="${palette.lit}"/></linearGradient>` +
-    `<linearGradient id="${id}-fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="0.72" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
-    `<mask id="${id}-mask" maskUnits="userSpaceOnUse" x="${f(box.x)}" y="${f(box.y)}" width="${box.w}" height="${f(box.h)}"><rect x="${f(box.x)}" y="${f(box.y)}" width="${box.w}" height="${f(box.h)}" fill="url(#${id}-fade)"/></mask>` +
-    `<filter id="${id}-filter" filterUnits="userSpaceOnUse" x="${f(box.x)}" y="${f(box.y)}" width="${box.w}" height="${f(box.h)}" color-interpolation-filters="sRGB">` +
-    // Tear the smooth outline into ragged, cloudy edges, then fray them finer still and soften:
-    // the columns are gas and dust, not rock.
-    `<feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="3" seed="${seed}" result="tear"/>` +
-    `<feDisplacementMap in="SourceGraphic" in2="tear" scale="52" xChannelSelector="R" yChannelSelector="G" result="torn"/>` +
-    `<feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="2" seed="${seed + 2}" result="fray"/>` +
-    `<feDisplacementMap in="torn" in2="fray" scale="14" xChannelSelector="G" yChannelSelector="R" result="frayed"/>` +
-    `<feGaussianBlur in="frayed" stdDeviation="2.4" result="shape"/>` +
-    // Shade a broad noise height map with a distant light, so the surface reads as billowing volume.
-    `<feTurbulence type="fractalNoise" baseFrequency="0.016" numOctaves="4" seed="${seed + 1}" result="bump"/>` +
-    `<feDiffuseLighting in="bump" surfaceScale="3.6" diffuseConstant="1.05" lighting-color="#fff4fb" result="light"><feDistantLight azimuth="${azimuth}" elevation="38"/></feDiffuseLighting>` +
-    `<feComposite in="light" in2="shape" operator="arithmetic" k1="0.85" k2="0" k3="0.32" k4="0" result="shaded"/>` +
-    `<feComposite in="shaded" in2="shape" operator="in" result="body"/>` +
-    // A halo of gas boiling off the lit flank, brightest towards the light.
-    `<feGaussianBlur in="shape" stdDeviation="18" result="soft"/>` +
-    `<feOffset in="soft" dx="${side === 'left' ? 16 : -16}" dy="-10" result="shifted"/>` +
-    `<feFlood flood-color="${palette.rim}" flood-opacity="0.6"/><feComposite in2="shifted" operator="in" result="halo"/>` +
-    // A crisp bright rim where the light grazes the lit flank and the tops.
-    `<feOffset in="shape" dx="${side === 'left' ? -7 : 7}" dy="6" result="away"/>` +
-    `<feComposite in="shape" in2="away" operator="out" result="edge"/>` +
-    `<feGaussianBlur in="edge" stdDeviation="1.8" result="edgeSoft"/>` +
-    `<feFlood flood-color="#f4f7ff" flood-opacity="0.9"/><feComposite in2="edgeSoft" operator="in" result="rim"/>` +
-    `<feMerge><feMergeNode in="halo"/><feMergeNode in="body"/><feMergeNode in="rim"/></feMerge></filter>`;
-  const paths = columns.map((item) => `<path d="${item.path}" fill="url(#${id}-fill)"/>`).join('');
-  // Bright tips where young stars are switching on, and the gas lit behind each head.
-  const tips = columns
-    .map(
-      (item) =>
-        `<ellipse cx="${f(item.tip[0])}" cy="${f(item.tip[1])}" rx="${f(item.width * 0.9)}" ry="${f(item.width * 0.7)}" fill="url(#sky-tip-glow)"/>` +
-        `<circle cx="${f(item.tip[0] + random.between(-12, 12))}" cy="${f(item.tip[1] + random.between(-6, 16))}" r="2.2" fill="#fff"/>`,
-    )
-    .join('');
-  return {
-    defs,
-    glow: { x: (side === 'left' ? left + 260 : left + 300) + toward * 120, y: top + 260 },
-    body: `<g class="sky-pillars"><g mask="url(#${id}-mask)"><g filter="url(#${id}-filter)">${paths}</g></g>${tips}</g>`,
-  };
+  return light;
 }
 
-const SHARED_DEFS =
-  '<radialGradient id="sky-shape-ellipse"><stop offset="0" stop-color="#fff"/><stop offset="0.55" stop-color="#fff" stop-opacity="0.55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
-  '<radialGradient id="sky-shape-ring"><stop offset="0.45" stop-color="#fff" stop-opacity="0"/><stop offset="0.72" stop-color="#fff"/><stop offset="0.86" stop-color="#fff" stop-opacity="0.5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
-  '<radialGradient id="sky-far-galaxy"><stop offset="0" stop-color="#fff7e8"/><stop offset="0.3" stop-color="#c7d2fe" stop-opacity="0.6"/><stop offset="1" stop-color="#c7d2fe" stop-opacity="0"/></radialGradient>' +
-  '<radialGradient id="sky-tip-glow"><stop offset="0" stop-color="#fff" stop-opacity="0.75"/><stop offset="0.35" stop-color="#dbe7ff" stop-opacity="0.35"/><stop offset="1" stop-color="#dbe7ff" stop-opacity="0"/></radialGradient>';
+/** A far galaxy: a small two-armed spiral of grains round a warm core. */
+function farGalaxy(sink: Sink, random: Random, x: number, y: number) {
+  const size = random.between(10, 26);
+  const tilt = random.between(0.3, 0.75);
+  const turn = random.between(0, Math.PI);
+  for (let index = 0; index < 160; index++) {
+    const angle = (index % 2) * Math.PI + random.next() * 4.2 + random.normal() * 0.25;
+    const r = size * random.next();
+    const px = Math.cos(angle) * r;
+    const py = Math.sin(angle) * r * tilt;
+    const gx = x + px * Math.cos(turn) - py * Math.sin(turn);
+    const gy = y + px * Math.sin(turn) + py * Math.cos(turn);
+    sink.add(gx, gy, random.between(0.5, 1.2), random.between(0.2, 0.5), '#c7d2fe');
+  }
+  sink.add(x, y, size * 0.5, 0.25, '#fff1d6');
+}
 
-/** Where the dust columns stand: alternating margins down the field. */
+/** A bright young star with diffraction spikes, drawn as rows of grains. */
+function sparkle(sink: Sink, random: Random, x: number, y: number) {
+  const length = random.between(26, 60);
+  for (let step = 1; step < 34; step++) {
+    const d = (step / 34) * length;
+    const alpha = 0.7 * (1 - step / 34) ** 1.6;
+    for (const [dx, dy] of [
+      [d, 0],
+      [-d, 0],
+      [0, d],
+      [0, -d],
+    ]) {
+      sink.add(x + dx, y + dy, 1, alpha, '#fff8e6');
+    }
+  }
+  sink.add(x, y, length * 0.35, 0.18, '#dbe7ff');
+  sink.add(x, y, 2.8, 1, '#ffffff');
+}
+
+/** Where the columns stand: alternating margins down the field. */
 const PILLAR_BASES: ReadonlyArray<['left' | 'right', number]> = [
   ['left', 1020],
   ['right', 1820],
   ['left', 2600],
 ];
 
-/** Inner markup of the page's nebula `<svg viewBox="0 0 1600 2600">`. */
-export function nebulaSvg(env: SkyEnvironment): string {
-  const { palette, features, sparkles = 0, galaxies = 0 } = ENVIRONMENTS[env];
-  const random = createRandom(env.length * 977 + palette.rim.charCodeAt(2) * 13);
-  const seed = () => Math.floor(random.between(1, 999));
-  const defs: string[] = [SHARED_DEFS];
-  const body: string[] = [];
-  const add = (item: Cloud, id: string) => {
-    const svg = cloudSvg(item, id, seed());
-    defs.push(svg.defs);
-    body.push(svg.body);
-  };
+/**
+ * The particles of a page's nebula, in draw order. `columns: false` leaves out the columns
+ * (phones, where the reading panel covers the margins); `share` thins every cloud.
+ */
+export function nebulaParticles(env: SkyEnvironment, options: { columns?: boolean; share?: number } = {}): NebulaParticles {
+  const { columns = true, share = 1 } = options;
+  const { gas: palette, rim, features, sparkles = 0, galaxies = 0 } = ENVIRONMENTS[env];
+  const random = createRandom(env.length * 977 + rim.charCodeAt(2) * 13);
+  const noise = createNoise(env.length * 31 + rim.charCodeAt(3));
+  const light = createSink();
+  const glow = createSink();
+  const cloud = (at: Spot, color: string, count: number): Feature => ({
+    kind: 'cloud',
+    at,
+    color,
+    count: Math.round(count * share),
+  });
 
-  const groups = PILLAR_BASES.map(([side, base], index) => pillars(random, `sky-p${index}`, side, base, palette, seed()));
+  const lights = columns ? PILLAR_BASES.map((place) => pillars(glow, random, noise, place, rim, palette)) : [];
   // Glowing gas: a haze down both margins, and a bright bloom behind every column group.
   for (let index = 0; index < 8; index++) {
-    const color = palette.gas[index % palette.gas.length];
-    add(cloud([index % 2 ? 1500 : 100, 160 + index * 320, 470, 360], color, 0.0026, 0.6), `sky-h${index}`);
-  }
-  groups.forEach((group, index) => {
-    add(
-      cloud([group.glow.x, group.glow.y, 400, 440], palette.gas[(index + 2) % palette.gas.length], 0.0024, 0.85),
-      `sky-b${index}`,
+    gas(
+      light,
+      random,
+      noise,
+      cloud([index % 2 ? 1500 : 100, 160 + index * 320, 470, 360], palette[index % palette.length], 2600),
     );
-    add(cloud([group.glow.x, group.glow.y - 40, 260, 280], WHITE, 0.003, 0.7), `sky-w${index}`);
+  }
+  lights.forEach(([x, y], index) => {
+    gas(light, random, noise, cloud([x, y, 380, 460], palette[(index + 2) % palette.length], 3600));
+    gas(light, random, noise, cloud([x - 40 * (index % 2 ? -1 : 1), y + 120, 300, 340], palette[index % 2], 2600));
+    gas(light, random, noise, cloud([x, y - 40, 210, 250], WHITE, 1500));
   });
-  features.forEach((item, index) => {
-    add(item, `sky-f${index}`);
-  });
+  for (const feature of features) {
+    const scaled = { ...feature, count: Math.round(feature.count * share) };
+    gas(light, random, noise, scaled);
+  }
   for (let index = 0; index < galaxies; index++) {
     const x = random.next() < 0.5 ? random.between(30, 430) : random.between(1170, 1570);
-    const y = random.between(60, 2540);
-    const r = random.between(8, 24);
-    body.push(
-      `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(r)}" ry="${f(r * random.between(0.25, 0.7))}" fill="url(#sky-far-galaxy)" transform="rotate(${f(random.between(0, 180))} ${f(x)} ${f(y)})"/>`,
-    );
-  }
-  for (const group of groups) {
-    defs.push(group.defs);
-    body.push(group.body);
+    farGalaxy(light, random, x, random.between(60, 2540));
   }
   for (let index = 0; index < sparkles; index++) {
-    const x = index % 2 ? random.between(1180, 1560) : random.between(40, 420);
-    const y = random.between(150, 2450);
-    const size = random.between(26, 60);
-    body.push(
-      `<g transform="translate(${f(x)} ${f(y)})"><circle r="${f(size * 0.32)}" fill="url(#sky-far-galaxy)"/>` +
-        `<ellipse rx="${f(size)}" ry="1.2" fill="#fff8e6" opacity="0.8"/><ellipse rx="1.2" ry="${f(size)}" fill="#fff8e6" opacity="0.8"/><circle r="2.6" fill="#fff"/></g>`,
-    );
+    sparkle(glow, random, index % 2 ? random.between(1180, 1560) : random.between(40, 420), random.between(150, 2450));
   }
-  return `<defs>${defs.join('')}</defs>${body.join('')}`;
+
+  // The gas first, then the columns, their lit skins, tips and stars on top.
+  const parts = [light.build(), glow.build()];
+  const colors: string[] = [];
+  const data = new Float32Array(parts.reduce((sum, part) => sum + part.data.length, 0));
+  let offset = 0;
+  for (const part of parts) {
+    const remap = part.colors.map((color) => {
+      if (!colors.includes(color)) colors.push(color);
+      return colors.indexOf(color);
+    });
+    data.set(part.data, offset);
+    for (let index = offset + 4; index < offset + part.data.length; index += NEBULA_STRIDE) data[index] = remap[data[index]];
+    offset += part.data.length;
+  }
+  return { colors, data };
 }
 
 /** Three layers of stars as box-shadows, spread deeper than the screen so they can glide on scroll. */

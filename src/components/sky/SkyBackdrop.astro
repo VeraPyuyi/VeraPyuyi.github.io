@@ -1,11 +1,10 @@
 ---
 /**
- * The sky behind an inner page: a nebula field taller than the screen (src/lib/sky-nebula.ts)
- * and three layers of stars. As the page scrolls they glide past at different depths, so the
- * surroundings travel with the reader. Only composited layers move: the SVG itself never animates,
- * so its filters are drawn once.
+ * The sky behind an inner page: a particle nebula taller than the screen (src/lib/sky-nebula.ts,
+ * painted once onto a canvas) and three layers of stars. As the page scrolls they glide past at
+ * different depths, so the surroundings travel with the reader. Only composited layers move.
  */
-import { nebulaSvg, starLayers } from '@/lib/sky-nebula';
+import { starLayers } from '@/lib/sky-nebula';
 import type { SkyEnvironment } from '@/lib/sky-catalog';
 
 interface Props {
@@ -18,9 +17,7 @@ const stars = starLayers(env);
 
 <div class="sky-backdrop" data-env={env} data-sky-backdrop aria-hidden="true">
   <div class="sky-nebula">
-    <svg class="sky-nebula-field" viewBox="0 0 1600 2600" preserveAspectRatio="xMidYMin slice">
-      <Fragment set:html={nebulaSvg(env)} />
-    </svg>
+    <canvas class="sky-nebula-field" width="1600" height="2600" data-sky-nebula></canvas>
   </div>
   {
     stars.map((layer, index) => (
@@ -30,6 +27,23 @@ const stars = starLayers(env);
 </div>
 
 <script>
+  import type { SkyEnvironment } from '@/lib/sky-catalog';
+  import { paintNebula } from './nebula-canvas';
+
+  // The nebula is painted once per page, after the page has settled.
+  let stopPaint: (() => void) | null = null;
+  function paintSky() {
+    stopPaint?.();
+    const backdrop = document.querySelector<HTMLElement>('[data-sky-backdrop]');
+    const canvas = backdrop?.querySelector<HTMLCanvasElement>('[data-sky-nebula]');
+    if (!backdrop || !canvas || canvas.classList.contains('is-painted')) return;
+    const start = () => {
+      stopPaint = paintNebula(canvas, backdrop.dataset.env as SkyEnvironment);
+    };
+    if ('requestIdleCallback' in window) window.requestIdleCallback(start, { timeout: 600 });
+    else window.setTimeout(start, 120);
+  }
+
   // The surroundings travel with the reader: as the page scrolls, the nebula field and the star
   // layers glide upwards at their own depths (CSS reads --sky-progress, 0 at the top, 1 at the end).
   let frame = 0;
@@ -45,6 +59,7 @@ const stars = starLayers(env);
   };
   function init() {
     if (!document.querySelector('[data-sky-backdrop]')) return;
+    paintSky();
     paint();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
@@ -52,6 +67,8 @@ const stars = starLayers(env);
   if (document.readyState !== 'loading') init();
   document.addEventListener('astro:page-load', init);
   document.addEventListener('astro:before-swap', () => {
+    stopPaint?.();
+    stopPaint = null;
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
   });
