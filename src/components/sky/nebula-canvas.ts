@@ -3,7 +3,8 @@
  * a crisp point or, for the few large puffs, a pre-tinted soft sprite; their light adds up
  * ('lighter'), as in the galaxies. The particles are generated in a worker and drawn over a few
  * frames, so the page never stalls; the canvas fades in when done. After that nothing is redrawn:
- * the canvas only glides and drifts as a composited layer.
+ * the canvas only glides and drifts as a composited layer. Particles are kept for the rest of the
+ * visit and the last couple of painted skies too, so going back to a page shows its nebula at once.
  */
 
 import { NEBULA_FIELD, NEBULA_STRIDE, type NebulaParticles, nebulaParticles } from '@/lib/sky-nebula';
@@ -29,20 +30,45 @@ function sprite(color: string): HTMLCanvasElement {
   return canvas;
 }
 
+/** Particles generated this visit, and the most recently painted skies (large, so only a few). */
+const particleCache = new Map<string, NebulaParticles>();
+const paintedCache = new Map<string, ImageBitmap>();
+const PAINTED_KEEP = 2;
+
+function remember(key: string, bitmap: ImageBitmap) {
+  paintedCache.delete(key);
+  paintedCache.set(key, bitmap);
+  while (paintedCache.size > PAINTED_KEEP) {
+    const [oldest, image] = paintedCache.entries().next().value as [string, ImageBitmap];
+    image.close();
+    paintedCache.delete(oldest);
+  }
+}
+
 /** Generates the particles in a worker, or on the main thread where workers are unavailable. */
 function generate(job: NebulaJob, done: (particles: NebulaParticles) => void): () => void {
+  const key = `${job.env}:${job.columns}:${job.share}`;
+  const kept = particleCache.get(key);
+  if (kept) {
+    done(kept);
+    return () => undefined;
+  }
+  const finish = (particles: NebulaParticles) => {
+    particleCache.set(key, particles);
+    done(particles);
+  };
   let worker: Worker | null = null;
   const fallback = () => {
     worker?.terminate();
     worker = null;
-    done(nebulaParticles(job.env, job));
+    finish(nebulaParticles(job.env, job));
   };
   try {
     worker = new Worker(new URL('./nebula-worker.ts', import.meta.url), { type: 'module' });
     worker.onmessage = (event: MessageEvent<NebulaParticles>) => {
       worker?.terminate();
       worker = null;
-      done(event.data);
+      finish(event.data);
     };
     worker.onerror = fallback;
     worker.postMessage(job);
@@ -57,16 +83,26 @@ export function paintNebula(canvas: HTMLCanvasElement, env: SkyEnvironment): () 
   const context = canvas.getContext('2d');
   if (!context) return () => undefined;
   const small = window.innerWidth < 768;
+  // Painted at the screen's own pixel density (within a memory cap), so the finest grains are real
+  // single pixels rather than smudges.
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const scale = Math.min(2200, Math.max(600, canvas.clientWidth * ratio)) / NEBULA_FIELD.width;
+  canvas.width = Math.round(NEBULA_FIELD.width * scale);
+  canvas.height = Math.round(NEBULA_FIELD.height * scale);
+  const job: NebulaJob = { env, columns: !small, share: small ? 0.5 : 1 };
+  const paintedKey = `${env}:${job.columns}:${canvas.width}x${canvas.height}`;
+  const painted = paintedCache.get(paintedKey);
+  if (painted) {
+    context.drawImage(painted, 0, 0);
+    remember(paintedKey, painted);
+    canvas.classList.add('is-instant', 'is-painted');
+    return () => undefined;
+  }
+
   let frame = 0;
   let stopped = false;
-  const stopWorker = generate({ env, columns: !small, share: small ? 0.5 : 1 }, ({ colors, data }) => {
+  const stopWorker = generate(job, ({ colors, data }) => {
     if (stopped) return;
-    // Painted at the screen's own pixel density (within a memory cap), so the finest grains are
-    // real single pixels rather than smudges.
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    const scale = Math.min(2200, Math.max(600, canvas.clientWidth * ratio)) / NEBULA_FIELD.width;
-    canvas.width = Math.round(NEBULA_FIELD.width * scale);
-    canvas.height = Math.round(NEBULA_FIELD.height * scale);
     const sprites = colors.map((color) => sprite(color));
     context.globalCompositeOperation = 'lighter';
     let cursor = 0;
@@ -86,8 +122,16 @@ export function paintNebula(canvas: HTMLCanvasElement, env: SkyEnvironment): () 
         context.globalAlpha = Math.min(1, data[cursor + 3]);
         context.drawImage(sprites[color], data[cursor] * scale - size / 2, data[cursor + 1] * scale - size / 2, size, size);
       }
-      if (cursor < data.length) frame = requestAnimationFrame(paint);
-      else canvas.classList.add('is-painted');
+      if (cursor < data.length) {
+        frame = requestAnimationFrame(paint);
+        return;
+      }
+      canvas.classList.add('is-painted');
+      if (typeof createImageBitmap === 'function') {
+        createImageBitmap(canvas)
+          .then((bitmap) => remember(paintedKey, bitmap))
+          .catch(() => undefined);
+      }
     });
   });
   return () => {

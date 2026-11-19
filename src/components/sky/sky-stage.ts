@@ -82,24 +82,30 @@ export function mountSkyStage(hero: HTMLElement): () => void {
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(canvas);
 
-  let backdropReady = -1;
-  let galaxyReady = -1;
+  let backdropIn = false;
+  let galaxyIn = false;
+  /** The live sky takes over from the still image only after its first full frame is drawn. */
+  let shown = false;
+  let instant = false;
   let time = 0;
   const models = loadModels({
     small,
     progress: Math.max(0, index),
     only: galaxy ? [galaxy.kind] : [],
     share: hero.classList.contains('is-compact') ? 0.45 : 0.7,
-    onBuilt: ({ id, light, dust }) => {
+    // Models arrive at full strength: the cross-fade from the still image is the only transition,
+    // so the object never dims in between. One kept from earlier in the visit swaps in instantly.
+    onBuilt: ({ id, light, dust }, cached) => {
       if (id === 'backdrop') {
         renderer.upload('backdrop', light);
-        backdropReady = time;
+        backdropIn = true;
+        if (!galaxy) instant = cached;
       } else {
         renderer.upload(`${id}-light`, light);
         if (dust) renderer.upload(`${id}-dust`, dust);
-        galaxyReady = time;
+        galaxyIn = true;
+        instant = cached;
       }
-      if (galaxy ? galaxyReady >= 0 : backdropReady >= 0) hero.classList.add('is-live');
     },
   });
 
@@ -146,14 +152,14 @@ export function mountSkyStage(hero: HTMLElement): () => void {
     const viewProjection = multiply(projection, view);
 
     const layers: ParticleLayer[] = [];
-    if (backdropReady >= 0) {
+    if (backdropIn) {
       layers.push({
         mesh: 'backdrop',
         model: IDENTITY,
         modelScale: 1,
         spin: skyTurn,
         wobble: 0,
-        alpha: clamp((time - backdropReady) / 0.8),
+        alpha: 1,
         dust: false,
         soft: [6.5, 8],
         spikes: 1,
@@ -162,13 +168,13 @@ export function mountSkyStage(hero: HTMLElement): () => void {
     const drift = galaxyDrift(Math.max(0, index), time);
     if (galaxy) {
       angle += galaxy.spin * dt;
-      if (galaxyReady >= 0) {
+      if (galaxyIn) {
         const base = {
           model: galaxyModelMatrix(galaxy, drift),
           modelScale: galaxy.radius,
           spin: angle,
           wobble: 0.012,
-          alpha: clamp((time - galaxyReady) / 1.4),
+          alpha: 1,
           soft: [0.018, 0.045] as const,
         };
         layers.push({ ...base, mesh: `${galaxy.kind}-light`, dust: false });
@@ -205,6 +211,11 @@ export function mountSkyStage(hero: HTMLElement): () => void {
           }
         : null,
     });
+    if (!shown && (galaxy ? galaxyIn : backdropIn)) {
+      shown = true;
+      if (instant) hero.classList.add('is-instant');
+      hero.classList.add('is-live');
+    }
     guard.tick(dt, !models.busy);
   }
 
@@ -214,7 +225,7 @@ export function mountSkyStage(hero: HTMLElement): () => void {
     resizeObserver.disconnect();
     visibility.disconnect();
     hero.removeEventListener('pointermove', onPointer);
-    hero.classList.remove('is-live');
+    hero.classList.remove('is-live', 'is-instant');
     renderer.destroy();
   };
 }

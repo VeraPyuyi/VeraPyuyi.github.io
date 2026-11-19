@@ -147,16 +147,18 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     ? loadModels({
         small,
         progress,
-        onBuilt: ({ id, light, dust }) => {
+        onBuilt: ({ id, light, dust }, cached) => {
+          // A model kept from earlier in the visit is shown at once rather than faded in again.
+          const readyAt = cached ? time - 10 : time;
           if (id === 'backdrop') {
             renderer.upload('backdrop', light);
-            backdropReady = time;
+            backdropReady = readyAt;
             return;
           }
           renderer.upload(`${id}-light`, light);
           if (dust) renderer.upload(`${id}-dust`, dust);
           const index = GALAXY_PLACEMENTS.findIndex((placement) => placement.kind === id);
-          if (index >= 0) galaxies[index].readyAt = time;
+          if (index >= 0) galaxies[index].readyAt = readyAt;
         },
       })
     : null;

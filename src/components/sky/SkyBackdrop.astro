@@ -30,18 +30,17 @@ const stars = starLayers(env);
   import type { SkyEnvironment } from '@/lib/sky-catalog';
   import { paintNebula } from './nebula-canvas';
 
-  // The nebula is painted once per page, after the page has settled.
+  // The nebula is painted once per page. The canvas is claimed before painting starts: on a first
+  // load this runs twice (document ready, then astro:page-load) and must not paint twice over itself.
+  // Generation happens in a worker, so it can start straight away.
   let stopPaint: (() => void) | null = null;
   function paintSky() {
-    stopPaint?.();
     const backdrop = document.querySelector<HTMLElement>('[data-sky-backdrop]');
     const canvas = backdrop?.querySelector<HTMLCanvasElement>('[data-sky-nebula]');
-    if (!backdrop || !canvas || canvas.classList.contains('is-painted')) return;
-    const start = () => {
-      stopPaint = paintNebula(canvas, backdrop.dataset.env as SkyEnvironment);
-    };
-    if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(start, { timeout: 600 });
-    else setTimeout(start, 120);
+    if (!backdrop || !canvas || canvas.dataset.claimed) return;
+    canvas.dataset.claimed = 'true';
+    stopPaint?.();
+    stopPaint = paintNebula(canvas, backdrop.dataset.env as SkyEnvironment);
   }
 
   // The surroundings travel with the reader: as the page scrolls, the nebula field and the star

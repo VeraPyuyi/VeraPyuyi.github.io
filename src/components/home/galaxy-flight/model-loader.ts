@@ -1,6 +1,8 @@
 /**
  * Builds the backdrop and the galaxy particle models, nearest galaxy first, in a worker when
  * possible (so scrolling never stutters) and on the main thread one model per tick otherwise.
+ * Built models are kept for the rest of the visit (the page swaps without reloading scripts), so
+ * coming back to a page, or to the homepage, brings its sky back at once instead of rebuilding.
  */
 
 import type { GalaxyKind } from '@/lib/galaxy';
@@ -11,6 +13,10 @@ import type { BuiltModel, ModelJob } from './model-worker';
 const BUDGETS = { blogs: 170_000, papers: 140_000, photos: 90_000, moments: 100_000 } as const;
 const BACKDROP_BUDGET = 110_000;
 
+/** Models built during this visit, by id and particle budget. */
+const built = new Map<string, BuiltModel>();
+const cacheKey = (job: ModelJob) => `${job.id}:${Math.round(job.budget)}`;
+
 export interface ModelLoader {
   /** True until every model has arrived. */
   readonly busy: boolean;
@@ -20,14 +26,15 @@ export interface ModelLoader {
 export function loadModels(options: {
   small: boolean;
   progress: number;
-  onBuilt: (model: BuiltModel) => void;
+  /** `cached` is true for a model built earlier in this visit: it can appear at once, without a fade-in. */
+  onBuilt: (model: BuiltModel, cached: boolean) => void;
   /** Build only these galaxies (the backdrop always comes), e.g. one page's own galaxy. */
   only?: readonly GalaxyKind[];
   /** Share of the full particle budget. */
   share?: number;
 }): ModelLoader {
   const { small, progress, onBuilt, only, share = 1 } = options;
-  const jobs: ModelJob[] = [{ id: 'backdrop', kind: 'backdrop', budget: BACKDROP_BUDGET * (small ? 0.6 : 1) }];
+  let jobs: ModelJob[] = [{ id: 'backdrop', kind: 'backdrop', budget: BACKDROP_BUDGET * (small ? 0.6 : 1) }];
   const order = GALAXY_PLACEMENTS.map((_, index) => index).sort((a, b) => Math.abs(a - progress) - Math.abs(b - progress));
   for (const index of order) {
     const { kind } = GALAXY_PLACEMENTS[index];
@@ -35,9 +42,25 @@ export function loadModels(options: {
     jobs.push({ id: kind, kind, budget: BUDGETS[kind] * (small ? 0.5 : 1) * share });
   }
   const pending = new Set(jobs.map((job) => job.id));
-  const receive = (model: BuiltModel) => {
-    if (pending.delete(model.id)) onBuilt(model);
+  const budgets = new Map(jobs.map((job) => [job.id, job]));
+  const receive = (model: BuiltModel, cached = false) => {
+    const job = budgets.get(model.id);
+    if (job) built.set(cacheKey(job), model);
+    if (pending.delete(model.id)) onBuilt(model, cached);
   };
+  // Models already built this visit arrive straight away; only the rest go to the builder.
+  const cached = jobs.filter((job) => built.has(cacheKey(job)));
+  for (const job of cached) {
+    const model = built.get(cacheKey(job));
+    if (model) receive(model, true);
+  }
+  jobs = jobs.filter((job) => pending.has(job.id));
+  if (!jobs.length) {
+    return {
+      busy: false,
+      stop() {},
+    };
+  }
 
   let timer = 0;
   const buildOnMainThread = () => {

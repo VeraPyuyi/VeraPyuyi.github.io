@@ -123,6 +123,11 @@
   opacity: 0;
 }
 
+/* Coming back to a page whose sky was already built this visit: swap at once, no fade. */
+.sky-hero.is-instant :is(.sky-hero-canvas, .sky-hero-galaxy) {
+  transition: none;
+}
+
 .sky-hero-galaxy {
   width: min(60vw, 54rem);
   height: auto;

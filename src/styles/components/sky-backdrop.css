@@ -36,6 +36,10 @@
   transition: opacity 2s ease;
 }
 
+.sky-nebula-field.is-instant {
+  transition: none;
+}
+
 .sky-nebula-field.is-painted {
   opacity: 1;
   animation: sky-nebula-drift 90s ease-in-out infinite alternate;
