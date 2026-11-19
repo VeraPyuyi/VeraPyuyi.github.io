@@ -1,0 +1,405 @@
+/**
+ * WebGL2 renderer for the galaxy flight.
+ *
+ * Particles are drawn as soft sprites into a half-float (HDR) target: starlight adds up,
+ * dust multiplies it down. A dual-filter bloom then lets bright cores and young clusters
+ * glow, and an ACES tone map brings everything back to the screen without clipping.
+ */
+
+import type { Mat4, ParticleSet } from '@/lib/galaxy-flight';
+
+export interface ParticleLayer {
+  /** Id given to `upload`. */
+  mesh: string;
+  model: Mat4;
+  /** World units per model unit, used for sprite sizes and the near fade. */
+  modelScale: number;
+  /** Turn of the object about its axis, radians. */
+  spin: number;
+  /** Amount of slow, per-star drift around the orbit. */
+  wobble: number;
+  /** 0–1 fade of the whole layer. */
+  alpha: number;
+  /** Dust absorbs instead of adding light. */
+  dust: boolean;
+  /** Sprite sizes (model units) over which stars turn into soft puffs. */
+  soft: readonly [number, number];
+}
+
+export interface FrameInput {
+  view: Mat4;
+  projection: Mat4;
+  fieldOfView: number;
+  time: number;
+  exposure: number;
+  layers: readonly ParticleLayer[];
+}
+
+export interface GalaxyRenderer {
+  upload(id: string, set: ParticleSet): void;
+  resize(cssWidth: number, cssHeight: number, pixelRatio: number): void;
+  render(frame: FrameInput): void;
+  /** Fraction (0–1] of every mesh to draw; meshes are shuffled, so a prefix is a fair sample. */
+  setDetail(fraction: number): void;
+  destroy(): void;
+}
+
+const PARTICLE_VERTEX = `#version 300 es
+layout(location = 0) in vec3 a_polar;
+layout(location = 1) in vec3 a_color;
+layout(location = 2) in float a_size;
+layout(location = 3) in float a_phase;
+uniform mat4 u_model;
+uniform mat4 u_view;
+uniform mat4 u_projection;
+uniform float u_spin;
+uniform float u_time;
+uniform float u_wobble;
+uniform float u_pixels;
+uniform float u_scale;
+uniform float u_alpha;
+uniform vec2 u_sizeRange;
+uniform vec2 u_soft;
+out vec3 v_color;
+out float v_soft;
+void main() {
+  float r = a_polar.x;
+  float theta = a_polar.y + u_spin + u_wobble * sin(u_time * 0.35 + a_phase * 6.2832) / (0.6 + r * 3.0);
+  vec4 view = u_view * (u_model * vec4(r * cos(theta), a_polar.z, r * sin(theta), 1.0));
+  gl_Position = u_projection * view;
+  float depth = -view.z;
+  if (depth < 0.05) {
+    gl_PointSize = 0.0;
+    v_color = vec3(0.0);
+    v_soft = 0.0;
+    return;
+  }
+  float twinkle = fract(a_phase * 13.7) > 0.82 ? 1.0 + 0.45 * sin(u_time * (1.2 + a_phase * 2.5) + a_phase * 50.0) : 1.0;
+  float px = a_size * u_scale * u_pixels / depth;
+  float size = clamp(px, u_sizeRange.x, u_sizeRange.y);
+  // Sub-pixel stars keep their light by dimming; huge sprites right next to the camera fade away.
+  float energy = px < size ? (px * px) / (size * size) : size / px;
+  float near = smoothstep(0.4, 3.0, depth);
+  v_color = a_color * energy * twinkle * near * u_alpha;
+  v_soft = smoothstep(u_soft.x, u_soft.y, a_size);
+  gl_PointSize = size;
+}`;
+
+const PARTICLE_FRAGMENT = `#version 300 es
+precision highp float;
+in vec3 v_color;
+in float v_soft;
+out vec4 outColor;
+void main() {
+  vec2 p = gl_PointCoord * 2.0 - 1.0;
+  float d2 = dot(p, p);
+  if (d2 > 1.0) discard;
+  float star = exp(-d2 * 7.0) + 0.12 * exp(-d2 * 2.2);
+  float puff = exp(-d2 * 3.0) * (1.0 - d2);
+  outColor = vec4(v_color * mix(star, puff, v_soft), 1.0);
+}`;
+
+const FULLSCREEN_VERTEX = `#version 300 es
+out vec2 v_uv;
+void main() {
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  v_uv = p;
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`;
+
+const DOWN_FRAGMENT = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_source;
+uniform vec2 u_texel;
+uniform float u_threshold;
+out vec4 outColor;
+vec3 tap(vec2 uv) { return texture(u_source, uv).rgb; }
+void main() {
+  vec3 c = tap(v_uv) * 4.0 + tap(v_uv - u_texel) + tap(v_uv + u_texel)
+    + tap(v_uv + vec2(u_texel.x, -u_texel.y)) + tap(v_uv + vec2(-u_texel.x, u_texel.y));
+  c /= 8.0;
+  if (u_threshold > 0.0) {
+    float bright = max(c.r, max(c.g, c.b));
+    float knee = clamp(bright - u_threshold + 0.5, 0.0, 1.0);
+    c *= max(knee * knee * 0.5, bright - u_threshold) / max(bright, 1e-4);
+  }
+  outColor = vec4(c, 1.0);
+}`;
+
+const UP_FRAGMENT = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_source;
+uniform vec2 u_texel;
+out vec4 outColor;
+void main() {
+  vec2 h = u_texel;
+  vec3 c = texture(u_source, v_uv + vec2(-h.x * 2.0, 0.0)).rgb + texture(u_source, v_uv + vec2(h.x * 2.0, 0.0)).rgb
+    + texture(u_source, v_uv + vec2(0.0, -h.y * 2.0)).rgb + texture(u_source, v_uv + vec2(0.0, h.y * 2.0)).rgb
+    + (texture(u_source, v_uv + vec2(-h.x, h.y)).rgb + texture(u_source, v_uv + vec2(h.x, h.y)).rgb
+    + texture(u_source, v_uv + vec2(h.x, -h.y)).rgb + texture(u_source, v_uv + vec2(-h.x, -h.y)).rgb) * 2.0;
+  outColor = vec4(c / 12.0, 1.0);
+}`;
+
+const COMPOSITE_FRAGMENT = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_scene;
+uniform sampler2D u_bloom;
+uniform float u_exposure;
+uniform float u_bloomStrength;
+uniform float u_time;
+out vec4 outColor;
+vec3 aces(vec3 x) {
+  return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
+}
+float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+void main() {
+  vec2 c = v_uv - 0.5;
+  vec3 space = mix(vec3(0.004, 0.005, 0.016), vec3(0.012, 0.011, 0.034), v_uv.y)
+    + vec3(0.012, 0.008, 0.026) * exp(-dot(c, c) * 3.0);
+  vec3 hdr = texture(u_scene, v_uv).rgb + texture(u_bloom, v_uv).rgb * u_bloomStrength + space;
+  vec3 mapped = aces(hdr * u_exposure);
+  mapped = max(mix(vec3(dot(mapped, vec3(0.2126, 0.7152, 0.0722))), mapped, 1.2), 0.0);
+  vec3 color = pow(mapped, vec3(1.0 / 2.2));
+  color *= 1.0 - dot(c, c) * 0.6;
+  color += (hash(gl_FragCoord.xy + fract(u_time) * 97.0) - 0.5) / 255.0;
+  outColor = vec4(color, 1.0);
+}`;
+
+interface Program {
+  program: WebGLProgram;
+  uniform: (name: string) => WebGLUniformLocation | null;
+}
+
+interface Mesh {
+  vao: WebGLVertexArrayObject;
+  buffers: WebGLBuffer[];
+  count: number;
+}
+
+interface Target {
+  framebuffer: WebGLFramebuffer;
+  texture: WebGLTexture;
+  width: number;
+  height: number;
+}
+
+const BLOOM_LEVELS = 5;
+
+function compile(gl: WebGL2RenderingContext, vertex: string, fragment: string): Program {
+  const program = gl.createProgram();
+  for (const [type, source] of [
+    [gl.VERTEX_SHADER, vertex],
+    [gl.FRAGMENT_SHADER, fragment],
+  ] as const) {
+    const shader = gl.createShader(type);
+    if (!shader) throw new Error('shader');
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader) ?? 'shader');
+    gl.attachShader(program, shader);
+  }
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) ?? 'link');
+  const cache = new Map<string, WebGLUniformLocation | null>();
+  return {
+    program,
+    uniform: (name) => {
+      if (!cache.has(name)) cache.set(name, gl.getUniformLocation(program, name));
+      return cache.get(name) ?? null;
+    },
+  };
+}
+
+/** Creates the renderer, or returns null when WebGL2 is unavailable. */
+export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer | null {
+  const context = canvas.getContext('webgl2', {
+    antialias: false,
+    alpha: false,
+    premultipliedAlpha: false,
+    powerPreference: 'high-performance',
+  });
+  if (!context) return null;
+  const gl: WebGL2RenderingContext = context;
+  let particles: Program;
+  let down: Program;
+  let up: Program;
+  let composite: Program;
+  try {
+    particles = compile(gl, PARTICLE_VERTEX, PARTICLE_FRAGMENT);
+    down = compile(gl, FULLSCREEN_VERTEX, DOWN_FRAGMENT);
+    up = compile(gl, FULLSCREEN_VERTEX, UP_FRAGMENT);
+    composite = compile(gl, FULLSCREEN_VERTEX, COMPOSITE_FRAGMENT);
+  } catch {
+    return null;
+  }
+  const hdr = Boolean(gl.getExtension('EXT_color_buffer_float'));
+  const maxPoint = (gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE) as Float32Array)[1] ?? 64;
+  const emptyVao = gl.createVertexArray();
+  const meshes = new Map<string, Mesh>();
+  let scene: Target | null = null;
+  let bloom: Target[] = [];
+  let ratio = 1;
+  let detail = 1;
+
+  function createTarget(width: number, height: number): Target {
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      hdr ? gl.RGBA16F : gl.RGBA8,
+      width,
+      height,
+      0,
+      gl.RGBA,
+      hdr ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE,
+      null,
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const framebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    return { framebuffer, texture, width, height };
+  }
+
+  function dropTargets() {
+    for (const target of [scene, ...bloom]) {
+      if (!target) continue;
+      gl.deleteFramebuffer(target.framebuffer);
+      gl.deleteTexture(target.texture);
+    }
+    scene = null;
+    bloom = [];
+  }
+
+  function fullscreen(program: Program, target: Target | null, source: Target, texel: Target, extra?: () => void) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, target?.framebuffer ?? null);
+    gl.viewport(0, 0, target?.width ?? gl.drawingBufferWidth, target?.height ?? gl.drawingBufferHeight);
+    gl.useProgram(program.program);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, source.texture);
+    gl.uniform1i(program.uniform('u_source'), 0);
+    gl.uniform2f(program.uniform('u_texel'), 1 / texel.width, 1 / texel.height);
+    extra?.();
+    gl.bindVertexArray(emptyVao);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  return {
+    upload(id, set) {
+      const vao = gl.createVertexArray();
+      gl.bindVertexArray(vao);
+      const buffers = [set.polar, set.color, set.size, set.phase].map((data, location) => {
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(location);
+        gl.vertexAttribPointer(location, location < 2 ? 3 : 1, gl.FLOAT, false, 0, 0);
+        return buffer;
+      });
+      gl.bindVertexArray(null);
+      const previous = meshes.get(id);
+      if (previous) {
+        gl.deleteVertexArray(previous.vao);
+        for (const buffer of previous.buffers) gl.deleteBuffer(buffer);
+      }
+      meshes.set(id, { vao, buffers, count: set.count });
+    },
+
+    resize(cssWidth, cssHeight, pixelRatio) {
+      ratio = pixelRatio;
+      const width = Math.max(1, Math.round(cssWidth * pixelRatio));
+      const height = Math.max(1, Math.round(cssHeight * pixelRatio));
+      if (canvas.width === width && canvas.height === height && scene) return;
+      canvas.width = width;
+      canvas.height = height;
+      dropTargets();
+      scene = createTarget(width, height);
+      let w = width;
+      let h = height;
+      for (let level = 0; level < BLOOM_LEVELS; level++) {
+        w = Math.max(1, Math.floor(w / 2));
+        h = Math.max(1, Math.floor(h / 2));
+        bloom.push(createTarget(w, h));
+      }
+    },
+
+    setDetail(fraction) {
+      detail = Math.min(1, Math.max(0.15, fraction));
+    },
+
+    render(frame) {
+      if (!scene || gl.isContextLost()) return;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, scene.framebuffer);
+      gl.viewport(0, 0, scene.width, scene.height);
+      gl.clearColor(0, 0, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.enable(gl.BLEND);
+      gl.useProgram(particles.program);
+      const u = particles.uniform;
+      gl.uniformMatrix4fv(u('u_view'), false, frame.view);
+      gl.uniformMatrix4fv(u('u_projection'), false, frame.projection);
+      gl.uniform1f(u('u_time'), frame.time);
+      gl.uniform1f(u('u_pixels'), scene.height / (2 * Math.tan(frame.fieldOfView / 2)));
+      gl.uniform2f(u('u_sizeRange'), Math.max(1, ratio), Math.min(maxPoint, 64 * ratio));
+      for (const layer of frame.layers) {
+        const mesh = meshes.get(layer.mesh);
+        if (!mesh || layer.alpha <= 0.001) continue;
+        if (layer.dust) gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_COLOR);
+        else gl.blendFunc(gl.ONE, gl.ONE);
+        gl.uniformMatrix4fv(u('u_model'), false, layer.model);
+        gl.uniform1f(u('u_scale'), layer.modelScale);
+        gl.uniform1f(u('u_spin'), layer.spin);
+        gl.uniform1f(u('u_wobble'), layer.wobble);
+        gl.uniform1f(u('u_alpha'), layer.alpha);
+        gl.uniform2f(u('u_soft'), layer.soft[0], layer.soft[1]);
+        gl.bindVertexArray(mesh.vao);
+        gl.drawArrays(gl.POINTS, 0, Math.floor(mesh.count * detail));
+      }
+      gl.disable(gl.BLEND);
+
+      // Bloom: threshold and halve down the chain, then add each level back up.
+      fullscreen(down, bloom[0], scene, scene, () => gl.uniform1f(down.uniform('u_threshold'), 1.1));
+      for (let level = 1; level < bloom.length; level++) {
+        fullscreen(down, bloom[level], bloom[level - 1], bloom[level - 1], () => gl.uniform1f(down.uniform('u_threshold'), 0));
+      }
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE);
+      for (let level = bloom.length - 1; level > 0; level--) {
+        fullscreen(up, bloom[level - 1], bloom[level], bloom[level]);
+      }
+      gl.disable(gl.BLEND);
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+      gl.useProgram(composite.program);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, scene.texture);
+      gl.uniform1i(composite.uniform('u_scene'), 0);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, bloom[0].texture);
+      gl.uniform1i(composite.uniform('u_bloom'), 1);
+      gl.uniform1f(composite.uniform('u_exposure'), frame.exposure);
+      gl.uniform1f(composite.uniform('u_bloomStrength'), hdr ? 0.7 : 0.45);
+      gl.uniform1f(composite.uniform('u_time'), frame.time);
+      gl.bindVertexArray(emptyVao);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    },
+
+    destroy() {
+      dropTargets();
+      for (const mesh of meshes.values()) {
+        gl.deleteVertexArray(mesh.vao);
+        for (const buffer of mesh.buffers) gl.deleteBuffer(buffer);
+      }
+      meshes.clear();
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+    },
+  };
+}

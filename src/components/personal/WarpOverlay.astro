@@ -13,7 +13,8 @@
  *
  * The canvas persists across client-side navigations, so this is one continuous shot.
  * Start it with: window.dispatchEvent(new CustomEvent('pyuyi:warp', { detail }))
- * where detail = { href, x, y, color? } in viewport pixels.
+ * where detail = { href, x, y, color?, camera? } in viewport pixels. Pass camera: 'self' when the
+ * caller moves its own (3D) camera onto the star, so the page itself is not zoomed.
  */
 ---
 
@@ -27,6 +28,8 @@
     x: number;
     y: number;
     color?: string;
+    /** 'self': the caller flies its own camera to the star; skip the page zoom. */
+    camera?: 'self';
   }
 
   interface Streak {
@@ -349,7 +352,7 @@
     lastFrame = startedAt;
     enter('aim', startedAt);
     canvas.style.opacity = '1';
-    aimCamera(detail);
+    if (detail.camera !== 'self') aimCamera(detail);
     raf = requestAnimationFrame(frame);
 
     const from = window.location.href;

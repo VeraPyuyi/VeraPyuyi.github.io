@@ -10,15 +10,13 @@ interface Props {
   locale?: string;
   limit?: number;
   indexable?: boolean;
-  randomized?: boolean;
   category?: BlogCategory;
 }
 
-const { locale = defaultLocale, limit, indexable = true, randomized = false, category } = Astro.props;
+const { locale = defaultLocale, limit, indexable = true, category } = Astro.props;
 const en = locale === 'en';
 const allBlogs = await getBlogArticles(locale, category);
-const blogs = randomized || limit === undefined ? allBlogs : allBlogs.slice(0, limit);
-const visibleLimit = limit ?? blogs.length;
+const blogs = limit === undefined ? allBlogs : allBlogs.slice(0, limit);
 const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pagefind-ignore': 'all' };
 ---
 
@@ -35,23 +33,14 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
       </p>
     </div>
   ) : (
-    <div
-      class="grid gap-5 lg:grid-cols-2"
-      data-home-random-pool={randomized ? 'blogs' : undefined}
-      data-home-random-limit={randomized ? visibleLimit : undefined}
-      {...pagefindAttributes}
-    >
+    <div class="grid gap-5 lg:grid-cols-2" {...pagefindAttributes}>
   {
-    blogs.map((entry, index) => {
+    blogs.map((entry) => {
       const href = localizedPath(`/blogs/${entry.data.routeSlug}`, locale);
       const categoryHref = `${localizedPath('/blogs', locale)}#${entry.data.category}`;
       const minutes = Math.max(1, Math.ceil(readingTime(entry.body ?? '').minutes));
       return (
-        <article
-          class="group relative flex min-w-0 flex-col"
-          data-home-random-item={randomized ? '' : undefined}
-          hidden={randomized && index >= visibleLimit}
-        >
+        <article class="group relative flex min-w-0 flex-col">
           <a
             class="relative block aspect-video overflow-hidden rounded-3xl bg-gradient-to-br from-pink-200/75 via-violet-100/70 to-sky-200/75 shadow-sm group-hover:shadow-xl"
             href={href}

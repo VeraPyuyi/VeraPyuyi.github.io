@@ -8,14 +8,12 @@ interface Props {
   locale?: string;
   limit?: number;
   indexable?: boolean;
-  randomized?: boolean;
 }
 
-const { locale = defaultLocale, limit, indexable = true, randomized = false } = Astro.props;
+const { locale = defaultLocale, limit, indexable = true } = Astro.props;
 const en = locale === 'en';
 const allPapers = getPapers();
-const papers = randomized || limit === undefined ? allPapers : allPapers.slice(0, limit);
-const visibleLimit = limit ?? papers.length;
+const papers = limit === undefined ? allPapers : allPapers.slice(0, limit);
 const issueNumbers = new Map(
   [...allPapers]
     .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
@@ -24,19 +22,10 @@ const issueNumbers = new Map(
 const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pagefind-ignore': 'all' };
 ---
 
-<div
-  class="space-y-5"
-  data-home-random-pool={randomized ? 'papers' : undefined}
-  data-home-random-limit={randomized ? visibleLimit : undefined}
-  {...pagefindAttributes}
->
+<div class="space-y-5" {...pagefindAttributes}>
   {
-    papers.map((paper, index) => (
-      <article
-        class="group flex min-w-0 flex-col"
-        data-home-random-item={randomized ? '' : undefined}
-        hidden={randomized && index >= visibleLimit}
-      >
+    papers.map((paper) => (
+      <article class="group flex min-w-0 flex-col">
         <a
           class="relative block aspect-video overflow-hidden rounded-3xl bg-gradient-to-br from-pink-200/75 via-violet-100/70 to-sky-200/75 shadow-sm transition-shadow duration-500 group-hover:shadow-xl"
           href={localizedPath(`/papers/${paper.id}`, locale)}

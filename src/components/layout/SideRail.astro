@@ -1,0 +1,277 @@
+---
+/**
+ * Desktop navigation: a rail tucked behind the left edge of the screen that slides out
+ * when the pointer reaches the edge (or a keyboard user tabs into it). It replaces the top
+ * bar above the tablet breakpoint; phones and tablets keep the header and drawer.
+ */
+import { routers, siteConfig } from '@constants/site-config';
+import { filterNavItems } from '@lib/utils';
+import { Icon } from 'astro-icon/components';
+import { getLocaleFromUrl, localizedPath, resolveNavName, stripLocaleFromPath } from '@/i18n';
+import SideRailControls from './SideRailControls';
+import Social from './Social.astro';
+
+const locale = getLocaleFromUrl(Astro.url.pathname);
+const en = locale === 'en';
+const current = stripLocaleFromPath(Astro.url.pathname);
+const items = filterNavItems(routers);
+const hrefOf = (path: string, localeIndependent?: boolean) => (localeIndependent ? path : localizedPath(path, locale));
+const isActive = (path?: string) => Boolean(path) && (path === '/' ? current === '/' : current === path || current.startsWith(`${path}/`));
+---
+
+<div class="side-rail-zone" data-side-rail>
+  <span class="side-rail-glint" aria-hidden="true"></span>
+  <nav class="side-rail" aria-label={en ? 'Site navigation' : '站点导航'} transition:name="side-rail">
+    <a class="side-rail-me" href={localizedPath('/', locale)}>
+      <img src={siteConfig.avatar ?? '/img/avatar.webp'} alt="" width="52" height="52" loading="lazy" decoding="async" />
+      <span>
+        <strong>{siteConfig.title}</strong>
+        <small>{siteConfig.subtitle}</small>
+      </span>
+    </a>
+    <p class="side-rail-bio">{siteConfig.description}</p>
+
+    <ul class="side-rail-links">
+      {
+        items.map((item) => {
+          const name = resolveNavName(item.nameKey, item.name, locale);
+          if (item.children?.length) {
+            return (
+              <li>
+                <p class="side-rail-heading">
+                  {item.icon && <Icon name={item.icon} aria-hidden="true" />}
+                  {name}
+                </p>
+                <ul class="side-rail-links">
+                  {item.children.map((child) =>
+                    child.path ? (
+                      <li>
+                        <a
+                          class:list={['side-rail-link', 'is-child', { 'is-active': isActive(child.path) }]}
+                          href={hrefOf(child.path, child.localeIndependent)}
+                          aria-current={isActive(child.path) ? 'page' : undefined}
+                        >
+                          {child.icon && <Icon name={child.icon} aria-hidden="true" />}
+                          {resolveNavName(child.nameKey, child.name, locale)}
+                        </a>
+                      </li>
+                    ) : null,
+                  )}
+                </ul>
+              </li>
+            );
+          }
+          if (!item.path) return null;
+          return (
+            <li>
+              <a
+                class:list={['side-rail-link', { 'is-active': isActive(item.path) }]}
+                href={hrefOf(item.path, item.localeIndependent)}
+                aria-current={isActive(item.path) ? 'page' : undefined}
+              >
+                {item.icon && <Icon name={item.icon} aria-hidden="true" />}
+                {name}
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+
+    <div class="side-rail-foot">
+      <Social />
+      <SideRailControls client:idle locale={locale} />
+    </div>
+  </nav>
+</div>
+
+<style is:global>
+  @media (min-width: 993px) {
+    /* The rail takes over from the top bar on larger screens. */
+    #site-header {
+      display: none;
+    }
+  }
+
+  .side-rail-zone {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 45;
+    width: 0.85rem;
+  }
+
+  @media (max-width: 992px) {
+    .side-rail-zone {
+      display: none;
+    }
+  }
+
+  .side-rail-glint {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 3px;
+    height: 5rem;
+    margin-top: -2.5rem;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(to bottom, transparent, #f7a8c8 30%, #b8e6fe 70%, transparent);
+    box-shadow: 0 0 14px 1px rgb(247 168 200 / 0.45);
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+    animation: side-rail-glint 3.6s ease-in-out infinite;
+  }
+
+  @keyframes side-rail-glint {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+
+    50% {
+      opacity: 0.75;
+    }
+  }
+
+  .side-rail {
+    position: absolute;
+    inset: 0 auto 0 0;
+    display: flex;
+    width: 16.5rem;
+    padding: 2rem 1.25rem 1.5rem;
+    flex-direction: column;
+    gap: 1.1rem;
+    overflow-y: auto;
+    background: rgb(255 255 255 / 0.74);
+    box-shadow: 0 0 48px rgb(10 12 40 / 0.2);
+    color: #2a2b45;
+    opacity: 0;
+    transform: translateX(-100%);
+    transition:
+      transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.22s,
+      opacity 0.3s ease 0.22s;
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    backdrop-filter: blur(20px) saturate(1.4);
+    scrollbar-width: none;
+  }
+
+  .dark .side-rail {
+    background: rgb(13 15 38 / 0.74);
+    color: #eef0ff;
+  }
+
+  .side-rail-zone:hover .side-rail,
+  .side-rail-zone:focus-within .side-rail,
+  .side-rail-zone:has([aria-expanded='true']) .side-rail,
+  .side-rail-zone:has([data-state='open']) .side-rail {
+    opacity: 1;
+    transform: none;
+    transition-delay: 0.05s;
+  }
+
+  .side-rail-zone:hover .side-rail-glint,
+  .side-rail-zone:focus-within .side-rail-glint {
+    opacity: 0;
+    animation: none;
+  }
+
+  .side-rail-me {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .side-rail-me img {
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgb(247 168 200 / 0.35);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .side-rail-me:hover img {
+    transform: rotate(-8deg) scale(1.05);
+  }
+
+  .side-rail-me strong {
+    display: block;
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+  }
+
+  .side-rail-me small {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.75rem;
+    opacity: 0.6;
+  }
+
+  .side-rail-bio {
+    font-size: 0.8rem;
+    line-height: 1.7;
+    opacity: 0.62;
+  }
+
+  .side-rail-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .side-rail-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.8rem 0.75rem 0.25rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    opacity: 0.5;
+  }
+
+  .side-rail-link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.9rem;
+    font-size: 0.92rem;
+    letter-spacing: 0.06em;
+    opacity: 0.78;
+    transition:
+      background-color 0.25s ease,
+      opacity 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .side-rail-link.is-child {
+    padding-left: 1.6rem;
+  }
+
+  .side-rail-link:hover,
+  .side-rail-link:focus-visible {
+    background-color: rgb(127 127 170 / 0.12);
+    opacity: 1;
+    transform: translateX(3px);
+    outline: none;
+  }
+
+  .side-rail-link.is-active {
+    background-image: linear-gradient(90deg, rgb(247 168 200 / 0.4), rgb(184 230 254 / 0.25));
+    opacity: 1;
+  }
+
+  .side-rail-foot {
+    display: flex;
+    margin-top: auto;
+    padding-top: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .side-rail,
+    .side-rail-glint {
+      animation: none;
+      transition-duration: 0.01s;
+    }
+  }
+</style>

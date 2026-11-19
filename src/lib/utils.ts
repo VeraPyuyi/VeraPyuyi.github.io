@@ -76,12 +76,6 @@ export function shuffleArray<T>(array: readonly T[], random: () => number = Math
   return result;
 }
 
-/** Select up to `count` unique items without mutating the source array. */
-export function sampleWithoutReplacement<T>(array: readonly T[], count: number, random: () => number = Math.random): T[] {
-  const size = Math.max(0, Math.min(array.length, Math.trunc(count)));
-  return shuffleArray(array, random).slice(0, size);
-}
-
 /**
  * Normalize shorthand hex color to full 6-digit format
  * Supports #RGB, #RGBA, #RRGGBB, #RRGGBBAA formats
