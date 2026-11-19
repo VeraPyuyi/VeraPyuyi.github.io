@@ -43,7 +43,7 @@ test('the homepage uses original bilingual feature copy and only overrides the b
   assert.match(home, /<GalaxyFlight locale=\{locale\} \/>/);
   assert.ok(home.includes("const browserTitle = 'Pyuyi’s Home';"));
   assert.match(home, /title=\{browserTitle\}/);
-  assert.match(home, /openGraph=\{\{ title: seoConfig\.title \}\}/);
+  assert.match(home, /openGraph=\{\{\s*title: seoConfig\.title,\s*image: siteConfig\.homeOgImage,/);
 });
 
 test('aggregate content contains three papers and twelve bilingual blog articles', () => {
