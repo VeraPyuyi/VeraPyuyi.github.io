@@ -1,9 +1,17 @@
 ---
 /**
- * Full-screen "hyperspace jump" played when a galaxy star is clicked.
- * The canvas persists across client-side navigations, so the jump starts on the
- * homepage, keeps streaking while the next page loads, and settles on arrival.
- * Anything can start it with: window.dispatchEvent(new CustomEvent('pyuyi:warp', { detail }))
+ * Full-screen "warp drive" played when a galaxy star is clicked.
+ *
+ * 1. Aim   — the camera turns to the chosen star and slowly pushes in on it
+ *            (the page itself zooms toward the star while the edges darken).
+ * 2. Spool — nearby stars begin to stretch into trails as the drive charges,
+ *            a warp bubble tightens around the star; the next page is fetched.
+ * 3. Jump  — a flash, full streaks; the streaks keep running until the new page
+ *            has arrived and a minimum cruise has passed.
+ * 4. Arrive — the streaks decelerate and the darkness lifts off the new page.
+ *
+ * The canvas persists across client-side navigations, so this is one continuous shot.
+ * Start it with: window.dispatchEvent(new CustomEvent('pyuyi:warp', { detail }))
  * where detail = { href, x, y, color? } in viewport pixels.
  */
 ---
@@ -23,20 +31,28 @@
   interface Streak {
     angle: number;
     dist: number;
-    speed: number;
+    depth: number;
     width: number;
     color: string;
   }
 
-  type Phase = 'idle' | 'launch' | 'cruise' | 'arrive';
+  type Phase = 'idle' | 'aim' | 'spool' | 'cruise' | 'arrive';
 
-  const LAUNCH_MS = 760;
-  const ARRIVE_MS = 650;
-  const MAX_CRUISE_MS = 4500;
+  const AIM_MS = 1100;
+  const SPOOL_MS = 900;
+  /** Start fetching the next page part-way through the spool-up… */
+  const PREFETCH_AT_MS = AIM_MS + 200;
+  /** …and hand over to it at the moment of the jump. */
+  const NAVIGATE_AT_MS = AIM_MS + SPOOL_MS;
+  const MIN_CRUISE_MS = 700;
+  const MAX_CRUISE_MS = 5000;
+  const ARRIVE_MS = 850;
+  /** Push-in on the chosen star during the aim. */
+  const ZOOM = 2.6;
   /** If the client router has not delivered the page by now, load it the plain way. */
-  const HARD_NAVIGATION_MS = 3000;
+  const HARD_NAVIGATION_MS = 3500;
   /** Whatever happens to animation frames, the overlay never outlives this. */
-  const WATCHDOG_MS = LAUNCH_MS + MAX_CRUISE_MS + ARRIVE_MS + 800;
+  const WATCHDOG_MS = AIM_MS + SPOOL_MS + MAX_CRUISE_MS + ARRIVE_MS + 800;
   const PALETTE = ['#ffffff', '#ffffff', '#dbe9ff', '#b8e6fe', '#fccee8', '#ffd27a'];
 
   const warpWindow = window as Window & { __pyuyiWarp?: boolean };
@@ -48,18 +64,19 @@
   let streaks: Streak[] = [];
   let origin = { x: 0, y: 0 };
   let accent = '#ffd27a';
+  let phaseAt = 0;
   let startedAt = 0;
-  let cruiseAt = 0;
-  let arriveAt = 0;
   let lastFrame = 0;
   let arrived = false;
   let raf = 0;
   let watchdog = 0;
   let hardNavigation = 0;
+  let zoomed: HTMLElement | null = null;
 
+  const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
   const easeInCubic = (t: number) => t * t * t;
   const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
-  const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+  const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
   function resize() {
     if (!canvas) return;
@@ -69,15 +86,39 @@
     ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function spawn(near: boolean): Streak {
-    const reach = Math.hypot(window.innerWidth, window.innerHeight) / 2;
+  function spawn(reach: number, anywhere: boolean): Streak {
     return {
       angle: Math.random() * Math.PI * 2,
-      dist: near ? Math.random() * reach * 0.08 : Math.random() * reach * 0.6,
-      speed: 0.5 + Math.random() * 0.9,
-      width: 0.6 + Math.random() * 1.6,
-      color: Math.random() < 0.18 ? accent : PALETTE[Math.floor(Math.random() * PALETTE.length)],
+      dist: anywhere ? (0.04 + Math.random() ** 0.7) * reach : Math.random() * reach * 0.06,
+      depth: 0.35 + Math.random() * 0.65,
+      width: 0.6 + Math.random() * 1.5,
+      color: Math.random() < 0.2 ? accent : PALETTE[Math.floor(Math.random() * PALETTE.length)],
     };
+  }
+
+  /** Camera push: move the chosen star to the centre of the screen and zoom in on it. */
+  function aimCamera(detail: WarpDetail) {
+    const main = document.querySelector<HTMLElement>('main');
+    if (!main) return;
+    const rect = main.getBoundingClientRect();
+    zoomed = main;
+    main.style.transformOrigin = `${detail.x - rect.left}px ${detail.y - rect.top}px`;
+    main.style.transition = `transform ${AIM_MS + SPOOL_MS}ms cubic-bezier(0.65, 0, 0.35, 1), filter ${AIM_MS + SPOOL_MS}ms ease-in`;
+    main.style.willChange = 'transform';
+    // Let the starting state paint, then animate to the target.
+    main.getBoundingClientRect();
+    main.style.transform = `translate(${window.innerWidth / 2 - detail.x}px, ${window.innerHeight / 2 - detail.y}px) scale(${ZOOM})`;
+    main.style.filter = 'blur(1.5px)';
+  }
+
+  function releaseCamera() {
+    if (!zoomed) return;
+    zoomed.style.transform = '';
+    zoomed.style.transition = '';
+    zoomed.style.transformOrigin = '';
+    zoomed.style.filter = '';
+    zoomed.style.willChange = '';
+    zoomed = null;
   }
 
   function finish() {
@@ -85,9 +126,15 @@
     cancelAnimationFrame(raf);
     window.clearTimeout(watchdog);
     window.clearTimeout(hardNavigation);
+    releaseCamera();
     if (canvas) canvas.style.opacity = '0';
     ctx?.clearRect(0, 0, window.innerWidth, window.innerHeight);
     streaks = [];
+  }
+
+  function enter(next: Phase, now: number) {
+    phase = next;
+    phaseAt = now;
   }
 
   function frame(now: number) {
@@ -97,71 +144,75 @@
     const width = window.innerWidth;
     const height = window.innerHeight;
     const reach = Math.hypot(width, height) / 2;
+    const inPhase = Math.max(0, now - phaseAt);
+    const sinceStart = Math.max(0, now - startedAt);
 
+    // Velocity of the drive (0 = still, 1 = full warp), darkness of the backdrop,
+    // and how tightly the darkness hugs the edges (vignette) versus covers everything.
     let velocity = 1;
-    let backdrop = 0.94;
-    let center = { x: width / 2, y: height / 2 };
+    let darkness = 0.95;
+    let vignette = 0;
 
-    if (phase === 'launch') {
-      const p = Math.min(1, Math.max(0, now - startedAt) / LAUNCH_MS);
-      velocity = easeInCubic(p);
-      backdrop = 0.94 * easeOutCubic(Math.min(1, p * 2.2));
-      const turn = easeInOut(Math.min(1, p * 1.4));
-      center = { x: origin.x + (width / 2 - origin.x) * turn, y: origin.y + (height / 2 - origin.y) * turn };
-      if (p >= 1) {
-        phase = 'cruise';
-        cruiseAt = now;
-      }
+    if (phase === 'aim') {
+      const p = clamp01(inPhase / AIM_MS);
+      velocity = 0.04 * p;
+      darkness = 0.75 * easeInOut(p);
+      vignette = 1;
+      if (p >= 1) enter('spool', now);
+    } else if (phase === 'spool') {
+      const p = clamp01(inPhase / SPOOL_MS);
+      velocity = 0.04 + 0.96 * easeInCubic(p);
+      darkness = 0.75 + 0.2 * p;
+      vignette = 1 - easeInOut(p);
+      if (p >= 1) enter('cruise', now);
     } else if (phase === 'cruise') {
-      if ((arrived && now - cruiseAt > 260) || now - cruiseAt > MAX_CRUISE_MS) {
-        phase = 'arrive';
-        arriveAt = now;
-      }
+      if ((arrived && inPhase > MIN_CRUISE_MS) || inPhase > MAX_CRUISE_MS) enter('arrive', now);
     } else if (phase === 'arrive') {
-      const p = Math.min(1, Math.max(0, now - arriveAt) / ARRIVE_MS);
+      const p = clamp01(inPhase / ARRIVE_MS);
       velocity = 1 - easeOutCubic(p);
-      backdrop = 0.94 * (1 - p) ** 1.6;
+      darkness = 0.95 * (1 - p) ** 1.5;
       if (p >= 1) {
         finish();
         return;
       }
     }
 
+    // The camera turns to the star over the aim + spool, in step with the page zoom
+    // (easeInOut below is the same curve as the CSS cubic-bezier(0.65, 0, 0.35, 1)).
+    const turn = easeInOut(clamp01(sinceStart / (AIM_MS + SPOOL_MS)));
+    const center =
+      phase === 'cruise' || phase === 'arrive'
+        ? { x: width / 2, y: height / 2 }
+        : { x: origin.x + (width / 2 - origin.x) * turn, y: origin.y + (height / 2 - origin.y) * turn };
+
     ctx.clearRect(0, 0, width, height);
-    const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, reach);
-    glow.addColorStop(0, `rgba(46, 52, 104, ${backdrop})`);
-    glow.addColorStop(1, `rgba(10, 12, 30, ${backdrop})`);
-    ctx.fillStyle = glow;
+    const backdrop = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, reach);
+    const inner = darkness * (1 - vignette * 0.85);
+    backdrop.addColorStop(0, `rgba(46, 52, 104, ${inner})`);
+    backdrop.addColorStop(vignette > 0 ? 0.35 : 0.01, `rgba(30, 34, 74, ${darkness * (1 - vignette * 0.4)})`);
+    backdrop.addColorStop(1, `rgba(10, 12, 30, ${darkness})`);
+    ctx.fillStyle = backdrop;
     ctx.fillRect(0, 0, width, height);
 
-    // Launch ring from the star that was clicked.
-    const sinceStart = Math.max(0, now - startedAt);
-    if (sinceStart < 600) {
-      const p = sinceStart / 600;
-      ctx.strokeStyle = accent;
-      ctx.globalAlpha = (1 - p) * 0.9;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(origin.x, origin.y, 6 + easeOutCubic(p) * 90, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
+    // Stars around the target: dots at rest, stretching into trails as the drive spools up.
     ctx.lineCap = 'round';
+    const fadeIn = clamp01(sinceStart / 500);
     for (let i = 0; i < streaks.length; i++) {
       const streak = streaks[i];
       const before = streak.dist;
-      streak.dist += (velocity * streak.speed * reach * 1.4 + streak.dist * velocity * 2.6) * dt;
+      const pace = velocity * (reach * 1.2 + streak.dist * 2.8) * streak.depth;
+      streak.dist += (pace + reach * 0.015) * dt;
       if (streak.dist > reach * 1.1) {
         if (phase === 'arrive') continue;
-        streaks[i] = spawn(true);
+        streaks[i] = spawn(reach, phase === 'aim');
         continue;
       }
-      const tail = Math.max(before, streak.dist - (velocity * streak.dist * 0.42 + 1.5));
-      const fade = Math.min(1, streak.dist / (reach * 0.25));
+      const trail = velocity * streak.dist * (0.06 + 0.5 * velocity) + 0.6;
+      const tail = Math.max(phase === 'aim' ? streak.dist - 0.6 : before, streak.dist - trail);
+      const near = clamp01(streak.dist / (reach * 0.2));
       ctx.strokeStyle = streak.color;
-      ctx.globalAlpha = fade * (0.35 + 0.65 * Math.max(velocity, phase === 'arrive' ? 0.2 : 0));
-      ctx.lineWidth = streak.width * (0.6 + (streak.dist / reach) * 1.4);
+      ctx.globalAlpha = fadeIn * near * (0.4 + 0.6 * streak.depth) * (phase === 'arrive' ? 0.3 + 0.7 * velocity : 1);
+      ctx.lineWidth = streak.width * streak.depth * (0.7 + (streak.dist / reach) * 1.3);
       ctx.beginPath();
       ctx.moveTo(center.x + Math.cos(streak.angle) * tail, center.y + Math.sin(streak.angle) * tail);
       ctx.lineTo(center.x + Math.cos(streak.angle) * streak.dist, center.y + Math.sin(streak.angle) * streak.dist);
@@ -169,10 +220,39 @@
     }
     ctx.globalAlpha = 1;
 
-    // A soft flash as the jump begins, and again as we drop out of it.
-    const flashAt = phase === 'arrive' ? (now - arriveAt) / 260 : (sinceStart - LAUNCH_MS * 0.85) / 260;
-    if (flashAt > 0 && flashAt < 1) {
-      ctx.fillStyle = `rgba(255, 245, 230, ${(1 - flashAt) * (phase === 'arrive' ? 0.18 : 0.32)})`;
+    // The chosen star: a glow that swells as the camera closes in.
+    if (phase === 'aim' || phase === 'spool') {
+      const swell = phase === 'aim' ? easeInOut(clamp01(inPhase / AIM_MS)) : 1;
+      const radius = 10 + swell * 34 + (phase === 'spool' ? Math.sin(inPhase / 60) * 3 : 0);
+      const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, radius * 3);
+      glow.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      glow.addColorStop(0.18, accent);
+      glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.globalAlpha = 0.35 + 0.65 * swell;
+      ctx.fillStyle = glow;
+      ctx.fillRect(center.x - radius * 3, center.y - radius * 3, radius * 6, radius * 6);
+      ctx.globalAlpha = 1;
+    }
+
+    // Warp bubble: rings that tighten around the star while the drive charges.
+    if (phase === 'spool') {
+      const p = clamp01(inPhase / SPOOL_MS);
+      for (let ring = 0; ring < 3; ring++) {
+        const q = (p * 1.6 + ring * 0.22) % 1;
+        ctx.strokeStyle = accent;
+        ctx.globalAlpha = (1 - q) * 0.55 * (1 - p * 0.4);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(center.x, center.y, (1 - q) * 220 + 12, (1 - q) * 120 + 8, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Flash on the jump, and a softer one as we drop out of warp.
+    const flash = phase === 'cruise' ? inPhase / 320 : phase === 'arrive' ? inPhase / 280 : -1;
+    if (flash >= 0 && flash < 1) {
+      ctx.fillStyle = `rgba(255, 246, 232, ${(1 - flash) * (phase === 'cruise' ? 0.55 : 0.18)})`;
       ctx.fillRect(0, 0, width, height);
     }
 
@@ -194,23 +274,27 @@
     resize();
     accent = detail.color || '#ffd27a';
     origin = { x: detail.x, y: detail.y };
-    streaks = Array.from({ length: Math.round(Math.min(520, (window.innerWidth * window.innerHeight) / 2600)) }, () =>
-      spawn(false),
-    );
+    const reach = Math.hypot(window.innerWidth, window.innerHeight) / 2;
+    const count = Math.round(Math.min(560, (window.innerWidth * window.innerHeight) / 2400));
+    streaks = Array.from({ length: count }, () => spawn(reach, true));
     arrived = false;
-    phase = 'launch';
     startedAt = performance.now();
     lastFrame = startedAt;
+    enter('aim', startedAt);
     canvas.style.opacity = '1';
+    aimCamera(detail);
     raf = requestAnimationFrame(frame);
 
     const from = window.location.href;
+    window.setTimeout(() => {
+      fetch(detail.href, { credentials: 'same-origin' }).catch(() => undefined);
+    }, PREFETCH_AT_MS);
     window.setTimeout(() => {
       navigate(detail.href).catch(() => window.location.assign(detail.href));
       hardNavigation = window.setTimeout(() => {
         if (!arrived && window.location.href === from) window.location.assign(detail.href);
       }, HARD_NAVIGATION_MS);
-    }, LAUNCH_MS * 0.9);
+    }, NAVIGATE_AT_MS);
     watchdog = window.setTimeout(finish, WATCHDOG_MS);
   }
 
@@ -223,6 +307,8 @@
   });
   document.addEventListener('astro:page-load', () => {
     arrived = true;
+    // The zoomed <main> was replaced by the new page; forget it.
+    zoomed = null;
   });
 </script>
 
