@@ -46,11 +46,13 @@ export function galaxyPoint(kind: GalaxyKind, arm: number, t: number): [number, 
   let radius: number;
   let angle: number;
   if (kind === 'blogs') {
+    // Logarithmic spiral (pitch ≈ 20°): tightly wound by the core, opening outward, like M51.
     radius = 0.1 + 0.88 * t;
-    angle = arm * Math.PI + t * 2.3 * Math.PI;
+    angle = arm * Math.PI + 2.7 * Math.log(radius / 0.1);
   } else if (kind === 'papers') {
+    // Arms leave the ends of the bar and sweep about half a turn, as in NGC 1300.
     radius = 0.42 + 0.56 * t;
-    angle = arm * Math.PI + t * 1.5 * Math.PI;
+    angle = arm * Math.PI + t * 1.1 * Math.PI;
   } else {
     radius = 0.74;
     angle = t * 2 * Math.PI;

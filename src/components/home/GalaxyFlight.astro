@@ -1,0 +1,307 @@
+---
+/**
+ * The homepage: four full-screen galaxies the visitor flies between with the scroll wheel.
+ * The particles are drawn with WebGL (see ./galaxy-flight); every post is a clickable star
+ * riding its galaxy's arms, ring or clumps.
+ */
+import { getCollection } from 'astro:content';
+import { siteConfig } from '@constants/site-config';
+import { Icon } from 'astro-icon/components';
+import { localizedPath } from '@/i18n';
+import { getBlogArticles } from '@/lib/blogs';
+import { displayDate } from '@/lib/date';
+import { type GalaxyItem, type GalaxyKind, placeGalaxyItems } from '@/lib/galaxy';
+import { getPapers } from '@/lib/papers';
+// Story styles first, so the phone overrides in galaxy-flight.css win.
+import '@/styles/components/galaxy-flight-story.css';
+import '@/styles/components/galaxy-flight.css';
+
+interface Props {
+  locale: string;
+}
+
+const { locale } = Astro.props;
+const en = locale === 'en';
+
+const blogs = await getBlogArticles(locale);
+const papers = getPapers();
+const albums = (await getCollection('albums')).filter((entry) => entry.data.language === 'zh' || entry.data.language === locale);
+const moments = (await getCollection('moments')).filter(
+  (entry) => !entry.data.draft && (entry.data.language === 'zh' || entry.data.language === locale),
+);
+
+/** First readable line of a moment, without Markdown links or emphasis. */
+function momentTitle(body: string | undefined): string {
+  const text = (body ?? '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[*_`>#]/g, '')
+    .trim();
+  const firstSentence = text.split(/(?<=[。！？.!?])/)[0] ?? text;
+  return firstSentence.length > 40 ? `${firstSentence.slice(0, 40)}…` : firstSentence || (en ? 'A moment' : '一段日常');
+}
+
+const itemsByKind: Record<GalaxyKind, GalaxyItem[]> = {
+  blogs: blogs.map((entry) => ({
+    id: `blog-${entry.data.routeSlug}`,
+    href: localizedPath(`/blogs/${entry.data.routeSlug}`, locale),
+    title: entry.data.title,
+    date: displayDate.date(entry.data.publishedAt),
+    group: entry.data.category,
+  })),
+  papers: papers.map((paper) => ({
+    id: `paper-${paper.id}`,
+    href: localizedPath(`/papers/${paper.id}`, locale),
+    title: en && paper.titleEn ? paper.titleEn : paper.title,
+    date: paper.date,
+  })),
+  photos: albums.flatMap((album) =>
+    album.data.photos.map((photo, index) => ({
+      id: `photo-${album.id}-${index}`,
+      href: localizedPath('/gallery', locale),
+      title: `${album.data.name} · ${photo.alt}`,
+      date: displayDate.date(photo.date ?? album.data.date ?? new Date()),
+    })),
+  ),
+  moments: moments.map((entry) => ({
+    id: `moment-${entry.id}`,
+    href: localizedPath('/moments', locale),
+    title: momentTitle(entry.body),
+    date: displayDate.date(entry.data.date),
+  })),
+};
+
+const kindLabel = (kind: GalaxyKind, group?: string): string => {
+  if (kind === 'blogs') return group === 'learning' ? (en ? 'Learning' : '学习') : en ? 'Inspiration' : '灵感';
+  if (kind === 'papers') return en ? 'Paper' : '论文';
+  if (kind === 'photos') return en ? 'Photo' : '照片';
+  return en ? 'Moment' : '生活';
+};
+
+const starColor = (kind: GalaxyKind, group?: string): string => {
+  if (kind === 'blogs') return group === 'learning' ? '#b8e6fe' : '#fccee8';
+  if (kind === 'papers') return '#ffd27a';
+  if (kind === 'photos') return '#fef3c6';
+  return '#b8e6fe';
+};
+
+/** Order matches GALAXY_PLACEMENTS in `@/lib/galaxy-flight`: the route visits them in this order. */
+const galaxies: {
+  kind: GalaxyKind;
+  section: string;
+  name: string;
+  note: string;
+  type: string;
+  quote: string;
+  href: string;
+  accent: string;
+}[] = [
+  {
+    kind: 'blogs',
+    section: en ? 'Blogs' : '博客',
+    name: en ? 'Whirlpool Galaxy' : '涡状星系',
+    note: en
+      ? 'Its arms keep winding back to the centre, the way every essay circles back to its first question.'
+      : '旋臂一圈圈绕回中心，像每篇文字最后都绕回最初那个问题。',
+    type: en ? 'M51 · grand-design spiral · with its companion NGC 5195' : 'M51 · 宏象旋涡星系 · 伴星系 NGC 5195',
+    quote: en ? 'Lines of words light up one by one; only the night ever answers.' : '字句一行行亮起，回应它们的始终只有深夜。',
+    href: localizedPath('/blogs', locale),
+    accent: '#fccee8',
+  },
+  {
+    kind: 'papers',
+    section: en ? 'Papers' : '论文',
+    name: 'NGC 1300',
+    note: en
+      ? 'A straight bar runs through the core and the arms unfurl from its ends: the rigorous skeleton comes first, then the argument can spread.'
+      : '一根笔直的棒穿过核心，旋臂从棒端舒展开——先有严格的骨架，推论才能伸展。',
+    type: en ? 'Barred spiral · Eridanus' : '棒旋星系 · 波江座',
+    quote: en
+      ? 'The proof reaches the end of the page; the one seeking answers still stands alone before the unknown.'
+      : '证明抵达纸页尽头，求解的人仍独自站在未知之前。',
+    href: localizedPath('/papers', locale),
+    accent: '#ffd27a',
+  },
+  {
+    kind: 'photos',
+    section: en ? 'Photo wall' : '照片墙',
+    name: en ? 'Hoag’s Object' : '霍格天体',
+    note: en
+      ? 'Almost nothing lies between its core and its ring, like the long silence just beyond a photograph. Look closely: another ring galaxy shines through the gap.'
+      : '核心与光环之间几乎空无一物，像照片之外那段漫长的寂静。仔细看，缝隙里还透出另一个更遥远的环。',
+    type: en ? 'Ring galaxy · Serpens' : '环状星系 · 巨蛇座',
+    quote: en
+      ? 'Photographs keep the world’s light; beyond the frame, only a long silence remains.'
+      : '照片替世界保存了光，镜头之外却只剩漫长的寂静。',
+    href: localizedPath('/gallery', locale),
+    accent: '#fef3c6',
+  },
+  {
+    kind: 'moments',
+    section: en ? 'Moments' : '生活动态',
+    name: en ? 'Small Magellanic Cloud' : '小麦哲伦云',
+    note: en
+      ? 'It keeps no fixed shape, yet it never leaves the Milky Way’s side, much like ordinary days. 47 Tucanae glitters beside it.'
+      : '没有固定的形状，却一直陪在银河身边，像日子。身旁那团密集的金光，是球状星团杜鹃座 47。',
+    type: en ? 'SMC · dwarf irregular · Tucana' : '小麦哲伦云 · 不规则矮星系 · 杜鹃座',
+    quote: en
+      ? 'Days pass slowly by; no one knows the thoughts that were never spoken.'
+      : '日子从身旁缓慢经过，无人知晓那些未说出口的心事。',
+    href: localizedPath('/moments', locale),
+    accent: '#b8e6fe',
+  },
+];
+
+const placed = galaxies.map((galaxy) => {
+  const stars = placeGalaxyItems(galaxy.kind, itemsByKind[galaxy.kind]);
+  return { ...galaxy, stars, newest: stars.find((star) => star.newest) };
+});
+const total = placed.reduce((sum, galaxy) => sum + galaxy.stars.length, 0);
+/** `placeGalaxyItems` returns 0–100 % of the drawing square; the 3D models use units of the radius. */
+const toUnit = (percent: number) => ((percent - 50) / 46).toFixed(4);
+const starPath =
+  'M12 1.5c.6 5.2 2.3 8.3 10.5 10.5C14.3 14.2 12.6 17.3 12 22.5 11.4 17.3 9.7 14.2 1.5 12 9.7 9.8 11.4 6.7 12 1.5z';
+---
+
+<section class="flight" aria-labelledby="flight-title" data-flight data-locale={locale} data-pagefind-ignore="all">
+  <div class="flight-stage" data-flight-stage>
+    <canvas class="flight-canvas" data-flight-canvas aria-hidden="true"></canvas>
+
+    <div class="flight-intro" data-flight-fade="0.35">
+      <p class="flight-moon" data-flight-moon>{en ? 'Tonight' : '今晚'}</p>
+      <h1 id="flight-title" class="font-chill-round">{siteConfig.title}</h1>
+      <p class="flight-greeting" data-flight-greeting>{siteConfig.subtitle}</p>
+      <p class="flight-lead">
+        {
+          en
+            ? `Four galaxies, ${total} stars. Each star was once a night spent with a question. Rest your cursor on a galaxy and it slows for you; click it and it tells you about itself.`
+            : `四个星系，${total} 颗星，每一颗都曾是一个和问题待在一起的夜晚。停在星系上，它会为你慢下来；轻点一下，它会说起自己。`
+        }
+      </p>
+    </div>
+
+    <div class="flight-stars">
+      {
+        placed.flatMap((galaxy, index) =>
+          galaxy.stars.map((star, order) => (
+            <a
+              class="flight-star"
+              href={star.href}
+              style={`--star:${starColor(galaxy.kind, star.group)};--delay:${(order * 0.37) % 3}s`}
+              data-flight-star
+              data-galaxy={index}
+              data-u={toUnit(star.x)}
+              data-v={toUnit(star.y)}
+              data-warp
+              data-warp-color={starColor(galaxy.kind, star.group)}
+              data-title={star.title}
+              data-date={star.date}
+              data-kind={kindLabel(galaxy.kind, star.group)}
+              aria-label={
+                en
+                  ? `${kindLabel(galaxy.kind, star.group)}: ${star.title}, ${star.date}`
+                  : `${kindLabel(galaxy.kind, star.group)}：${star.title}，${star.date}`
+              }
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d={starPath} />
+              </svg>
+            </a>
+          )),
+        )
+      }
+    </div>
+
+    {
+      placed.map((galaxy, index) => (
+        <article id={`flight-story-${index}`} class="flight-label" data-flight-label style={`--accent:${galaxy.accent}`}>
+          <p class="flight-kicker">
+            <span class="flight-number">{String(index + 1).padStart(2, '0')}</span>
+            {galaxy.section}
+            <span class="flight-count">{en ? `${galaxy.stars.length} stars` : `${galaxy.stars.length} 颗星`}</span>
+          </p>
+          <h2>
+            <a
+              class="flight-name font-chill-round"
+              href={galaxy.href}
+              data-warp
+              data-warp-color={galaxy.accent}
+              data-flight-enter={index}
+              aria-label={en ? `${galaxy.section}: ${galaxy.name}` : `${galaxy.section}：${galaxy.name}`}
+            >
+              {galaxy.name}
+              <Icon name="ri:arrow-right-line" aria-hidden="true" />
+            </a>
+          </h2>
+          <p class="flight-type">{galaxy.type}</p>
+          <p class="flight-quote">{galaxy.quote}</p>
+          <p class="flight-note">{galaxy.note}</p>
+          <p class="flight-info" role="status">
+            {galaxy.newest ? (
+              <>
+                <span class="flight-info-head" data-flight-info-head>
+                  {en ? 'Newest' : '最新'} · {kindLabel(galaxy.kind, galaxy.newest.group)} · {galaxy.newest.date}
+                </span>
+                <span class="flight-info-title" data-flight-info-title>
+                  {galaxy.newest.title}
+                </span>
+              </>
+            ) : (
+              <span class="flight-info-title">{en ? 'No stars here yet.' : '这里还没有星星。'}</span>
+            )}
+          </p>
+        </article>
+      ))
+    }
+
+    <nav class="flight-nav" aria-label={en ? 'The four galaxies' : '四个星系'}>
+      {
+        placed.map((galaxy, index) => (
+          <button
+            type="button"
+            data-flight-goto={index}
+            aria-controls={`flight-story-${index}`}
+            aria-expanded="false"
+            style={`--accent:${galaxy.accent}`}
+          >
+            <span class="flight-nav-name">{galaxy.name}</span>
+            <span class="flight-nav-dot" aria-hidden="true"></span>
+          </button>
+        ))
+      }
+    </nav>
+
+    <p class="flight-ask" data-flight-ask aria-hidden="true">
+      <span class="flight-ask-dot"></span>
+      {en ? 'Click the galaxy to hear its story' : '轻点星系，听它说说自己'}
+    </p>
+
+    <p class="flight-hint" data-flight-fade="0.12" aria-hidden="true">
+      <span class="flight-mouse"></span>
+      {en ? 'Scroll to fly' : '滚动，穿过星系'}
+    </p>
+  </div>
+</section>
+
+<script>
+  import { mountGalaxyFlight } from './galaxy-flight/controller';
+
+  let unmount: (() => void) | null = null;
+  let mounted: HTMLElement | null = null;
+
+  function init() {
+    const root = document.querySelector<HTMLElement>('[data-flight]');
+    if (root === mounted) return;
+    unmount?.();
+    unmount = null;
+    mounted = root;
+    if (root) unmount = mountGalaxyFlight(root);
+  }
+
+  if (document.readyState !== 'loading') init();
+  document.addEventListener('astro:page-load', init);
+  document.addEventListener('astro:before-swap', () => {
+    unmount?.();
+    unmount = null;
+    mounted = null;
+  });
+</script>

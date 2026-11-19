@@ -16,6 +16,7 @@ import Header from '@components/layout/Header.astro';
 import MobileDrawer from '@components/layout/MobileDrawer.astro';
 import SearchDialog from '@components/layout/SearchDialog';
 import SearchPortal from '@components/layout/SearchPortal.astro';
+import SideRail from '@components/layout/SideRail.astro';
 import CodeBlockFullscreen from '@components/markdown/CodeBlockFullscreen';
 import DiagramFullscreen from '@components/markdown/DiagramFullscreen';
 import ImageLightbox from '@components/markdown/ImageLightbox';
@@ -29,6 +30,7 @@ const { siderType } = Astro.props;
 
 <ChristmasEffects transition:persist="christmas-snowfall" />
 <div class="flex min-h-screen flex-col text-black dark:text-white">
+  <SideRail />
   <Header isPostPage={false} tocNumbering />
   <main class="relative flex grow flex-col gap-4">
     {(<slot />)}
