@@ -78,14 +78,23 @@ void main() {
     v_soft = 0.0;
     return;
   }
-  float twinkle = fract(a_phase * 13.7) > 0.82 ? 1.0 + 0.45 * sin(u_time * (1.2 + a_phase * 2.5) + a_phase * 50.0) : 1.0;
+  v_soft = smoothstep(u_soft.x, u_soft.y, a_size);
+  // Scintillation: about 40% of stars flicker, each at its own uneven rhythm (two detuned waves),
+  // the strongest dipping almost to nothing. Soft puffs of gas stay steady.
+  float twinkle = 1.0;
+  float pick = fract(a_phase * 13.7);
+  if (pick > 0.6) {
+    float speed = 1.4 + fract(a_phase * 7.31) * 5.0;
+    float wave = 0.6 * sin(u_time * speed + a_phase * 50.0) + 0.4 * sin(u_time * speed * 1.73 + a_phase * 91.0);
+    float strength = 0.35 + 0.6 * (pick - 0.6) / 0.4;
+    twinkle = mix(max(0.04, 1.0 + wave * strength), 1.0, v_soft);
+  }
   float px = a_size * u_scale * u_pixels / depth;
   float size = clamp(px, u_sizeRange.x, u_sizeRange.y);
   // Sub-pixel stars keep their light by dimming; huge sprites right next to the camera fade away.
   float energy = px < size ? (px * px) / (size * size) : size / px;
   float near = smoothstep(0.4, 3.0, depth);
   v_color = a_color * energy * twinkle * near * u_alpha;
-  v_soft = smoothstep(u_soft.x, u_soft.y, a_size);
   gl_PointSize = size;
 }`;
 

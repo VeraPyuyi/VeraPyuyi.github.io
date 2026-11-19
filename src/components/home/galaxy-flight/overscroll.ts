@@ -8,6 +8,8 @@
 export interface OverscrollPull {
   /** 0–1, with resistance: the harder you push, the less each extra push adds. */
   readonly amount: number;
+  /** Which end of the route is being pushed past. */
+  readonly edge: 'start' | 'end';
   update(dt: number): void;
   stop(): void;
 }
@@ -18,6 +20,7 @@ export function createOverscrollPull(): OverscrollPull {
   let pull = 0;
   let lastInput = 0;
   let touchY: number | null = null;
+  let edge: 'start' | 'end' = 'start';
 
   const atTop = () => window.scrollY <= 1;
   const atBottom = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
@@ -25,7 +28,12 @@ export function createOverscrollPull(): OverscrollPull {
     pull = Math.min(1.5, pull + amount);
     lastInput = performance.now();
   };
-  const beyondEdge = (delta: number) => (delta < 0 && atTop()) || (delta > 0 && atBottom());
+  const beyondEdge = (delta: number) => {
+    if (delta < 0 && atTop()) edge = 'start';
+    else if (delta > 0 && atBottom()) edge = 'end';
+    else return false;
+    return true;
+  };
 
   const onWheel = (event: WheelEvent) => {
     const delta = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
@@ -53,6 +61,9 @@ export function createOverscrollPull(): OverscrollPull {
   return {
     get amount() {
       return 1 - Math.exp(-pull * 2.2);
+    },
+    get edge() {
+      return edge;
     },
     update(dt) {
       // Hold while the push continues; spring back once it stops.

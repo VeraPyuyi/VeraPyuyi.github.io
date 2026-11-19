@@ -84,15 +84,28 @@ export interface ParticleBuilder {
   build(random: Random): ParticleSet;
 }
 
-export function createParticleBuilder(): ParticleBuilder {
+export interface BuilderOptions {
+  /** Star sprites (size below 0.012) are scaled by this, so stars resolve into finer points… */
+  starSize?: number;
+  /** …and brightened by this, so the galaxy keeps roughly the same light. */
+  starGain?: number;
+}
+
+export function createParticleBuilder(options: BuilderOptions = {}): ParticleBuilder {
   const values: number[] = [];
   const STRIDE = 8;
+  const starSize = options.starSize ?? 1;
+  const starGain = options.starGain ?? 1;
   return {
     get count() {
       return values.length / STRIDE;
     },
     add(x, y, z, color, brightness, size) {
       if (![x, y, z, brightness, size].every(Number.isFinite)) return;
+      if (size < 0.012) {
+        size *= starSize;
+        brightness *= starGain;
+      }
       values.push(
         Math.hypot(x, z),
         Math.atan2(z, x),
