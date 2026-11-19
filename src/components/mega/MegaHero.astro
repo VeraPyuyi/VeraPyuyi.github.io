@@ -29,6 +29,7 @@ const json = JSON.stringify(items).replace(/</g, '\\u003c');
 
 <section class="mega-hero" data-mega-hero={kind} data-mega-galaxy={SKY_CATALOG[entry.sky].image} aria-label={name}>
   <canvas class="mega-canvas" data-mega-canvas aria-hidden="true"></canvas>
+  <canvas class="mega-canvas mega-overlay" data-mega-overlay aria-hidden="true"></canvas>
   <div class="mega-caption">
     <p class="mega-kicker">
       <span class="mega-kicker-mark" aria-hidden="true"></span>
@@ -43,9 +44,8 @@ const json = JSON.stringify(items).replace(/</g, '\\u003c');
 </section>
 
 <script>
-  import { mountMegaHero } from './engine';
-  import { SCENES } from './scenes';
   import type { MegaKind } from '@/lib/megastructures';
+  import { mountMegaHero } from './engine';
 
   let cleanups: (() => void)[] = [];
 
@@ -57,8 +57,7 @@ const json = JSON.stringify(items).replace(/</g, '\\u003c');
   function init() {
     cleanup();
     document.querySelectorAll<HTMLElement>('[data-mega-hero]').forEach((root) => {
-      const factory = SCENES[root.dataset.megaHero as MegaKind];
-      if (factory) cleanups.push(mountMegaHero(root, factory));
+      cleanups.push(mountMegaHero(root, root.dataset.megaHero as MegaKind));
     });
   }
 
@@ -73,9 +72,9 @@ const json = JSON.stringify(items).replace(/</g, '\\u003c');
     z-index: 0;
     display: flex;
     align-items: center;
-    height: 46dvh;
-    min-height: 20rem;
-    max-height: 32rem;
+    height: 54dvh;
+    min-height: 22rem;
+    max-height: 36rem;
     overflow: hidden;
     background: linear-gradient(#0b0d2a, #151a42);
     color: #fff;

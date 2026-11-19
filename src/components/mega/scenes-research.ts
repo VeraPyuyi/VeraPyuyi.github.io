@@ -1,8 +1,8 @@
 /** Scenes for the writing pages: all posts (Sentry Array), papers (Science Nexus), blogs (Dyson Sphere). */
 
 import { hashUnit } from '@/lib/megastructures';
-import { HitList, type SceneFactory } from './engine';
-import { ellipse, glow, neon, PALETTE, rgba, tag } from './kit';
+import type { SceneFactory } from './engine';
+import { ellipse, glow, HitList, neon, PALETTE, rgba, tag } from './kit';
 import { drawShip, run } from './ships';
 
 const TAU = Math.PI * 2;

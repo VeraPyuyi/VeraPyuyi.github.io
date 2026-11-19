@@ -1,8 +1,8 @@
 /** Scenes for the life pages: photo wall (Ring World), moments (Orbital Habitat), about (Matter Decompressor). */
 
 import { hashUnit } from '@/lib/megastructures';
-import { HitList, type SceneFactory } from './engine';
-import { ellipse, glow, neon, PALETTE, rgba, tag } from './kit';
+import type { SceneFactory } from './engine';
+import { ellipse, glow, HitList, neon, PALETTE, rgba, tag } from './kit';
 import { drawShip, run } from './ships';
 
 const TAU = Math.PI * 2;

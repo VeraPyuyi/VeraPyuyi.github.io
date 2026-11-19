@@ -88,22 +88,60 @@ export function drawShip(
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-  // Engine light trails behind the hull.
+  // Engine plumes: long, hot at the nozzle, stretched behind the hull.
   const engines = kind === 'titan' ? [-0.12, 0, 0.12] : kind === 'cruiser' ? [-0.2, 0.2] : [0];
   for (const offset of engines) {
-    glow(ctx, -0.55 * size, offset * size, size * (kind === 'titan' ? 0.16 : 0.3), color, 0.8 * alpha);
+    ctx.save();
+    ctx.translate(-0.5 * size, offset * size);
+    ctx.scale(3.2, 1);
+    glow(ctx, 0, 0, size * (kind === 'titan' ? 0.07 : 0.16), color, 0.9 * alpha);
+    ctx.restore();
+    glow(ctx, -0.5 * size, offset * size, Math.max(1.5, size * 0.03), PALETTE.white, alpha);
   }
-  ctx.beginPath();
-  HULLS[kind].forEach(([px, py], index) => {
-    if (index === 0) ctx.moveTo(px * size, py * size);
-    else ctx.lineTo(px * size, py * size);
-  });
-  ctx.closePath();
+  const hullPath = () => {
+    ctx.beginPath();
+    HULLS[kind].forEach(([px, py], index) => {
+      if (index === 0) ctx.moveTo(px * size, py * size);
+      else ctx.lineTo(px * size, py * size);
+    });
+    ctx.closePath();
+  };
+  hullPath();
+  // Hull: sunlit metal, bright along the upper side and falling into shadow below.
   ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = rgba(PALETTE.hull, 0.92 * alpha);
+  const shade = ctx.createLinearGradient(0, -0.3 * size, 0, 0.3 * size);
+  shade.addColorStop(0, `rgba(178, 186, 206, ${alpha})`);
+  shade.addColorStop(0.45, `rgba(92, 98, 116, ${alpha})`);
+  shade.addColorStop(1, `rgba(16, 18, 28, ${alpha})`);
+  ctx.fillStyle = shade;
   ctx.fill();
+  ctx.strokeStyle = `rgba(10, 12, 20, ${0.8 * alpha})`;
+  ctx.lineWidth = 0.6;
+  ctx.stroke();
+  // Panel lines and a ridge along the spine.
+  if (size > 18) {
+    ctx.save();
+    ctx.clip();
+    ctx.strokeStyle = `rgba(0, 0, 0, ${0.35 * alpha})`;
+    ctx.lineWidth = 0.5;
+    for (let line = -0.4; line < 0.5; line += kind === 'titan' ? 0.06 : 0.12) {
+      ctx.beginPath();
+      ctx.moveTo(line * size, -0.3 * size);
+      ctx.lineTo(line * size, 0.3 * size);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = `rgba(230, 236, 255, ${0.45 * alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(-0.45 * size, -0.02 * size);
+    ctx.lineTo(0.45 * size, -0.02 * size);
+    ctx.stroke();
+    ctx.restore();
+  }
   ctx.globalCompositeOperation = 'lighter';
-  neon(ctx, color, 0.85 * alpha, size > 60 ? 1.1 : 0.8);
+  hullPath();
+  ctx.strokeStyle = rgba(color, 0.35 * alpha);
+  ctx.lineWidth = 0.7;
+  ctx.stroke();
   if (kind === 'science') {
     ellipse(ctx, 0.12 * size, 0, 0.1 * size, 0.1 * size);
     neon(ctx, color, 0.7 * alpha, 0.7);

@@ -69,3 +69,26 @@ export function tag(ctx: CanvasRenderingContext2D, x: number, y: number, text: s
 }
 
 export const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+
+/** Points recorded during a draw so scenes can answer hit tests. */
+export class HitList {
+  private points: { x: number; y: number; r: number; index: number }[] = [];
+  reset() {
+    this.points = [];
+  }
+  add(index: number, x: number, y: number, r: number) {
+    this.points.push({ x, y, r, index });
+  }
+  find(x: number, y: number): number {
+    let best = -1;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    for (const point of this.points) {
+      const distance = Math.hypot(point.x - x, point.y - y);
+      if (distance <= point.r && distance < bestDistance) {
+        best = point.index;
+        bestDistance = distance;
+      }
+    }
+    return best;
+  }
+}
