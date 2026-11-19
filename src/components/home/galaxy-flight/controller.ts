@@ -55,8 +55,11 @@ interface StarLink {
   orbit?: number;
 }
 
-/** A point on the tilted ring the black hole's links orbit along (stop units). */
-const orbitPoint = (angle: number): Vec3 => [Math.cos(angle) * 1.0, Math.sin(angle) * 0.72, 0];
+/** A point on the ring the black hole's links orbit along (stop units); taller and narrower on portrait screens. */
+const orbitPoint = (angle: number, aspect: number): Vec3 => {
+  const squeeze = Math.min(1, aspect * 1.3);
+  return [Math.cos(angle) * 0.86 * squeeze, (Math.sin(angle) * 0.5) / squeeze, 0];
+};
 const HOLE = blackHoleFrame();
 
 interface Warp {
@@ -294,7 +297,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     for (const star of stars) {
       const placement = ROUTE[star.galaxy];
       const galaxy = galaxies[star.galaxy];
-      const local = star.orbit === undefined ? star.local : orbitPoint(star.orbit + orbitClock);
+      const local = star.orbit === undefined ? star.local : orbitPoint(star.orbit + orbitClock, width / height);
       const point = project(viewProjection, localToWorld(placement, galaxy?.angle ?? 0, local, galaxy?.drift), width, height);
       const near = clamp(1 - Math.abs(progress - star.galaxy) * 2.2);
       const opacity = point.depth > 0.5 && !warp ? near : 0;

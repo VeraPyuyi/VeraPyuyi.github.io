@@ -49,7 +49,7 @@ out vec4 outColor;
 const float BOUND = 20.0;
 const float R_IN = 2.6;
 const float R_OUT = 14.0;
-const float FLOW_PERIOD = 9.0;
+const float FLOW_PERIOD = 6.0;
 
 float hash3(vec3 p) {
   p = fract(p * 0.3183099 + 0.1);
@@ -81,11 +81,11 @@ float fbm(vec3 p) {
 // Emission (rgb, already weighted) and opacity of the disk where a ray crosses it.
 vec4 disk(vec3 p, vec3 dir) {
   float r = length(p.xz);
-  // Keplerian flow: the inner edge laps the hole every few seconds, the outer gas drifts slowly.
+  // Keplerian flow: the inner edge laps the hole in about four seconds, the outer gas drifts behind.
   // Two texture layers advance in turn and cross-fade, so the shear never winds the streaks
   // into ever finer stripes, however long the page stays open.
   float theta = atan(p.z, p.x);
-  float sweep = FLOW_PERIOD * 3.4 / pow(r, 1.5);
+  float sweep = FLOW_PERIOD * 6.5 / pow(r, 1.5);
   float phase = fract(u_time / FLOW_PERIOD);
   float weight = 1.0 - abs(2.0 * phase - 1.0);
   float a1 = theta - sweep * phase;
@@ -102,7 +102,9 @@ vec4 disk(vec3 p, vec3 dir) {
   streaks = clamp((streaks - 0.5) * 1.45 + 0.5, 0.0, 1.0);
   float t = clamp((r - R_IN) / (R_OUT - R_IN), 0.0, 1.0);
   float profile = smoothstep(R_IN * 0.96, R_IN * 1.25, r) * (1.0 - smoothstep(0.5, 1.0, t)) * pow(R_IN / r, 1.5);
-  float density = profile * (0.3 + 1.2 * streaks * (0.65 + 0.7 * fine));
+  // Slowly boiling turbulence on top of the flow, so the gas never looks like a turning picture.
+  float boil = noise3(vec3(cos(theta) * 3.0, sin(theta) * 3.0, r * 2.0 + u_time * 0.9));
+  float density = profile * (0.3 + 1.2 * streaks * (0.65 + 0.7 * fine)) * (0.82 + 0.36 * boil);
   vec3 color = mix(vec3(1.0, 0.94, 0.84), vec3(1.0, 0.62, 0.27), smoothstep(0.0, 0.4, t));
   color = mix(color, vec3(0.78, 0.27, 0.1), smoothstep(0.4, 1.0, t));
   // Relativistic beaming: the side of the disk moving towards us is brighter.
