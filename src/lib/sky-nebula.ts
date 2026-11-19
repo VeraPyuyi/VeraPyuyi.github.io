@@ -169,10 +169,23 @@ function createSink(): Sink & { build(): NebulaParticles } {
   };
 }
 
-/** Light particles: mostly fine grains, some soft puffs, as in the galaxy models. */
+/**
+ * Light particles: almost all fine grains, a pair at a time, over a faint veil of soft puffs. The
+ * nebula is read from its grain, as in the galaxy models, not from glow.
+ */
 function emit(sink: Sink, random: Random, x: number, y: number, color: string, weight: number) {
-  if (random.next() < 0.6) sink.add(x, y, random.between(0.7, 2.1), random.between(0.1, 0.32) * weight, color);
-  else sink.add(x, y, random.between(8, 30), random.between(0.03, 0.075) * weight, color);
+  if (random.next() < 0.88) {
+    sink.add(x, y, random.between(0.35, 1), random.between(0.09, 0.26) * weight, color);
+    sink.add(
+      x + random.normal() * 3,
+      y + random.normal() * 3,
+      random.between(0.3, 0.8),
+      random.between(0.06, 0.2) * weight,
+      color,
+    );
+  } else {
+    sink.add(x, y, random.between(8, 26), random.between(0.01, 0.026) * weight, color);
+  }
 }
 
 /**
@@ -257,14 +270,16 @@ function pillars(
         const shade = Math.max(-1, Math.min(1, ((x - cx) * toward) / Math.max(8, half(t))));
         const tone = shade < -0.2 ? body[0] : shade < 0.45 ? body[1] : body[2];
         const bright = 0.55 + 0.45 * (shade + 1) * 0.5;
-        glow.add(x, y, random.between(8, 18), random.between(0.05, 0.1) * bright * fade, tone);
-        glow.add(
-          x + random.normal() * 4,
-          y + random.normal() * 4,
-          random.between(0.7, 2),
-          random.between(0.14, 0.36) * bright * fade,
-          tone,
-        );
+        glow.add(x, y, random.between(8, 18), random.between(0.014, 0.032) * bright * fade, tone);
+        for (let grain = 0; grain < 2; grain++) {
+          glow.add(
+            x + random.normal() * 4,
+            y + random.normal() * 4,
+            random.between(0.35, 1),
+            random.between(0.12, 0.3) * bright * fade,
+            tone,
+          );
+        }
         // The lit skin: dense bright grains where starlight eats into the column.
         if (lit && edge > -16 * (1 + noise(y * 0.03, x * 0.03))) {
           for (let grain = 0; grain < 3; grain++) {
@@ -273,15 +288,21 @@ function pillars(
             glow.add(
               gx,
               gy,
-              random.between(0.6, 1.7),
-              random.between(0.3, 0.7) * fade,
+              random.between(0.35, 1),
+              random.between(0.22, 0.5) * fade,
               skin[Math.floor(random.next() * skin.length)],
             );
           }
         }
       } else if (lit && edge < 26) {
         // Gas boiling off the lit flank.
-        glow.add(x, y, random.between(6, 18), random.between(0.03, 0.07) * fade, skin[Math.floor(random.next() * skin.length)]);
+        glow.add(
+          x,
+          y,
+          random.between(6, 18),
+          random.between(0.01, 0.024) * fade,
+          skin[Math.floor(random.next() * skin.length)],
+        );
       }
     }
     // Bright tips where young stars switch on.
@@ -293,12 +314,12 @@ function pillars(
       glow.add(
         tipX + Math.cos(angle) * r,
         tipY + Math.sin(angle) * r * 0.8,
-        random.between(0.6, 1.8),
-        random.between(0.25, 0.7),
+        random.between(0.35, 1.1),
+        random.between(0.2, 0.55),
         '#ffffff',
       );
     }
-    glow.add(tipX, tipY, width * 0.9, 0.12, rim);
+    glow.add(tipX, tipY, width * 0.9, 0.045, rim);
     glow.add(tipX + random.between(-8, 8), tipY + random.between(0, 14), 2.6, 1, '#ffffff');
   }
   return light;

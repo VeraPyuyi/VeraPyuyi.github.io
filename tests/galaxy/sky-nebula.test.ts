@@ -11,7 +11,7 @@ test('every page sky is deterministic, finite and within a reasonable particle b
     assert.deepEqual(nebulaParticles(env).data, data, env);
     assert.equal(data.length % NEBULA_STRIDE, 0, env);
     const count = data.length / NEBULA_STRIDE;
-    assert.ok(count > 40_000 && count < 160_000, `${env}: ${count}`);
+    assert.ok(count > 60_000 && count < 300_000, `${env}: ${count}`);
     for (let index = 0; index < data.length; index += NEBULA_STRIDE) {
       const [x, y, r, alpha, color] = data.subarray(index, index + NEBULA_STRIDE);
       assert.ok(Number.isFinite(x) && Number.isFinite(y) && r > 0 && alpha >= 0 && alpha <= 1, env);
