@@ -119,13 +119,15 @@ function armHaze(brush: Brush, kind: GalaxyKind, count: number, maxT: number, wi
   }
 }
 
-/** Dust lanes on the concave side of each arm. */
+/** Dust lanes on the concave side of each arm: a soft, broken haze rather than a drawn line. */
 function armDust(brush: Brush, kind: GalaxyKind, count: number, maxT: number, width: (t: number) => number) {
   const { random } = brush;
   for (let index = 0; index < count; index++) {
     const t = random.between(0.02, maxT);
-    const [x, z] = onArm(kind, index % 2, t, -width(t) * 0.9 + random.normal() * width(t) * 0.35, random.normal() * 0.01);
-    brush.dust.add(x, random.normal() * 0.006, z, DUST, random.between(0.18, 0.38), random.between(0.02, 0.045));
+    const [x, z] = onArm(kind, index % 2, t, -width(t) * 0.8 + random.normal() * width(t) * 0.75, random.normal() * 0.02);
+    // Patchy: most dust is faint, a few clumps are thicker, so the lane breaks up like real dust.
+    const opacity = random.next() < 0.15 ? random.between(0.12, 0.2) : random.between(0.04, 0.1);
+    brush.dust.add(x, random.normal() * 0.006, z, DUST, opacity, random.between(0.035, 0.07));
   }
 }
 
@@ -244,8 +246,8 @@ function barred(brush: Brush, n: number) {
     const x = (index % 2 ? 1 : -1) * random.between(0.07, 0.42);
     const reach = Math.abs(x) / 0.42;
     const lane = Math.sign(x) * (0.035 + 0.045 * reach ** 2);
-    const opacity = random.between(0.08, 0.16) * Math.min(1, (Math.abs(x) - 0.05) / 0.1);
-    brush.dust.add(x, random.normal() * 0.004, lane + random.normal() * 0.006, DUST, opacity, random.between(0.018, 0.035));
+    const opacity = random.between(0.035, 0.08) * Math.min(1, (Math.abs(x) - 0.05) / 0.1);
+    brush.dust.add(x, random.normal() * 0.004, lane + random.normal() * 0.012, DUST, opacity, random.between(0.03, 0.055));
   }
   disk(brush, n * 0.1, 0.22, 1, 0.05);
   for (let index = 0; index < n * 0.36; index++) {
