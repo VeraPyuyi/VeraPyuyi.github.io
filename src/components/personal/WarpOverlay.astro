@@ -33,6 +33,10 @@
   const LAUNCH_MS = 760;
   const ARRIVE_MS = 650;
   const MAX_CRUISE_MS = 4500;
+  /** If the client router has not delivered the page by now, load it the plain way. */
+  const HARD_NAVIGATION_MS = 3000;
+  /** Whatever happens to animation frames, the overlay never outlives this. */
+  const WATCHDOG_MS = LAUNCH_MS + MAX_CRUISE_MS + ARRIVE_MS + 800;
   const PALETTE = ['#ffffff', '#ffffff', '#dbe9ff', '#b8e6fe', '#fccee8', '#ffd27a'];
 
   const warpWindow = window as Window & { __pyuyiWarp?: boolean };
@@ -50,6 +54,8 @@
   let lastFrame = 0;
   let arrived = false;
   let raf = 0;
+  let watchdog = 0;
+  let hardNavigation = 0;
 
   const easeInCubic = (t: number) => t * t * t;
   const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
@@ -77,6 +83,8 @@
   function finish() {
     phase = 'idle';
     cancelAnimationFrame(raf);
+    window.clearTimeout(watchdog);
+    window.clearTimeout(hardNavigation);
     if (canvas) canvas.style.opacity = '0';
     ctx?.clearRect(0, 0, window.innerWidth, window.innerHeight);
     streaks = [];
@@ -173,6 +181,10 @@
 
   function start(detail: WarpDetail) {
     if (phase !== 'idle') return;
+    if (document.visibilityState !== 'visible') {
+      window.location.assign(detail.href);
+      return;
+    }
     canvas = document.getElementById('pyuyi-warp') as HTMLCanvasElement | null;
     ctx = canvas?.getContext('2d') ?? null;
     if (!canvas || !ctx) {
@@ -192,9 +204,14 @@
     canvas.style.opacity = '1';
     raf = requestAnimationFrame(frame);
 
+    const from = window.location.href;
     window.setTimeout(() => {
       navigate(detail.href).catch(() => window.location.assign(detail.href));
+      hardNavigation = window.setTimeout(() => {
+        if (!arrived && window.location.href === from) window.location.assign(detail.href);
+      }, HARD_NAVIGATION_MS);
     }, LAUNCH_MS * 0.9);
+    watchdog = window.setTimeout(finish, WATCHDOG_MS);
   }
 
   window.addEventListener('pyuyi:warp', (event) => {
