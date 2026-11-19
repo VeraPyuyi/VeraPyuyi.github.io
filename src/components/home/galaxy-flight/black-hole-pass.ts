@@ -120,14 +120,13 @@ vec4 disk(vec3 p, vec3 dir) {
 }
 
 vec3 sky(vec3 direction) {
+  // Rays bent off screen (or behind us) see the rendered sky mirrored back in at the edges, so the
+  // lensed region keeps the scene's own colour and stars instead of a synthetic field.
   vec4 clip = u_viewProjection * vec4(u_eye + direction * 900.0, 1.0);
-  if (clip.w > 0.0) {
-    vec2 uv = clip.xy / clip.w * 0.5 + 0.5;
-    if (uv == clamp(uv, 0.0, 1.0)) return texture(u_scene, uv).rgb;
-  }
-  // Bent off screen: the average colour of space plus a sparse star field, so the lensed sky never shows holes.
-  float h = hash3(floor(direction * 160.0));
-  return vec3(0.011, 0.010, 0.03) + vec3(0.9, 0.95, 1.0) * step(0.986, h) * (h - 0.986) * 60.0;
+  if (clip.w <= 0.0) clip = u_viewProjection * vec4(u_eye - direction * 900.0, 1.0);
+  vec2 uv = clip.xy / max(clip.w, 1e-4) * 0.5 + 0.5;
+  uv = 1.0 - abs(1.0 - mod(uv, 2.0));
+  return texture(u_scene, uv).rgb;
 }
 
 void main() {
@@ -146,14 +145,15 @@ void main() {
   float h2 = dot(momentum, momentum);
   vec3 color = vec3(0.0);
   float alpha = 0.0;
-  bool captured = false;
+  bool escaped = false;
+  int crossings = 0;
   for (int i = 0; i < 220; i++) {
     float r2 = dot(pos, pos);
-    if (r2 < 1.0) {
-      captured = true;
+    if (r2 < 1.0) break;
+    if (r2 > BOUND * BOUND * 1.01 && dot(pos, vel) > 0.0) {
+      escaped = true;
       break;
     }
-    if (r2 > BOUND * BOUND * 1.01 && dot(pos, vel) > 0.0) break;
     float r = sqrt(r2);
     float dt = clamp(0.08 * (r - 0.9) * r, 0.012, 0.9);
     vec3 previous = pos;
@@ -162,17 +162,25 @@ void main() {
     if (previous.y * pos.y < 0.0) {
       vec3 hit = mix(previous, pos, previous.y / (previous.y - pos.y));
       float rr = length(hit.xz);
+      crossings++;
       if (rr > R_IN * 0.9 && rr < R_OUT) {
         vec4 emission = disk(hit, normalize(vel));
+        // The direct image and the first lensed one (arching over and under the shadow) are drawn
+        // in full; light that loops the hole again forms the photon ring, a hairline far too thin
+        // for this resolution that would break into dots, so it only adds a faint glow.
+        if (crossings > 2) emission *= 0.12;
         color += (1.0 - alpha) * emission.rgb;
         alpha += (1.0 - alpha) * emission.a;
         if (alpha > 0.985) break;
       }
     }
   }
-  // Rays grazing the photon sphere would smear single stars into a dotted ring; let them fade to dark.
-  float graze = 0.25 + 0.75 * smoothstep(2.6, 2.9, sqrt(h2));
-  vec3 background = captured ? vec3(0.0) : sky(normalize(transpose(u_toLocal) * vel)) * graze;
+  // Only rays that really got away see the sky. Rays still circling the photon sphere when the
+  // step budget runs out stay dark: sampling the sky along their last heading would scatter random
+  // stars into a dotted ring round the shadow. Just outside the shadow the whole sky is squeezed
+  // into a sliver, so there it is dimmed a little rather than crowding into bright specks.
+  float clear = smoothstep(2.62, 3.4, sqrt(h2));
+  vec3 background = escaped ? sky(normalize(transpose(u_toLocal) * vel)) * mix(0.3, 1.0, clear) : vec3(0.0);
   // Lensing fades out towards the bounding sphere, where it meets the unbent scene seamlessly.
   float cover = 1.0 - smoothstep(BOUND * 0.72, BOUND * 0.98, sqrt(h2));
   outColor = vec4(color + (1.0 - alpha) * background, cover * u_alpha);

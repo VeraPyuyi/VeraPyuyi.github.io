@@ -171,7 +171,7 @@ export function mountSkyStage(hero: HTMLElement): () => void {
           soft: [0.018, 0.045] as const,
         };
         layers.push({ ...base, mesh: `${galaxy.kind}-light`, dust: false });
-        layers.push({ ...base, alpha: base.alpha * 0.55, mesh: `${galaxy.kind}-dust`, dust: true });
+        layers.push({ ...base, alpha: base.alpha * 0.4, mesh: `${galaxy.kind}-dust`, dust: true });
       }
       const depth = riders.length ? project(viewProjection, localToWorld(galaxy, 0, [0, 0, 0], drift), width, height).depth : 0;
       for (const rider of riders) {

@@ -270,7 +270,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
         layers.push({ ...base, mesh: `${placement.kind}-light`, dust: false });
         // Dust also dims the deep-space background drawn under it, so it needs a lighter hand
         // than the light layer to keep lanes from reading darker than empty space.
-        layers.push({ ...base, alpha: base.alpha * 0.55, mesh: `${placement.kind}-dust`, dust: true });
+        layers.push({ ...base, alpha: base.alpha * 0.4, mesh: `${placement.kind}-dust`, dust: true });
       }
       const blackHole =
         holeAlpha > 0

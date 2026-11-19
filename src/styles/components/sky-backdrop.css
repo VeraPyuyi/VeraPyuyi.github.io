@@ -14,10 +14,12 @@
 
 .sky-nebula {
   position: absolute;
-  inset: -4%;
+  top: 0;
+  left: -4%;
   width: 108%;
-  height: 108%;
-  opacity: 0.9;
+  height: 230vh;
+  transform: translate3d(0, calc(var(--sky-progress, 0) * -130vh), 0);
+  will-change: transform;
 }
 
 /* Each cloud drifts on its own long, slow loop. */
@@ -45,6 +47,9 @@
   width: 1px;
   height: 1px;
   border-radius: 50%;
+  /* Nearer layers glide further as the page scrolls, so the sky has depth. */
+  transform: translate3d(0, calc(var(--sky-progress, 0) * var(--depth) * -1), 0);
+  will-change: transform;
 }
 
 .sky-stars-1 {
@@ -53,6 +58,26 @@
 
 .sky-stars-2 {
   animation: sky-stars-breathe 3.4s ease-in-out -1.2s infinite alternate;
+}
+
+/* Spiked young stars in the reflection nebulae pulse slowly. */
+.sky-sparkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sky-sparkle 6s ease-in-out var(--delay) infinite;
+}
+
+@keyframes sky-sparkle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+
+  50% {
+    opacity: 0.55;
+    transform: scale(0.8) rotate(8deg);
+  }
 }
 
 @keyframes sky-stars-breathe {
@@ -68,18 +93,24 @@
 /* ---- The reading panel: dawn light with edges that dissolve into the sky ---- */
 .sky-dawn {
   --feather: 9rem;
-  --panel: rgb(251 246 251 / 0.93);
+  --panel: rgb(246 241 250 / 0.86);
   --panel-glow: rgb(247 198 221 / 0.55);
   position: relative;
-  width: min(100%, 80rem);
+  width: min(100%, 64rem);
   margin: -5rem auto 0;
   padding-top: 5rem;
   padding-bottom: 7rem;
   isolation: isolate;
 }
 
-.sky-dawn:has(.has-toc) {
-  width: min(100%, 90rem);
+.is-article .sky-dawn {
+  width: min(100%, 54rem);
+}
+
+@media (min-width: 1280px) {
+  .sky-dawn:has(.has-toc) {
+    width: min(100%, 74rem);
+  }
 }
 
 .sky-dawn::before {
@@ -120,12 +151,21 @@
 
 @media (prefers-reduced-motion: reduce) {
   .sky-cloud,
+  .sky-sparkle,
   .sky-stars {
     animation: none;
   }
+
+  .sky-nebula,
+  .sky-stars {
+    transform: none;
+  }
 }
 
-html.motion-off .sky-cloud,
-html.motion-off .sky-stars {
+html.motion-off :is(.sky-cloud, .sky-sparkle, .sky-stars) {
   animation: none;
+}
+
+html.motion-off :is(.sky-nebula, .sky-stars) {
+  transform: none;
 }
