@@ -102,7 +102,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   const renderer = createGalaxyRenderer(canvas);
   root.classList.toggle('is-flat', !renderer);
   const small = Math.min(window.innerWidth, window.innerHeight) < 700 || (navigator.hardwareConcurrency || 8) <= 4;
-  let maxRatio = small ? 1.25 : 1.5;
+  let maxRatio = small ? 1.25 : 2;
   let detail = 1;
   let width = 1;
   let height = 1;
@@ -191,7 +191,11 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     let target = pose.target;
     // Pushing past either end of the route eases the camera towards that object instead of bouncing the page.
     overscroll.update(dt);
-    if (!still && overscroll.amount > 0) eye = mix(eye, ROUTE[Math.round(progress)].center, overscroll.amount * 0.24);
+    // Past the first galaxy the camera drifts away from it; past the black hole it is drawn in.
+    if (!still && overscroll.amount > 0) {
+      const toward = overscroll.edge === 'end' ? overscroll.amount * 0.24 : -overscroll.amount * 0.32;
+      eye = mix(eye, ROUTE[Math.round(progress)].center, toward);
+    }
     if (warp) {
       const k = easeInOut(clamp((now - warp.start) / WARP_CAMERA_MS));
       eye = mix(warp.eye, warp.point, k * 0.86);
@@ -267,7 +271,15 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
               alpha: holeAlpha,
             }
           : null;
-      renderer.render({ view, projection, fieldOfView: FIELD_OF_VIEW, time, exposure: 1.25, layers, blackHole });
+      renderer.render({
+        view,
+        projection,
+        fieldOfView: FIELD_OF_VIEW,
+        time: still ? 0 : time,
+        exposure: 1.25,
+        layers,
+        blackHole,
+      });
     }
 
     updateOverlay();

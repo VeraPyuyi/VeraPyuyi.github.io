@@ -7,7 +7,7 @@ import { buildBackdrop, buildGalaxyModel, GALAXY_PLACEMENTS } from '@/lib/galaxy
 import type { BuiltModel, ModelJob } from './model-worker';
 
 /** Light particles per galaxy on a capable desktop; phones and small machines get about half. */
-const BUDGETS = { blogs: 120_000, papers: 100_000, photos: 64_000, moments: 70_000 } as const;
+const BUDGETS = { blogs: 170_000, papers: 140_000, photos: 90_000, moments: 100_000 } as const;
 const BACKDROP_BUDGET = 16_000;
 
 export interface ModelLoader {

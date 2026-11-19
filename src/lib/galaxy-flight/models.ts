@@ -401,7 +401,12 @@ const MODELS: Record<GalaxyKind, (brush: Brush, n: number) => void> = {
 /** Builds one galaxy with roughly `budget` light particles. Deterministic for a given kind and budget. */
 export function buildGalaxyModel(kind: GalaxyKind, budget: number): GalaxyModel {
   const random = createRandom(SEEDS[kind]);
-  const brush: Brush = { light: createParticleBuilder(), dust: createParticleBuilder(), random };
+  // Finer stars: smaller points, brighter each, and more of them (see model-loader budgets).
+  const brush: Brush = {
+    light: createParticleBuilder({ starSize: 0.72, starGain: 1.45 }),
+    dust: createParticleBuilder(),
+    random,
+  };
   MODELS[kind](brush, Math.max(2000, Math.round(budget)));
   return { light: brush.light.build(random), dust: brush.dust.build(random) };
 }
