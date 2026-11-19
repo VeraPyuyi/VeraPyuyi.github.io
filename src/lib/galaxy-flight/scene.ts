@@ -26,6 +26,10 @@ export interface FlightStop {
   roll: number;
   /** Pattern speed in radians per second; spirals turn so their arms trail. */
   spin: number;
+  /** Half-width (in radii) the resting view must keep on screen; smaller lets the object overflow. Default 1.25. */
+  frameWidth?: number;
+  /** How far right of centre it rests on wide screens, in radii, leaving room for its story. Default 0.42. */
+  shift?: number;
 }
 
 export interface GalaxyPlacement extends FlightStop {
@@ -113,10 +117,13 @@ export const BLACK_HOLE: FlightStop = {
   center: [26, -4, -455],
   radius: 14,
   view: normalize([0.12, 0.14, 1]),
-  distance: 2.25,
+  // Close enough that the disk spills past the edges of the screen: the hole should feel overwhelming.
+  distance: 1.45,
   inclination: Math.PI / 2 - 0.16,
   roll: 0,
   spin: 0,
+  frameWidth: 0.55,
+  shift: 0.16,
 };
 
 /** Every stop the camera visits, in order. */
@@ -197,12 +204,12 @@ export function localToWorld(placement: FlightStop, angle: number, local: Vec3, 
 function restingPose(index: number, aspect: number): { eye: Vec3; target: Vec3 } {
   const placement = ROUTE[index];
   const halfWidth = Math.tan(FIELD_OF_VIEW / 2) * aspect;
-  const fit = Math.max(1, Math.min(2.4, 1.25 / halfWidth / placement.distance));
+  const fit = Math.max(1, Math.min(2.4, (placement.frameWidth ?? 1.25) / halfWidth / placement.distance));
   const eye = add(placement.center, scale(placement.view, placement.distance * placement.radius * fit));
   // On wide screens the galaxy sits right of centre, leaving the left for its name and words.
   const wide = clamp01((aspect - 1.15) / 0.55);
   const right = normalize(cross(scale(placement.view, -1), UP));
-  const target = sub(placement.center, scale(right, placement.radius * 0.42 * wide));
+  const target = sub(placement.center, scale(right, placement.radius * (placement.shift ?? 0.42) * wide));
   return { eye, target };
 }
 
