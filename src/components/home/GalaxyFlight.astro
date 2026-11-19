@@ -171,8 +171,8 @@ const starPath =
       <p class="flight-lead">
         {
           en
-            ? `Four galaxies, ${total} stars. Each star was once a night spent with a question. Rest your cursor on a galaxy and it will slow for you.`
-            : `四个星系，${total} 颗星，每一颗都曾是一个和问题待在一起的夜晚。停在星系上，它会为你慢下来。`
+            ? `Four galaxies, ${total} stars. Each star was once a night spent with a question. Rest your cursor on a galaxy and it slows for you; click it and it tells you about itself.`
+            : `四个星系，${total} 颗星，每一颗都曾是一个和问题待在一起的夜晚。停在星系上，它会为你慢下来；轻点一下，它会说起自己。`
         }
       </p>
     </div>
@@ -211,7 +211,7 @@ const starPath =
 
     {
       placed.map((galaxy, index) => (
-        <article class="flight-label" data-flight-label style={`--accent:${galaxy.accent}`}>
+        <article id={`flight-story-${index}`} class="flight-label" data-flight-label style={`--accent:${galaxy.accent}`}>
           <p class="flight-kicker">
             <span class="flight-number">{String(index + 1).padStart(2, '0')}</span>
             {galaxy.section}
@@ -254,13 +254,24 @@ const starPath =
     <nav class="flight-nav" aria-label={en ? 'The four galaxies' : '四个星系'}>
       {
         placed.map((galaxy, index) => (
-          <button type="button" data-flight-goto={index} style={`--accent:${galaxy.accent}`}>
+          <button
+            type="button"
+            data-flight-goto={index}
+            aria-controls={`flight-story-${index}`}
+            aria-expanded="false"
+            style={`--accent:${galaxy.accent}`}
+          >
             <span class="flight-nav-name">{galaxy.name}</span>
             <span class="flight-nav-dot" aria-hidden="true"></span>
           </button>
         ))
       }
     </nav>
+
+    <p class="flight-ask" data-flight-ask aria-hidden="true">
+      <span class="flight-ask-dot"></span>
+      {en ? 'Click the galaxy to hear its story' : '轻点星系，听它说说自己'}
+    </p>
 
     <p class="flight-hint" data-flight-fade="0.12" aria-hidden="true">
       <span class="flight-mouse"></span>

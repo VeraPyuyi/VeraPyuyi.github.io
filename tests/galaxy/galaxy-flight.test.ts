@@ -7,6 +7,7 @@ import {
   cameraAt,
   FIELD_OF_VIEW,
   GALAXY_PLACEMENTS,
+  galaxyDrift,
   localToWorld,
   lookAt,
   multiply,
@@ -78,4 +79,18 @@ test('the backdrop is finite and surrounds the route', () => {
   const backdrop = buildBackdrop(3000);
   assert.ok(backdrop.count > 2000);
   for (const value of backdrop.polar) assert.ok(Number.isFinite(value));
+});
+
+test('galaxies float gently: small, smooth drift that moves their stars with them', () => {
+  const placement = GALAXY_PLACEMENTS[0];
+  let previous = galaxyDrift(0, 0);
+  for (let step = 1; step <= 600; step++) {
+    const drift = galaxyDrift(0, step / 10);
+    assert.ok(Math.abs(drift.lift) < 0.08 && Math.abs(drift.sway) < 0.03 && Math.abs(drift.tilt) < 0.06);
+    assert.ok(Math.abs(drift.lift - previous.lift) < 0.01, 'no jumps');
+    previous = drift;
+  }
+  const still = localToWorld(placement, 0, [0, 0, 0]);
+  const floated = localToWorld(placement, 0, [0, 0, 0], { lift: 0.05, sway: 0, tilt: 0 });
+  assert.ok(Math.abs(floated[1] - still[1] - 0.05 * placement.radius) < 1e-9);
 });

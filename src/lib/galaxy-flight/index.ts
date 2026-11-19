@@ -5,7 +5,7 @@ export {
   cameraAt,
   FIELD_OF_VIEW,
   GALAXY_PLACEMENTS,
-  type GalaxyPlacement,
+  galaxyDrift,
   galaxyModelMatrix,
   localToWorld,
   lookAt,

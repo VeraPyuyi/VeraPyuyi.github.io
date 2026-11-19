@@ -28,6 +28,15 @@ export interface GalaxyPlacement {
   spin: number;
 }
 
+/** Slow floating motion of a galaxy: offsets in galaxy radii, tilt in radians. */
+export interface GalaxyDrift {
+  lift: number;
+  sway: number;
+  tilt: number;
+}
+
+export const NO_DRIFT: GalaxyDrift = { lift: 0, sway: 0, tilt: 0 };
+
 export interface CameraPose {
   eye: Vec3;
   target: Vec3;
@@ -92,8 +101,9 @@ export const GALAXY_PLACEMENTS: readonly GalaxyPlacement[] = [
 ];
 
 /** The galaxy's own axes in world space: `x` and `z` span the disk, `y` is its spin axis. */
-function galaxyBasis(placement: GalaxyPlacement): { x: Vec3; y: Vec3; z: Vec3 } {
-  const { view, inclination, roll } = placement;
+function galaxyBasis(placement: GalaxyPlacement, tilt = 0): { x: Vec3; y: Vec3; z: Vec3 } {
+  const { view, roll } = placement;
+  const inclination = placement.inclination + tilt;
   const tiltTowards = normalize(sub(UP, scale(view, dot(view, UP))));
   const y = normalize(add(scale(view, Math.cos(inclination)), scale(tiltTowards, Math.sin(inclination))));
   const across = normalize(cross(UP, y));
@@ -105,11 +115,30 @@ function galaxyBasis(placement: GalaxyPlacement): { x: Vec3; y: Vec3; z: Vec3 } 
   };
 }
 
+/**
+ * How galaxy `index` floats at `time` seconds: it rises and sinks, sways a little sideways and
+ * slowly rocks, each on its own long, unrelated period so the motion never visibly repeats.
+ */
+export function galaxyDrift(index: number, time: number): GalaxyDrift {
+  const wave = (period: number, phase: number) => Math.sin((time * 2 * Math.PI) / period + phase);
+  return {
+    lift: 0.055 * wave(11, index * 1.7) + 0.012 * wave(4.7, index * 0.9),
+    sway: 0.022 * wave(17, index * 2.1),
+    tilt: 0.05 * wave(13, index * 2.3),
+  };
+}
+
+/** World position of the galaxy's centre once it has drifted. */
+function driftedCenter(placement: GalaxyPlacement, drift: GalaxyDrift): Vec3 {
+  const side = normalize(cross(UP, placement.view));
+  return add(placement.center, add(scale(UP, drift.lift * placement.radius), scale(side, drift.sway * placement.radius)));
+}
+
 /** Model matrix taking galaxy units (radius 1) to world space. */
-export function galaxyModelMatrix(placement: GalaxyPlacement): Mat4 {
-  const { x, y, z } = galaxyBasis(placement);
+export function galaxyModelMatrix(placement: GalaxyPlacement, drift: GalaxyDrift = NO_DRIFT): Mat4 {
+  const { x, y, z } = galaxyBasis(placement, drift.tilt);
   const r = placement.radius;
-  const [cx, cy, cz] = placement.center;
+  const [cx, cy, cz] = driftedCenter(placement, drift);
   return new Float32Array([
     x[0] * r,
     x[1] * r,
@@ -130,14 +159,14 @@ export function galaxyModelMatrix(placement: GalaxyPlacement): Mat4 {
   ]);
 }
 
-/** World position of a point given in galaxy units, after the galaxy has turned by `angle`. */
-export function localToWorld(placement: GalaxyPlacement, angle: number, local: Vec3): Vec3 {
+/** World position of a point given in galaxy units, after the galaxy has turned by `angle` and drifted. */
+export function localToWorld(placement: GalaxyPlacement, angle: number, local: Vec3, drift: GalaxyDrift = NO_DRIFT): Vec3 {
   const radius = Math.hypot(local[0], local[2]);
   const theta = Math.atan2(local[2], local[0]) + angle;
-  const { x, y, z } = galaxyBasis(placement);
+  const { x, y, z } = galaxyBasis(placement, drift.tilt);
   const r = placement.radius;
   return add(
-    placement.center,
+    driftedCenter(placement, drift),
     add(add(scale(x, radius * Math.cos(theta) * r), scale(y, local[1] * r)), scale(z, radius * Math.sin(theta) * r)),
   );
 }
@@ -169,9 +198,10 @@ function catmullRom(p0: Vec3, p1: Vec3, p2: Vec3, p3: Vec3, t: number): Vec3 {
 
 /**
  * Camera pose for a flight `progress` in [0, galaxies − 1]: integer values rest on a galaxy,
- * values in between fly past the current galaxy towards the next one.
+ * values in between fly past the current galaxy towards the next one. `nudge` shifts the eye
+ * sideways and up (world units) while it keeps looking at the same point, for pointer parallax.
  */
-export function cameraAt(progress: number, aspect: number): CameraPose {
+export function cameraAt(progress: number, aspect: number, nudge: readonly [number, number] = [0, 0]): CameraPose {
   const last = GALAXY_PLACEMENTS.length - 1;
   const p = Math.min(last, Math.max(0, progress));
   const index = Math.min(last - 1, Math.floor(p));
@@ -191,7 +221,9 @@ export function cameraAt(progress: number, aspect: number): CameraPose {
   const forward = normalize(sub(target, position));
   const side = normalize(cross(forward, UP));
   const bank = Math.sin(Math.PI * t) * 0.14 * (index % 2 === 0 ? 1 : -1);
-  return { eye: position, target, up: normalize(add(scale(UP, Math.cos(bank)), scale(side, Math.sin(bank)))) };
+  const up = normalize(add(scale(UP, Math.cos(bank)), scale(side, Math.sin(bank))));
+  const lifted = cross(side, forward);
+  return { eye: add(position, add(scale(side, nudge[0]), scale(lifted, nudge[1]))), target, up };
 }
 
 export function perspective(fieldOfView: number, aspect: number, near: number, far: number): Mat4 {

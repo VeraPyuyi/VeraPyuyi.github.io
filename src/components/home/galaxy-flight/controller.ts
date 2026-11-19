@@ -11,6 +11,7 @@ import {
   cameraAt,
   FIELD_OF_VIEW,
   GALAXY_PLACEMENTS,
+  galaxyDrift,
   galaxyModelMatrix,
   localToWorld,
   lookAt,
@@ -55,6 +56,7 @@ const prefersStill = () =>
 
 interface GalaxyState {
   matrix: Float32Array;
+  drift: ReturnType<typeof galaxyDrift>;
   angle: number;
   speed: number;
   /** Time the particles finished uploading, or -1 while still being built. */
@@ -90,11 +92,13 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   const stage = root.querySelector<HTMLElement>('[data-flight-stage]');
   const canvas = root.querySelector<HTMLCanvasElement>('[data-flight-canvas]');
   if (!stage || !canvas) return () => undefined;
+  const surface: HTMLElement = stage;
   paintIntro(root);
 
   const labels = [...root.querySelectorAll<HTMLElement>('[data-flight-label]')];
   const gotos = [...root.querySelectorAll<HTMLButtonElement>('[data-flight-goto]')];
   const fades = [...root.querySelectorAll<HTMLElement>('[data-flight-fade]')];
+  const ask = root.querySelector<HTMLElement>('[data-flight-ask]');
   const stars: StarLink[] = [...root.querySelectorAll<HTMLAnchorElement>('[data-flight-star]')].map((element) => ({
     element,
     galaxy: Number(element.dataset.galaxy),
@@ -103,6 +107,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   const last = GALAXY_PLACEMENTS.length - 1;
   const galaxies: GalaxyState[] = GALAXY_PLACEMENTS.map((placement) => ({
     matrix: galaxyModelMatrix(placement),
+    drift: galaxyDrift(0, 0),
     angle: 0,
     speed: prefersStill() ? 0 : 1,
     readyAt: -1,
@@ -139,6 +144,11 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   let hoverGalaxy = -1;
   let hoverStar = -1;
   let warp: Warp | null = null;
+  /** Galaxy whose story is showing, and one whose story should open when the camera arrives. */
+  let revealed = -1;
+  let revealOnArrival = -1;
+  const nudge = { x: 0, y: 0 };
+  let camera: { eye: Vec3; target: Vec3 } = { eye: [0, 0, 0], target: [0, 0, -1] };
   let viewProjection: Float32Array = IDENTITY;
   let slowFrames = 0;
   let fastFrames = 0;
@@ -216,7 +226,11 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     }
 
     const aspect = width / height;
-    const pose = cameraAt(progress, aspect);
+    // Pointer parallax: the eye drifts a little with the pointer, so the galaxy seems to float in depth.
+    const ease = still ? 1 : 1 - Math.exp(-dt * 2.2);
+    nudge.x += ((pointer && !still ? (pointer.x / width - 0.5) * 2 : 0) - nudge.x) * ease;
+    nudge.y += ((pointer && !still ? (pointer.y / height - 0.5) * 2 : 0) - nudge.y) * ease;
+    const pose = cameraAt(progress, aspect, [nudge.x * 1.1, -nudge.y * 0.7]);
     let eye = pose.eye;
     let target = pose.target;
     if (warp) {
@@ -224,20 +238,20 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       eye = mix(warp.eye, warp.point, k * 0.86);
       target = mix(warp.target, warp.point, clamp(k * 1.8));
     }
+    if (!warp) camera = { eye, target };
     const view = lookAt(eye, target, pose.up);
     const projection = perspective(FIELD_OF_VIEW, aspect, 0.05, 3000);
     viewProjection = multiply(projection, view);
 
+    // Each galaxy floats: it rises and sinks, sways and slowly rocks.
+    galaxies.forEach((galaxy, index) => {
+      galaxy.drift = still ? galaxyDrift(index, 0) : galaxyDrift(index, time);
+      galaxy.matrix = galaxyModelMatrix(GALAXY_PLACEMENTS[index], galaxy.drift);
+    });
+
     // Galaxy under the pointer (only the one we are visiting) and the spin it should have.
-    const active = Math.round(progress);
-    hoverGalaxy = -1;
-    if (pointer && Math.abs(progress - active) < 0.3) {
-      const placement = GALAXY_PLACEMENTS[active];
-      const center = project(viewProjection, placement.center, width, height);
-      const rim = project(viewProjection, localToWorld(placement, 0, [1, 0, 0]), width, height);
-      const reach = Math.hypot(rim.x - center.x, rim.y - center.y);
-      if (center.depth > 0 && Math.hypot(pointer.x - center.x, pointer.y - center.y) < reach * 0.95) hoverGalaxy = active;
-    }
+    hoverGalaxy = pointer ? galaxyAt(pointer.x, pointer.y) : -1;
+    surface.style.cursor = hoverGalaxy >= 0 ? 'pointer' : '';
     galaxies.forEach((galaxy, index) => {
       const goal = still || warp || hoverStar === index ? 0 : hoverGalaxy === index ? 0.12 : 1;
       galaxy.speed += (goal - galaxy.speed) * (1 - Math.exp(-dt / 0.45));
@@ -284,10 +298,30 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     adapt(dt);
   }
 
+  /** Index of the galaxy being visited if (x, y) falls on its disk, else -1. */
+  function galaxyAt(x: number, y: number): number {
+    const active = Math.round(progress);
+    if (warp || Math.abs(progress - active) > 0.3) return -1;
+    const placement = GALAXY_PLACEMENTS[active];
+    const { drift } = galaxies[active];
+    const center = project(viewProjection, localToWorld(placement, 0, [0, 0, 0], drift), width, height);
+    if (center.depth <= 0) return -1;
+    let reach = 0;
+    for (const local of [
+      [1, 0, 0],
+      [0, 0, 1],
+    ] as const) {
+      const rim = project(viewProjection, localToWorld(placement, 0, local, drift), width, height);
+      reach = Math.max(reach, Math.hypot(rim.x - center.x, rim.y - center.y));
+    }
+    return Math.hypot(x - center.x, y - center.y) < reach * 0.95 ? active : -1;
+  }
+
   function updateOverlay() {
     for (const star of stars) {
       const placement = GALAXY_PLACEMENTS[star.galaxy];
-      const point = project(viewProjection, localToWorld(placement, galaxies[star.galaxy].angle, star.local), width, height);
+      const { angle, drift } = galaxies[star.galaxy];
+      const point = project(viewProjection, localToWorld(placement, angle, star.local, drift), width, height);
       const near = clamp(1 - Math.abs(progress - star.galaxy) * 2.2);
       const opacity = point.depth > 0.5 && !warp ? near : 0;
       const scale = clamp((placement.radius * 2.3) / Math.max(point.depth, 0.01), 0.55, 1.5);
@@ -297,15 +331,29 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       style.visibility = opacity < 0.02 ? 'hidden' : 'visible';
       star.element.classList.toggle('is-idle', opacity < 0.5);
     }
+    // Stories stay hidden until their galaxy is clicked; leaving the galaxy closes it again.
+    if (revealOnArrival >= 0 && Math.abs(progress - revealOnArrival) < 0.12) {
+      revealed = revealOnArrival;
+      revealOnArrival = -1;
+    }
+    if (revealed >= 0 && (warp || Math.abs(progress - revealed) > 0.45)) revealed = -1;
     labels.forEach((label, index) => {
       const offset = progress - index;
-      const opacity = warp ? 0 : clamp(1 - Math.abs(offset) * 2.4);
-      label.style.opacity = opacity.toFixed(3);
+      label.classList.toggle('is-revealed', revealed === index);
+      label.style.opacity = (warp ? 0 : clamp(1 - Math.abs(offset) * 2.4)).toFixed(3);
       label.style.transform = `translate3d(0, ${(-offset * 48).toFixed(1)}px, 0)`;
-      label.style.visibility = opacity < 0.02 ? 'hidden' : 'visible';
     });
+    const active = Math.round(progress);
+    if (ask) {
+      const visible = !warp && revealed !== active && Math.abs(progress - active) < 0.2;
+      ask.style.opacity = visible ? String(clamp(1 - Math.abs(progress - active) * 5)) : '0';
+      ask.style.setProperty('--accent', labels[active]?.style.getPropertyValue('--accent') ?? '');
+    }
     const nearest = Math.round(progress);
-    gotos.forEach((button, index) => button.toggleAttribute('aria-current', index === nearest));
+    gotos.forEach((button, index) => {
+      button.toggleAttribute('aria-current', index === nearest);
+      button.setAttribute('aria-expanded', String(revealed === index));
+    });
     root.style.setProperty('--flight-progress', (progress / last).toFixed(4));
     for (const element of fades) {
       const until = Number(element.dataset.flightFade) || 0.3;
@@ -367,12 +415,27 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     window.scrollTo({ top, behavior: prefersStill() ? 'auto' : 'smooth' });
   };
   const onClick = (event: MouseEvent) => {
-    const goto = (event.target as Element | null)?.closest<HTMLElement>('[data-flight-goto]');
+    const element = event.target as Element | null;
+    const goto = element?.closest<HTMLElement>('[data-flight-goto]');
     if (goto) {
-      travelTo(Number(goto.dataset.flightGoto));
+      const index = Number(goto.dataset.flightGoto);
+      if (Math.abs(progress - index) < 0.12) {
+        revealed = revealed === index ? -1 : index;
+      } else {
+        revealOnArrival = index;
+        travelTo(index);
+      }
       return;
     }
-    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[data-warp]');
+    const link = element?.closest<HTMLAnchorElement>('a[data-warp]');
+    if (!link) {
+      if (element?.closest('[data-flight-label], .flight-nav, a, button')) return;
+      // A click on the galaxy itself opens (or closes) its story; a click on empty space closes it.
+      const rect = stage.getBoundingClientRect();
+      const hit = galaxyAt(event.clientX - rect.left, event.clientY - rect.top);
+      revealed = hit >= 0 && revealed !== hit ? hit : -1;
+      return;
+    }
     const warpReady = (window as Window & { __pyuyiWarp?: boolean }).__pyuyiWarp;
     if (!link || !warpReady || warp || prefersStill()) return;
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
@@ -381,11 +444,12 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     const star = starOf(link);
     const galaxyIndex = star ? star.galaxy : Number(link.dataset.flightEnter);
     const placement = GALAXY_PLACEMENTS[galaxyIndex] ?? GALAXY_PLACEMENTS[0];
-    const point = star ? localToWorld(placement, galaxies[star.galaxy].angle, star.local) : placement.center;
-    const pose = cameraAt(progress, width / height);
+    const point = star
+      ? localToWorld(placement, galaxies[star.galaxy].angle, star.local, galaxies[star.galaxy].drift)
+      : localToWorld(placement, 0, [0, 0, 0], galaxies[galaxyIndex]?.drift);
     const onScreen = project(viewProjection, point, width, height);
     const rect = stage.getBoundingClientRect();
-    warp = { start: performance.now(), eye: pose.eye, target: pose.target, point };
+    warp = { start: performance.now(), eye: camera.eye, target: camera.target, point };
     window.setTimeout(() => {
       warp = null;
     }, 9000);
@@ -402,6 +466,10 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     );
   };
 
+  const onKey = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') revealed = -1;
+  };
+  window.addEventListener('keydown', onKey);
   stage.addEventListener('pointermove', onPointerMove);
   stage.addEventListener('pointerleave', onPointerLeave);
   root.addEventListener('pointerover', onStarEnter);
@@ -417,6 +485,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     pending.clear();
     worker?.terminate();
     resizeObserver.disconnect();
+    window.removeEventListener('keydown', onKey);
     stage.removeEventListener('pointermove', onPointerMove);
     stage.removeEventListener('pointerleave', onPointerLeave);
     root.removeEventListener('pointerover', onStarEnter);
