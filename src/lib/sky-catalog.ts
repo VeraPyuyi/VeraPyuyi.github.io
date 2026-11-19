@@ -109,3 +109,6 @@ export interface ChartStar {
   /** Rough length of the piece, in characters; sets the star's size. */
   weight: number;
 }
+
+/** The sky behind an inner page (src/components/sky/SkyBackdrop.astro): one per stop, plus a few of its own. */
+export type SkyEnvironment = 'rose' | 'gold' | 'ring' | 'cloud' | 'disk' | 'milkyway' | 'remnant' | 'group';

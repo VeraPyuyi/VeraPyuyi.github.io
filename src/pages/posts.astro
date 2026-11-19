@@ -42,6 +42,7 @@ const chartStars: ChartStar[] = [
   title={en ? 'All Posts' : '全部文章'}
   description={en ? 'Rigour and reverie, side by side: some pages are written for proofs, some for the small hours.' : '严谨与随想并排放着：有些写给证明，有些写给深夜。'}
   showDescription={false}
+  env="milkyway"
   plate={en ? `Star catalogue · ${chartStars.length} entries` : `星表 · 共 ${chartStars.length} 颗`}
 >
   <StarChart slot="art" stars={chartStars} locale={locale} />

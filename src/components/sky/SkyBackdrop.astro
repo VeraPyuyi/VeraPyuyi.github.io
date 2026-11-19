@@ -1,0 +1,177 @@
+---
+/**
+ * The sky behind an inner page: a fixed field of twinkling stars and nebula clouds that drift
+ * very slowly, different for every page. Clouds are fractal noise (SVG feTurbulence) tinted and
+ * shaped by soft ellipses, so each one is wispy rather than a flat glow.
+ */
+import { createRandom } from '@/lib/galaxy-flight/particles';
+import type { SkyEnvironment } from '@/lib/sky-catalog';
+
+interface Props {
+  env: SkyEnvironment;
+}
+
+interface Cloud {
+  /** Centre and half-size in a 1600 × 1000 field. */
+  x: number;
+  y: number;
+  rx: number;
+  ry: number;
+  color: [number, number, number];
+  /** Noise scale (smaller = larger wisps) and how much of it shows. */
+  frequency: number;
+  strength: number;
+  seed: number;
+  /** Rotation of the cloud's ellipse, degrees. */
+  turn?: number;
+}
+
+const rgb = (hex: string) =>
+  [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16) / 255) as [number, number, number];
+
+const ENVIRONMENTS: Record<SkyEnvironment, Cloud[]> = {
+  // M51: rose and violet emission clouds.
+  rose: [
+    { x: 160, y: 420, rx: 420, ry: 300, color: rgb('#f472b6'), frequency: 0.0032, strength: 0.75, seed: 3 },
+    { x: 1460, y: 640, rx: 460, ry: 320, color: rgb('#8b5cf6'), frequency: 0.0028, strength: 0.8, seed: 11 },
+    { x: 1250, y: 130, rx: 300, ry: 160, color: rgb('#ec4899'), frequency: 0.005, strength: 0.45, seed: 7, turn: -12 },
+  ],
+  // NGC 1300: warm dust light and cold teal gas, like a page lit by a lamp.
+  gold: [
+    { x: 1450, y: 380, rx: 420, ry: 300, color: rgb('#f5b45a'), frequency: 0.003, strength: 0.6, seed: 21 },
+    { x: 150, y: 700, rx: 440, ry: 300, color: rgb('#2dd4bf'), frequency: 0.003, strength: 0.55, seed: 5 },
+    { x: 260, y: 160, rx: 260, ry: 140, color: rgb('#60a5fa'), frequency: 0.0045, strength: 0.4, seed: 9 },
+  ],
+  // Hoag's Object: blue light, quiet and wide.
+  ring: [
+    { x: 180, y: 500, rx: 460, ry: 360, color: rgb('#60a5fa'), frequency: 0.0026, strength: 0.7, seed: 13 },
+    { x: 1440, y: 300, rx: 380, ry: 260, color: rgb('#6366f1'), frequency: 0.0032, strength: 0.6, seed: 17 },
+    { x: 1380, y: 820, rx: 300, ry: 160, color: rgb('#a5f3fc'), frequency: 0.005, strength: 0.35, seed: 2 },
+  ],
+  // The Small Magellanic Cloud: torn cyan and lilac clouds.
+  cloud: [
+    { x: 260, y: 300, rx: 380, ry: 240, color: rgb('#67e8f9'), frequency: 0.0042, strength: 0.6, seed: 31, turn: 18 },
+    { x: 1380, y: 640, rx: 440, ry: 300, color: rgb('#c4b5fd'), frequency: 0.0036, strength: 0.7, seed: 4 },
+    { x: 1100, y: 160, rx: 200, ry: 120, color: rgb('#f9a8d4'), frequency: 0.006, strength: 0.4, seed: 29 },
+  ],
+  // Sgr A*: the disk's own blue and rose spilling into the dark.
+  disk: [
+    { x: 1420, y: 260, rx: 420, ry: 260, color: rgb('#f472b6'), frequency: 0.003, strength: 0.6, seed: 41, turn: -8 },
+    { x: 180, y: 640, rx: 460, ry: 320, color: rgb('#3b82f6'), frequency: 0.0028, strength: 0.65, seed: 43 },
+    { x: 800, y: 900, rx: 600, ry: 120, color: rgb('#a78bfa'), frequency: 0.004, strength: 0.4, seed: 47 },
+  ],
+  // The star chart: the Milky Way as a long band across the sky.
+  milkyway: [
+    { x: 800, y: 520, rx: 1050, ry: 170, color: rgb('#c7d2fe'), frequency: 0.0045, strength: 0.75, seed: 51, turn: -24 },
+    { x: 760, y: 540, rx: 900, ry: 90, color: rgb('#fde68a'), frequency: 0.006, strength: 0.45, seed: 53, turn: -24 },
+    { x: 1450, y: 160, rx: 260, ry: 200, color: rgb('#f9a8d4'), frequency: 0.004, strength: 0.4, seed: 57 },
+  ],
+  // The pulsar: the torn shell of the supernova that made it, red filaments over teal.
+  remnant: [
+    { x: 1350, y: 450, rx: 420, ry: 380, color: rgb('#2dd4bf'), frequency: 0.0035, strength: 0.55, seed: 61 },
+    { x: 1350, y: 450, rx: 460, ry: 420, color: rgb('#f87171'), frequency: 0.009, strength: 0.7, seed: 67 },
+    { x: 220, y: 760, rx: 320, ry: 200, color: rgb('#818cf8'), frequency: 0.004, strength: 0.4, seed: 71 },
+  ],
+  // The Local Group: thin, even light with far galaxies scattered in it.
+  group: [
+    { x: 300, y: 300, rx: 460, ry: 300, color: rgb('#a78bfa'), frequency: 0.003, strength: 0.5, seed: 81 },
+    { x: 1350, y: 700, rx: 460, ry: 300, color: rgb('#93c5fd'), frequency: 0.003, strength: 0.5, seed: 83 },
+  ],
+};
+
+const { env } = Astro.props;
+const clouds = ENVIRONMENTS[env];
+const random = createRandom(env.length * 131 + clouds.length * 17 + clouds[0].seed);
+
+// Three layers of stars drawn as box-shadows of one dot each, in viewport units so they fill any screen.
+const layer = (count: number, size: [number, number], alpha: [number, number], blur: number) =>
+  Array.from({ length: count }, () => {
+    const warm = random.next() < 0.2;
+    const a = random.between(alpha[0], alpha[1]).toFixed(2);
+    const color = warm ? `rgb(255 222 190 / ${a})` : `rgb(225 232 255 / ${a})`;
+    return `${random.between(0, 100).toFixed(2)}vw ${random.between(0, 100).toFixed(2)}vh ${blur}px ${random.between(size[0], size[1]).toFixed(1)}px ${color}`;
+  }).join(',');
+const stars = [layer(240, [0, 0.4], [0.25, 0.6], 0), layer(80, [0.4, 0.9], [0.45, 0.85], 1), layer(18, [0.8, 1.4], [0.75, 1], 3)];
+
+// Far galaxies for the Local Group sky: small tilted smudges.
+const far =
+  env === 'group'
+    ? Array.from({ length: 9 }, () => ({
+        x: random.between(60, 1540),
+        y: random.between(60, 940),
+        r: random.between(8, 22),
+        tilt: random.between(0.25, 0.7),
+        turn: random.between(0, 180),
+      }))
+    : [];
+---
+
+<div class="sky-backdrop" data-env={env} aria-hidden="true">
+  <svg class="sky-nebula" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="sky-cloud-shape">
+        <stop offset="0" stop-color="#fff"></stop>
+        <stop offset="0.55" stop-color="#fff" stop-opacity="0.55"></stop>
+        <stop offset="1" stop-color="#fff" stop-opacity="0"></stop>
+      </radialGradient>
+      <radialGradient id="sky-far-galaxy">
+        <stop offset="0" stop-color="#fff7e8"></stop>
+        <stop offset="0.3" stop-color="#c7d2fe" stop-opacity="0.6"></stop>
+        <stop offset="1" stop-color="#c7d2fe" stop-opacity="0"></stop>
+      </radialGradient>
+      {
+        clouds.map((cloud, index) => (
+          <>
+            <filter id={`sky-noise-${index}`} x="0" y="0" width="100%" height="100%">
+              <feTurbulence type="fractalNoise" baseFrequency={cloud.frequency} numOctaves="5" seed={cloud.seed} />
+              <feColorMatrix
+                type="matrix"
+                values={`0 0 0 0 ${cloud.color[0].toFixed(3)} 0 0 0 0 ${cloud.color[1].toFixed(3)} 0 0 0 0 ${cloud.color[2].toFixed(3)} ${(2.6 * cloud.strength).toFixed(2)} 0 0 0 ${(-0.95 * cloud.strength).toFixed(2)}`}
+              />
+            </filter>
+            <mask id={`sky-shape-${index}`}>
+              <ellipse
+                cx={cloud.x}
+                cy={cloud.y}
+                rx={cloud.rx}
+                ry={cloud.ry}
+                fill="url(#sky-cloud-shape)"
+                transform={cloud.turn ? `rotate(${cloud.turn} ${cloud.x} ${cloud.y})` : undefined}
+              />
+            </mask>
+          </>
+        ))
+      }
+    </defs>
+    {
+      clouds.map((cloud, index) => {
+        const reach = Math.max(cloud.rx, cloud.ry);
+        return (
+          <g class="sky-cloud" style={`--drift:${70 + index * 23}s;--delay:${index * -17}s`}>
+            <rect
+              x={cloud.x - reach}
+              y={cloud.y - reach}
+              width={reach * 2}
+              height={reach * 2}
+              filter={`url(#sky-noise-${index})`}
+              mask={`url(#sky-shape-${index})`}
+            />
+          </g>
+        );
+      })
+    }
+    {
+      far.map((galaxy) => (
+        <ellipse
+          cx={galaxy.x.toFixed(0)}
+          cy={galaxy.y.toFixed(0)}
+          rx={galaxy.r.toFixed(1)}
+          ry={(galaxy.r * galaxy.tilt).toFixed(1)}
+          fill="url(#sky-far-galaxy)"
+          transform={`rotate(${galaxy.turn.toFixed(0)} ${galaxy.x.toFixed(0)} ${galaxy.y.toFixed(0)})`}
+        />
+      ))
+    }
+  </svg>
+  {stars.map((shadow, index) => <span class={`sky-stars sky-stars-${index}`} style={`box-shadow:${shadow}`}></span>)}
+</div>

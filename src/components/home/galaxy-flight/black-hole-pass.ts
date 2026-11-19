@@ -105,14 +105,18 @@ vec4 disk(vec3 p, vec3 dir) {
   // Slowly boiling turbulence on top of the flow, so the gas never looks like a turning picture.
   float boil = noise3(vec3(cos(theta) * 3.0, sin(theta) * 3.0, r * 2.0 + u_time * 0.9));
   float density = profile * (0.3 + 1.2 * streaks * (0.65 + 0.7 * fine)) * (0.82 + 0.36 * boil);
-  vec3 color = mix(vec3(1.0, 0.94, 0.84), vec3(1.0, 0.62, 0.27), smoothstep(0.0, 0.4, t));
-  color = mix(color, vec3(0.78, 0.27, 0.1), smoothstep(0.4, 1.0, t));
-  // Relativistic beaming: the side of the disk moving towards us is brighter.
+  // Blue-white heat at the inner edge, cooling through periwinkle to rose at the rim.
+  vec3 color = mix(vec3(0.72, 0.84, 1.0), vec3(0.28, 0.5, 1.0), smoothstep(0.0, 0.3, t));
+  color = mix(color, vec3(1.0, 0.28, 0.68), smoothstep(0.28, 0.9, t));
+  // Relativistic beaming: the side of the disk moving towards us is brighter, and Doppler-shifted
+  // bluer; the receding side dims and turns pinker.
   vec3 orbit = normalize(vec3(-p.z, 0.0, p.x));
   float beta = clamp(0.62 / sqrt(r), 0.0, 0.6);
   float g = sqrt(1.0 - beta * beta) / (1.0 - beta * dot(orbit, -dir));
   float beaming = mix(1.0, g * g * g, 0.6);
-  return vec4(color * density * 1.6 * beaming, clamp(density * 1.8, 0.0, 0.97));
+  float shift = clamp((g - 1.0) * 1.4, -1.0, 1.0);
+  color = mix(color, shift > 0.0 ? vec3(0.3, 0.55, 1.0) : vec3(1.0, 0.3, 0.68), abs(shift) * 0.55);
+  return vec4(color * density * 1.25 * beaming, clamp(density * 1.8, 0.0, 0.97));
 }
 
 vec3 sky(vec3 direction) {

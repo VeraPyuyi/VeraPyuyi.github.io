@@ -1,0 +1,131 @@
+/* The sky behind every inner page (src/components/sky/SkyBackdrop.astro) and the misty panel the
+   page is read in (.sky-dawn in src/components/sky/SkyPage.astro). */
+
+.sky-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 110%, rgb(40 30 90 / 0.55), transparent 60%),
+    linear-gradient(180deg, #05061a 0%, #080a22 55%, #0d0d2b 100%);
+}
+
+.sky-nebula {
+  position: absolute;
+  inset: -4%;
+  width: 108%;
+  height: 108%;
+  opacity: 0.9;
+}
+
+/* Each cloud drifts on its own long, slow loop. */
+.sky-cloud {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: sky-cloud-drift var(--drift) ease-in-out var(--delay) infinite alternate;
+  will-change: transform;
+}
+
+@keyframes sky-cloud-drift {
+  from {
+    transform: translate(-18px, 10px) scale(1);
+  }
+
+  to {
+    transform: translate(22px, -14px) scale(1.04);
+  }
+}
+
+.sky-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  border-radius: 50%;
+}
+
+.sky-stars-1 {
+  animation: sky-stars-breathe 5.5s ease-in-out infinite alternate;
+}
+
+.sky-stars-2 {
+  animation: sky-stars-breathe 3.4s ease-in-out -1.2s infinite alternate;
+}
+
+@keyframes sky-stars-breathe {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.35;
+  }
+}
+
+/* ---- The reading panel: dawn light with edges that dissolve into the sky ---- */
+.sky-dawn {
+  --feather: 9rem;
+  --panel: rgb(251 246 251 / 0.93);
+  --panel-glow: rgb(247 198 221 / 0.55);
+  position: relative;
+  width: min(100%, 80rem);
+  margin: -5rem auto 0;
+  padding-top: 5rem;
+  padding-bottom: 7rem;
+  isolation: isolate;
+}
+
+.sky-dawn:has(.has-toc) {
+  width: min(100%, 90rem);
+}
+
+.sky-dawn::before {
+  /* A soft-edged slab of light: blurring a rounded box gives a Gaussian falloff with no visible
+     inner edge, so the panel dissolves into the sky like mist rather than ending in a frame. */
+  position: absolute;
+  inset: calc(var(--feather) * 0.35) calc(var(--feather) * -0.15);
+  z-index: -1;
+  border-radius: calc(var(--feather) * 0.8);
+  background:
+    radial-gradient(70% 22rem at 50% 0, var(--panel-glow), transparent 75%),
+    linear-gradient(180deg, rgb(242 228 241 / 0.9) 0, var(--panel) 18rem);
+  filter: blur(calc(var(--feather) * 0.42));
+  content: '';
+}
+
+.dark .sky-dawn {
+  --panel: rgb(14 16 40 / 0.74);
+  --panel-glow: rgb(120 90 200 / 0.22);
+}
+
+.dark .sky-dawn::before {
+  background:
+    radial-gradient(70% 22rem at 50% 0, var(--panel-glow), transparent 75%),
+    linear-gradient(180deg, rgb(20 18 50 / 0.7) 0, var(--panel) 18rem);
+}
+
+@media (max-width: 768px) {
+  .sky-dawn {
+    --feather: 5rem;
+  }
+
+  /* On a phone the panel takes the full width; only its top and bottom melt into the sky. */
+  .sky-dawn::before {
+    inset: calc(var(--feather) * 0.35) -2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-cloud,
+  .sky-stars {
+    animation: none;
+  }
+}
+
+html.motion-off .sky-cloud,
+html.motion-off .sky-stars {
+  animation: none;
+}

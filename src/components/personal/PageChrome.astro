@@ -7,7 +7,7 @@
 import { HomeSiderType } from '@constants/enum';
 import { siteConfig } from '@constants/site-config';
 import SkyPage from '@/components/sky/SkyPage.astro';
-import type { SkyObject } from '@/lib/sky-catalog';
+import type { SkyEnvironment, SkyObject } from '@/lib/sky-catalog';
 
 interface Props {
   locale: string;
@@ -25,6 +25,8 @@ interface Props {
   sky?: SkyObject;
   /** Caption for pages that are not a stop on the flight. */
   plate?: string;
+  /** Sky for pages that are not a stop on the flight. */
+  env?: SkyEnvironment;
 }
 
 const {
@@ -41,6 +43,7 @@ const {
   mathStyles = false,
   sky,
   plate,
+  env,
 } = Astro.props;
 const article = contentType === 'article' || Boolean(cover);
 ---
@@ -52,6 +55,7 @@ const article = contentType === 'article' || Boolean(cover);
   description={description}
   showDescription={showDescription}
   object={sky}
+  env={env}
   plate={plate}
   image={cover}
   imageAlt={coverAlt}
