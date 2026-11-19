@@ -5,8 +5,10 @@ import Cover from '@components/ui/cover/Cover.astro';
 import { CONTENT_PADDING } from '@constants/layout';
 import { seoConfig } from '@constants/site-config';
 import { Comment } from '@/components/comment';
+import MegaHero from '@/components/mega/MegaHero.astro';
 import SkyPlate from '@/components/sky/SkyPlate.astro';
 import { getLocaleFromUrl } from '@/i18n';
+import type { MegaKind } from '@/lib/megastructures';
 import type { SkyObject } from '@/lib/sky-catalog';
 import Layout from './Layout.astro';
 import TwoColumnLayout from './TwoColumnLayout.astro';
@@ -20,6 +22,8 @@ export interface Props {
     commentId?: string;
     /** Object on the homepage star map this page belongs to, shown as a caption above the text. */
     sky?: SkyObject;
+    /** Megastructure shown in place of the picture cover. */
+    mega?: MegaKind;
   };
 }
 
@@ -30,7 +34,20 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
 
 <Layout title={`${frontmatter.title} | ${seoConfig.title}`} description={frontmatter.description}>
   <TwoColumnLayout>
-    <Cover slot="cover" title={frontmatter.coverTitle ?? frontmatter.title} />
+    {
+      frontmatter.mega ? (
+        <MegaHero
+          slot="cover"
+          kind={frontmatter.mega}
+          locale={locale}
+          title={frontmatter.coverTitle ?? frontmatter.title}
+          items={[{ title: frontmatter.description ?? frontmatter.title }]}
+          readout={locale === 'en' ? 'Decompressing · matter becomes words' : '解压中 · 物质正在变成字句'}
+        />
+      ) : (
+        <Cover slot="cover" title={frontmatter.coverTitle ?? frontmatter.title} />
+      )
+    }
     <HomeSider slot="sider" />
     <div
       class={`shadow-box bg-gradient-start mx-0 flex min-w-0 w-full max-w-full flex-col gap-8 overflow-x-clip ${CONTENT_PADDING.standard}`}

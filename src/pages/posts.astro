@@ -4,6 +4,7 @@ import { Icon } from 'astro-icon/components';
 import BlogList from '@/components/personal/BlogList.astro';
 import PageChrome from '@/components/personal/PageChrome.astro';
 import PaperList from '@/components/personal/PaperList.astro';
+import { blogItems, paperItems } from '@/components/mega/items';
 import { defaultLocale, localizedPath } from '@/i18n';
 import { getPapers } from '@/lib/papers';
 
@@ -14,6 +15,7 @@ interface Props {
 const { locale = defaultLocale } = Astro.props;
 const en = locale === 'en';
 const paperCount = getPapers().length;
+const megaItems = [...paperItems(locale), ...(await blogItems(locale))];
 const blogCount = (await getCollection('blogs')).filter((entry) => entry.data.language === locale && !entry.data.draft).length;
 ---
 
@@ -22,6 +24,9 @@ const blogCount = (await getCollection('blogs')).filter((entry) => entry.data.la
   title={en ? 'All Posts' : '全部文章'}
   description={en ? 'Rigour and reverie, side by side: some pages are written for proofs, some for the small hours.' : '严谨与随想并排放着：有些写给证明，有些写给深夜。'}
   showDescription={false}
+  mega="sentry"
+  megaItems={megaItems}
+  megaReadout={en ? `${megaItems.length} contacts in the sector · sweeping` : `扇区内 ${megaItems.length} 个信号 · 持续扫描中`}
 >
   <div class="space-y-12" data-pagefind-ignore="all">
     <section aria-labelledby="all-papers-title" class="space-y-5">

@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import PageChrome from '@/components/personal/PageChrome.astro';
 import ResponsiveImage from '@/components/personal/ResponsiveImage.astro';
+import { albumItems } from '@/components/mega/items';
 import { defaultLocale } from '@/i18n';
 
 interface Props {
@@ -14,10 +15,10 @@ const albums = (await getCollection('albums'))
   .sort((a, b) => (b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0));
 ---
 
-<PageChrome locale={locale} sky="photos" title={en ? 'Photo Wall' : '照片墙'} description={en ? 'When the shutter closes, the light finally has somewhere to stay.' : '快门落下的那一刻，光终于有了去处。'}>
+<PageChrome locale={locale} sky="photos" mega="ringworld" megaItems={await albumItems(locale)} title={en ? 'Photo Wall' : '照片墙'} description={en ? 'When the shutter closes, the light finally has somewhere to stay.' : '快门落下的那一刻，光终于有了去处。'}>
   <div class="space-y-10" data-pagefind-body>
     {albums.map((album) => (
-      <section class="space-y-4">
+      <section id={`album-${album.id}`} class="scroll-mt-24 space-y-4">
         <div class="flex flex-wrap items-end justify-between gap-3">
           <div><h2 class="text-2xl font-bold">{album.data.name}</h2>{album.data.description && <p class="text-muted-foreground mt-1 text-sm">{album.data.description}</p>}</div>
           {album.data.date && <time class="text-muted-foreground text-xs" datetime={album.data.date.toISOString()}>{new Intl.DateTimeFormat(en ? 'en' : 'zh-CN', { dateStyle: 'long' }).format(album.data.date)}</time>}
