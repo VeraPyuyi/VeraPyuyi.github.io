@@ -6,7 +6,7 @@
   min-height: 100vh;
   overflow-x: clip;
   isolation: isolate;
-  background: #06071a;
+  background: #1b2257;
 }
 
 /* ---- Hero ---- */
@@ -19,7 +19,11 @@
   align-items: center;
   overflow: hidden;
   isolation: isolate;
-  background: radial-gradient(55% 50% at 70% 42%, rgb(78 66 160 / 0.22), transparent 70%);
+  /* The same twilight blue as the sky behind the page, so nothing up here is black either. */
+  background:
+    radial-gradient(55% 50% at 70% 42%, rgb(140 120 230 / 0.3), transparent 70%),
+    radial-gradient(45% 40% at 10% 20%, rgb(245 140 196 / 0.18), transparent 70%),
+    linear-gradient(180deg, #1b2257 0%, #20215b 72%, rgb(32 33 91 / 0) 100%);
   color: #f4f2ff;
 }
 
@@ -95,6 +99,8 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  /* Screen: the galaxy's light shows, the renderer's black sky gives way to the blue behind it. */
+  mix-blend-mode: screen;
   opacity: 0;
   -webkit-mask-image: linear-gradient(to bottom, #000 48%, transparent 90%);
   mask-image: linear-gradient(to bottom, #000 48%, transparent 90%);

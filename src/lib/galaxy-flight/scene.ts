@@ -123,7 +123,7 @@ export const BLACK_HOLE: FlightStop = {
   roll: 0,
   spin: 0,
   frameWidth: 0.55,
-  shift: 0.16,
+  shift: 0.05,
 };
 
 /** Every stop the camera visits, in order. */

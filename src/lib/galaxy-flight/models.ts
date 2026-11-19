@@ -229,7 +229,7 @@ function barred(brush: Brush, n: number) {
     const jitter = random.normal() * 0.004;
     brush.light.add((radius + jitter) * Math.cos(angle), 0, (radius + jitter) * Math.sin(angle), STAR.white, 0.25, 0.005);
     if (index % 4 === 0) {
-      brush.dust.add((radius - 0.006) * Math.cos(angle - 0.3), 0, (radius - 0.006) * Math.sin(angle - 0.3), DUST, 0.18, 0.012);
+      brush.dust.add((radius - 0.006) * Math.cos(angle - 0.3), 0, (radius - 0.006) * Math.sin(angle - 0.3), DUST, 0.05, 0.022);
     }
   }
   for (let index = 0; index < n * 0.17; index++) {
@@ -241,13 +241,14 @@ function barred(brush: Brush, n: number) {
   for (const end of [-1, 1]) {
     blob(brush, n * 0.0075, [end * 0.4, 0, 0], [0.03, 0.015, 0.025], oldLook(0.6));
   }
-  // Dust lanes run along the bar's leading edges and curl into the nucleus without crossing it.
-  for (let index = 0; index < n * 0.035; index++) {
+  // Dust lanes run along the bar's leading edges and curl into the nucleus without crossing it:
+  // wide, faint puffs, so they read as a soft shadow on the bar rather than a drawn line.
+  for (let index = 0; index < n * 0.022; index++) {
     const x = (index % 2 ? 1 : -1) * random.between(0.07, 0.42);
     const reach = Math.abs(x) / 0.42;
     const lane = Math.sign(x) * (0.035 + 0.045 * reach ** 2);
-    const opacity = random.between(0.035, 0.08) * Math.min(1, (Math.abs(x) - 0.05) / 0.1);
-    brush.dust.add(x, random.normal() * 0.004, lane + random.normal() * 0.012, DUST, opacity, random.between(0.03, 0.055));
+    const opacity = random.between(0.012, 0.03) * Math.min(1, (Math.abs(x) - 0.05) / 0.1);
+    brush.dust.add(x, random.normal() * 0.006, lane + random.normal() * 0.026, DUST, opacity, random.between(0.06, 0.11));
   }
   disk(brush, n * 0.1, 0.22, 1, 0.05);
   for (let index = 0; index < n * 0.36; index++) {

@@ -7,36 +7,48 @@
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+  /* Never black: a deep twilight blue, warming towards rose at the edges. */
   background:
-    radial-gradient(120% 80% at 50% 110%, rgb(40 30 90 / 0.55), transparent 60%),
-    linear-gradient(180deg, #05061a 0%, #080a22 55%, #0d0d2b 100%);
+    radial-gradient(60% 50% at 0% 30%, rgb(122 140 255 / 0.32), transparent 70%),
+    radial-gradient(60% 50% at 100% 70%, rgb(245 140 196 / 0.28), transparent 70%),
+    radial-gradient(120% 80% at 50% 110%, rgb(150 120 230 / 0.35), transparent 60%),
+    linear-gradient(180deg, #1b2257 0%, #241f5e 50%, #2d2466 100%);
 }
 
 .sky-nebula {
   position: absolute;
   top: 0;
-  left: -4%;
-  width: 108%;
-  height: 230vh;
+  left: 0;
+  display: flex;
+  width: 100%;
+  justify-content: center;
   transform: translate3d(0, calc(var(--sky-progress, 0) * -130vh), 0);
   will-change: transform;
 }
 
-/* Each cloud drifts on its own long, slow loop. */
-.sky-cloud {
-  transform-box: view-box;
-  transform-origin: 50% 50%;
-  animation: sky-cloud-drift var(--drift) ease-in-out var(--delay) infinite alternate;
+/* The painted particle field: as wide as the screen (a little more) and at least tall enough to
+   glide through the whole page. It fades in once painted, then drifts and breathes very slowly. */
+.sky-nebula-field {
+  flex: none;
+  width: max(108vw, calc(230vh * 1600 / 2600));
+  height: auto;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+
+.sky-nebula-field.is-painted {
+  opacity: 1;
+  animation: sky-nebula-drift 90s ease-in-out infinite alternate;
   will-change: transform;
 }
 
-@keyframes sky-cloud-drift {
+@keyframes sky-nebula-drift {
   from {
-    transform: translate(-18px, 10px) scale(1);
+    transform: translate3d(-0.6%, 0.4%, 0) scale(1);
   }
 
   to {
-    transform: translate(22px, -14px) scale(1.04);
+    transform: translate3d(0.6%, -0.4%, 0) scale(1.025);
   }
 }
 
@@ -58,26 +70,6 @@
 
 .sky-stars-2 {
   animation: sky-stars-breathe 3.4s ease-in-out -1.2s infinite alternate;
-}
-
-/* Spiked young stars in the reflection nebulae pulse slowly. */
-.sky-sparkle {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: sky-sparkle 6s ease-in-out var(--delay) infinite;
-}
-
-@keyframes sky-sparkle {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-
-  50% {
-    opacity: 0.55;
-    transform: scale(0.8) rotate(8deg);
-  }
 }
 
 @keyframes sky-stars-breathe {
@@ -150,8 +142,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sky-cloud,
-  .sky-sparkle,
+  .sky-nebula-field,
   .sky-stars {
     animation: none;
   }
@@ -162,7 +153,7 @@
   }
 }
 
-html.motion-off :is(.sky-cloud, .sky-sparkle, .sky-stars) {
+html.motion-off :is(.sky-nebula-field, .sky-stars) {
   animation: none;
 }
 
