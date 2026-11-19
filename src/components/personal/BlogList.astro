@@ -48,15 +48,15 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
       const minutes = Math.max(1, Math.ceil(readingTime(entry.body ?? '').minutes));
       return (
         <article
-          class="group relative flex min-w-0 flex-col overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none dark:border-white/10 dark:bg-white/5"
-          data-tilt-card
+          class="group relative flex min-w-0 flex-col"
           data-home-random-item={randomized ? '' : undefined}
           hidden={randomized && index >= visibleLimit}
         >
           <a
-            class="relative block aspect-video overflow-hidden bg-gradient-to-br from-pink-200/75 via-violet-100/70 to-sky-200/75"
+            class="relative block aspect-video overflow-hidden rounded-3xl bg-gradient-to-br from-pink-200/75 via-violet-100/70 to-sky-200/75 shadow-sm group-hover:shadow-xl"
             href={href}
             aria-label={entry.data.title}
+            data-tilt-card
           >
             <ResponsiveImage
               src={entry.data.cover ?? '/og.png'}
@@ -67,8 +67,9 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
               loading="lazy"
             />
             <span class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/5"></span>
+            <span class="card-sheen" aria-hidden="true"></span>
           </a>
-          <div class="flex flex-1 flex-col gap-4 p-6">
+          <div class="flex flex-1 flex-col gap-3 px-1 pt-5 pb-2">
             <div class="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
               <a
                 class="text-primary rounded-full bg-primary/10 px-2.5 py-1 font-semibold hover:bg-primary/15"
@@ -91,7 +92,6 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
               {en ? 'Read the essay' : '阅读全文'}
             </a>
           </div>
-          <span class="card-sheen" aria-hidden="true"></span>
         </article>
       );
     })
