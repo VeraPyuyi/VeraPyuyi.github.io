@@ -20,7 +20,7 @@ const moments = (await getCollection('moments'))
 const rendered = await Promise.all(moments.map(async (entry) => ({ entry, Content: (await render(entry)).Content })));
 ---
 
-<PageChrome locale={locale} sky="moments" title={en ? 'Moments' : '生活动态'} description={en ? 'Days too small for an essay still deserve a quiet line.' : '撑不起一篇文章的日子，也值得被轻轻记下一行。'}>
+<PageChrome locale={locale} sky="moments" title={en ? 'Moments' : '生活动态'} description={en ? 'Days too small for an essay get one line each.' : '撑不起一篇文章的日子，就记一行。'}>
   <LightCurve slot="meta" dates={moments.map((entry) => entry.data.date)} locale={locale} />
   <ol class="relative ml-3 space-y-8 border-l border-pink-300/70 pl-8 dark:border-pink-400/25" data-pagefind-body>
     {rendered.map(({ entry, Content }) => (

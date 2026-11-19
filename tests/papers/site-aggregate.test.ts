@@ -30,14 +30,14 @@ test('the homepage uses original bilingual feature copy and only overrides the b
   const home = read('src/pages/index.astro');
   const galaxyFlight = read('src/components/home/GalaxyFlight.astro');
   const quotes = [
-    '证明抵达纸页尽头，求解的人仍独自站在未知之前。',
-    '字句一行行亮起，回应它们的始终只有深夜。',
-    '照片替世界保存了光，镜头之外却只剩漫长的寂静。',
-    '日子从身旁缓慢经过，无人知晓那些未说出口的心事。',
-    'The proof reaches the end of the page; the one seeking answers still stands alone before the unknown.',
-    'Lines of words light up one by one; only the night ever answers.',
-    'Photographs keep the world’s light; beyond the frame, only a long silence remains.',
-    'Days pass slowly by; no one knows the thoughts that were never spoken.',
+    '那根笔直的棒并不是实心的，而是无数恒星一遍遍走过同一条路。证明也是这样走出来的。',
+    'M51 的旋臂，是被身旁的伴星系一路牵出来的。我写下的每篇文字旁边，也有一个伴星——那个让我动笔的问题。',
+    '照片记下的从来不是那一刻，而是那一刻刚好抵达镜头的光。',
+    '小麦哲伦云绕着银河走，身后拖着一条长长的气流。日子也会掉下些细碎的东西，我把它们捡起来。',
+    'The straight bar is not solid: it is countless stars taking the same path, again and again. A proof is walked into being the same way.',
+    'M51’s arms were drawn out by the companion galaxy beside it. Everything I write has a companion too: the question that made me start.',
+    'A photograph never records the moment itself, only the light that happened to arrive at that moment.',
+    'Circling the Milky Way, the Small Magellanic Cloud trails a long stream of gas behind it. Days shed small things too; I pick them up.',
   ];
 
   for (const quote of quotes) assert.ok(galaxyFlight.includes(quote), quote);

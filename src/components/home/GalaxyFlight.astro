@@ -103,7 +103,7 @@ const galaxies: {
       ? 'Its arms keep winding back to the centre, the way every essay circles back to its first question.'
       : '旋臂一圈圈绕回中心，像每篇文字最后都绕回最初那个问题。',
     type: en ? 'M51 · grand-design spiral · with its companion NGC 5195' : 'M51 · 宏象旋涡星系 · 伴星系 NGC 5195',
-    quote: en ? 'Lines of words light up one by one; only the night ever answers.' : '字句一行行亮起，回应它们的始终只有深夜。',
+    quote: en ? 'M51’s arms were drawn out by the companion galaxy beside it. Everything I write has a companion too: the question that made me start.' : 'M51 的旋臂，是被身旁的伴星系一路牵出来的。我写下的每篇文字旁边，也有一个伴星——那个让我动笔的问题。',
     href: localizedPath('/blogs', locale),
     accent: '#fccee8',
   },
@@ -116,8 +116,8 @@ const galaxies: {
       : '一根笔直的棒穿过核心，旋臂从棒端舒展开——先有严格的骨架，推论才能伸展。',
     type: en ? 'Barred spiral · Eridanus' : '棒旋星系 · 波江座',
     quote: en
-      ? 'The proof reaches the end of the page; the one seeking answers still stands alone before the unknown.'
-      : '证明抵达纸页尽头，求解的人仍独自站在未知之前。',
+      ? 'The straight bar is not solid: it is countless stars taking the same path, again and again. A proof is walked into being the same way.'
+      : '那根笔直的棒并不是实心的，而是无数恒星一遍遍走过同一条路。证明也是这样走出来的。',
     href: localizedPath('/papers', locale),
     accent: '#ffd27a',
   },
@@ -126,12 +126,12 @@ const galaxies: {
     section: en ? 'Photo wall' : '照片墙',
     name: en ? 'Hoag’s Object' : '霍格天体',
     note: en
-      ? 'Almost nothing lies between its core and its ring, like the long silence just beyond a photograph. Look closely: another ring galaxy shines through the gap.'
-      : '核心与光环之间几乎空无一物，像照片之外那段漫长的寂静。仔细看，缝隙里还透出另一个更遥远的环。',
+      ? 'Almost nothing lies between its core and its ring, and no one is quite sure how the ring got there. Some pictures are allowed to be beautiful before they are explained. Look closely: another ring galaxy shines through the gap.'
+      : '核心与光环之间几乎空无一物，至今没人能确定那道环是怎么来的。有些画面，可以先好看，再被解释。仔细看，缝隙里还透出另一个更遥远的环。',
     type: en ? 'Ring galaxy · Serpens' : '环状星系 · 巨蛇座',
     quote: en
-      ? 'Photographs keep the world’s light; beyond the frame, only a long silence remains.'
-      : '照片替世界保存了光，镜头之外却只剩漫长的寂静。',
+      ? 'A photograph never records the moment itself, only the light that happened to arrive at that moment.'
+      : '照片记下的从来不是那一刻，而是那一刻刚好抵达镜头的光。',
     href: localizedPath('/gallery', locale),
     accent: '#fef3c6',
   },
@@ -144,8 +144,8 @@ const galaxies: {
       : '没有固定的形状，却一直陪在银河身边，像日子。身旁那团密集的金光，是球状星团杜鹃座 47。',
     type: en ? 'SMC · dwarf irregular · Tucana' : '小麦哲伦云 · 不规则矮星系 · 杜鹃座',
     quote: en
-      ? 'Days pass slowly by; no one knows the thoughts that were never spoken.'
-      : '日子从身旁缓慢经过，无人知晓那些未说出口的心事。',
+      ? 'Circling the Milky Way, the Small Magellanic Cloud trails a long stream of gas behind it. Days shed small things too; I pick them up.'
+      : '小麦哲伦云绕着银河走，身后拖着一条长长的气流。日子也会掉下些细碎的东西，我把它们捡起来。',
     href: localizedPath('/moments', locale),
     accent: '#b8e6fe',
   },
@@ -165,16 +165,16 @@ const hole = {
     ? 'The supermassive black hole at the heart of the Milky Way · not even light leaves its horizon'
     : '银河系中心的超大质量黑洞 · 视界之内，连光也无法离开',
   quote: en
-    ? 'Starlight cannot answer anything for anyone; it only keeps the long night from going completely dark.'
-    : '星光并不能替人回答什么，只是让漫长的夜晚不至于完全黑下去。',
+    ? 'I am in no hurry to answer my questions. An answer ends a question, and I would like to keep it company a little longer.'
+    : '我不急着给问题找答案。答案一到，问题就走了，而我还想和它多待一会儿。',
   about: en
     ? [
-        'Welcome. I am Pyuyi. I tend to keep company with questions that have no answers yet, study a few things of uncertain use, and slowly write down what I have read, thought, and not yet fully understood.',
-        'This site is more like a small room with the light left on: papers, blogs, photos, and a few things I never managed to say. If you are passing by, look around. There may be no standard answers here, but I hope a page or a photo keeps you quiet company for a while.',
+        'Most of what I study does not have a name yet. By day I read papers, push symbols and write code; by night I write down what I understood, what I did not, and what I only thought I had. The last kind is the most common, and the most worth keeping.',
+        'Here are papers, blog posts, photographs, and a few things I did not get round to saying. They are not sorted by importance, only by when they set out: every page tells you how long its light has been travelling.',
       ]
     : [
-        '欢迎来到这里。我是 Pyuyi，平时会和一些暂时没有答案的问题待在一起，也在研究一些不知所谓的东西，会把读过、想过和还没有完全想明白的东西慢慢写下来。',
-        '这个网站更像一间留着灯的小房间，放着论文、博客、照片，以及一些来不及说出口的心事。如果你偶然经过，可以随意看看，这里也许没有标准答案，但希望某一页文字、某一张照片，能陪你安静一会儿。',
+        '我研究的东西，多数时候还没有名字。白天读论文、推公式、写代码；晚上把弄懂的、没弄懂的、以为弄懂其实没有的，一并记下来——最后一种最多，也最值得记。',
+        '这里放着论文、博客、照片，和几句没来得及说出口的话。它们不按重要性排列，只按出发的时间：每一页都标着，它的光已经走了多久。',
       ],
   note: en
     ? 'Every ray bends and turns back here, the way each sentence I write circles back to me in the end. My links orbit it; catch one.'

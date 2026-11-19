@@ -66,6 +66,7 @@ const stars = Array.from({ length: compact ? 90 : 140 }, () => {
 
   <div class="sky-hero-art" aria-hidden={image || Astro.slots.has('art') ? undefined : 'true'}>
     {art && <canvas class="sky-hero-canvas" data-sky-canvas aria-hidden="true"></canvas>}
+    <noscript><style is:inline>.sky-hero-galaxy{opacity:var(--still)}</style></noscript>
     {
       art && (
         <img

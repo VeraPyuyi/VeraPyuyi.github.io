@@ -13,9 +13,16 @@ import type { BuiltModel, ModelJob } from './model-worker';
 const BUDGETS = { blogs: 170_000, papers: 140_000, photos: 90_000, moments: 100_000 } as const;
 const BACKDROP_BUDGET = 110_000;
 
-/** Models built during this visit, by id and particle budget. */
-const built = new Map<string, BuiltModel>();
-const cacheKey = (job: ModelJob) => `${job.id}:${Math.round(job.budget)}`;
+/**
+ * Models built during this visit, by id, with the budget each was built at. A request is served
+ * by any kept model at least as detailed as it asks for: the homepage builds every galaxy at full
+ * size, so a page hero opened from it (which asks for less) never has to build its galaxy again.
+ */
+const built = new Map<string, { budget: number; model: BuiltModel }>();
+const keptFor = (job: ModelJob) => {
+  const kept = built.get(job.id);
+  return kept && kept.budget >= job.budget * 0.98 ? kept.model : null;
+};
 
 export interface ModelLoader {
   /** True until every model has arrived. */
@@ -45,13 +52,12 @@ export function loadModels(options: {
   const budgets = new Map(jobs.map((job) => [job.id, job]));
   const receive = (model: BuiltModel, cached = false) => {
     const job = budgets.get(model.id);
-    if (job) built.set(cacheKey(job), model);
+    if (job && !cached && (built.get(model.id)?.budget ?? 0) < job.budget) built.set(model.id, { budget: job.budget, model });
     if (pending.delete(model.id)) onBuilt(model, cached);
   };
   // Models already built this visit arrive straight away; only the rest go to the builder.
-  const cached = jobs.filter((job) => built.has(cacheKey(job)));
-  for (const job of cached) {
-    const model = built.get(cacheKey(job));
+  for (const job of jobs) {
+    const model = keptFor(job);
     if (model) receive(model, true);
   }
   jobs = jobs.filter((job) => pending.has(job.id));

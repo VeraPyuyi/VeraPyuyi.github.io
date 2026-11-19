@@ -178,6 +178,9 @@ void main() {
         // in full; light that loops the hole again forms the photon ring, a hairline far too thin
         // for this resolution that would break into dots, so it only adds a faint glow.
         if (crossings > 2) emission *= 0.12;
+        // Rays skimming the photon sphere draw their second image as a hairline round the shadow,
+        // too thin for this resolution: it would break into dashes, so it thins out to nothing.
+        if (crossings > 1) emission *= smoothstep(2.62, 3.05, sqrt(h2));
         color += (1.0 - alpha) * emission.rgb;
         alpha += (1.0 - alpha) * emission.a;
         if (alpha > 0.985) break;

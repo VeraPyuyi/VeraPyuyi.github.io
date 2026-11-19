@@ -16,14 +16,14 @@ const twitterUrl = 'https://x.com/Pyuyi2333';
 test('about pages use independent localized introductions', () => {
   assert.match(chinese, /title: "关于 Pyuyi"/);
   assert.match(chinese, /coverTitle: "关于 Pyuyi"/);
-  assert.match(chinese, /欢迎来到这里。我是 Pyuyi/);
-  assert.match(chinese, /星光并不能替人回答什么，只是让漫长的夜晚不至于完全黑下去。/);
+  assert.match(chinese, /我研究的东西，多数时候还没有名字。/);
+  assert.match(chinese, /我不急着给问题找答案。答案一到，问题就走了，而我还想和它多待一会儿。/);
   assert.doesNotMatch(chinese, /### 站点原则|### English/);
 
   assert.match(english, /title: "About Pyuyi"/);
   assert.match(english, /coverTitle: "About Pyuyi"/);
-  assert.match(english, /Welcome\. I’m Pyuyi\./);
-  assert.match(english, /Starlight cannot answer our questions/);
+  assert.match(english, /Most of what I study does not have a name yet\./);
+  assert.match(english, /An answer ends a question/);
   assert.match(mirror, /import AboutEnglishPage from '\.\.\/_shared\/about\.en\.md'/);
   assert.doesNotMatch(mirror, /import AboutPage from '\.\.\/about\.md'/);
 });

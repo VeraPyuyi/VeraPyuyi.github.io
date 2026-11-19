@@ -1,0 +1,80 @@
+---
+/**
+ * The last line of every inner page: how long this page itself spent on its way to the reader,
+ * and how far light travels in that time. Measured, not made up: the network time of the page's
+ * own request on a first load, or of the fetch behind a client-side page change.
+ */
+---
+
+<p class="light-trip" data-light-trip hidden></p>
+
+<style>
+  .light-trip {
+    margin: 0 auto;
+    padding: 0 1.5rem 2.5rem;
+    color: hsl(var(--muted-foreground));
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  .light-trip::before {
+    margin-right: 0.5em;
+    color: hsl(var(--primary));
+    content: '✦';
+  }
+</style>
+
+<script>
+  /** Times light goes round the Earth in one second (the speed of light over the equator). */
+  const LAPS_PER_SECOND = 299_792.458 / 40_075.017;
+  let fetchStart = 0;
+  let fetchTime = -1;
+
+  /** The first load: the page's own request, from asking to the last byte arriving. */
+  function firstLoadTime() {
+    const [entry] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    if (!entry) return -1;
+    if (entry.transferSize === 0 && entry.decodedBodySize > 0) return 0;
+    return Math.max(0, entry.responseEnd - entry.requestStart);
+  }
+
+  function describe(ms: number, en: boolean) {
+    if (ms < 2) {
+      return en
+        ? 'This page came out of your browser’s cache; its light barely had to set out.'
+        : '这一页是从你浏览器的缓存里取出来的，它的光几乎还没出发。';
+    }
+    const seconds = ms / 1000;
+    const laps = seconds * LAPS_PER_SECOND;
+    const time = seconds < 1 ? seconds.toFixed(2) : seconds.toFixed(1);
+    const round = laps < 1 ? `${Math.round(laps * 100)}%` : laps.toFixed(1);
+    if (en) {
+      return laps < 1
+        ? `This page spent ${time} s on its way to you, time enough for light to get ${round} of the way round the Earth.`
+        : `This page spent ${time} s on its way to you, time enough for light to circle the Earth ${round} times.`;
+    }
+    return laps < 1
+      ? `这一页在路上走了 ${time} 秒。这段时间，光能绕地球走完 ${round}。`
+      : `这一页在路上走了 ${time} 秒。这段时间，光能绕地球 ${round} 圈。`;
+  }
+
+  function show() {
+    const line = document.querySelector<HTMLElement>('[data-light-trip]');
+    if (!line) return;
+    const ms = fetchTime >= 0 ? fetchTime : firstLoadTime();
+    if (ms < 0) return;
+    line.textContent = describe(ms, document.documentElement.lang.startsWith('en'));
+    line.hidden = false;
+  }
+
+  // A client-side page change: time the fetch of the next page.
+  document.addEventListener('astro:before-preparation', () => {
+    fetchStart = performance.now();
+  });
+  document.addEventListener('astro:after-preparation', () => {
+    if (fetchStart) fetchTime = performance.now() - fetchStart;
+  });
+  if (document.readyState !== 'loading') show();
+  document.addEventListener('astro:page-load', show);
+</script>
