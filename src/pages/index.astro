@@ -1,5 +1,5 @@
 ---
-import { seoConfig } from '@constants/site-config';
+import { seoConfig, siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import GalaxyFlight from '@/components/home/GalaxyFlight.astro';
 import { defaultLocale } from '@/i18n';
@@ -13,6 +13,17 @@ const { locale = defaultLocale } = Astro.props;
 const browserTitle = 'Pyuyi’s Home';
 ---
 
-<Layout locale={locale} title={browserTitle} openGraph={{ title: seoConfig.title }}>
+<Layout
+  locale={locale}
+  title={browserTitle}
+  openGraph={{
+    title: seoConfig.title,
+    image: siteConfig.homeOgImage,
+    imageAlt:
+      locale === 'en'
+        ? 'Pyuyi’s small universe: the Whirlpool Galaxy glowing in deep space, with more galaxies beyond'
+        : 'Pyuyi 的小宇宙：涡状星系在深空中发光，远处还有更多星系',
+  }}
+>
   <GalaxyFlight locale={locale} />
 </Layout>

@@ -58,7 +58,7 @@ export async function buildSiteSocialImages(root = process.cwd()) {
   const locales = (config.i18n?.locales ?? [{ code: defaultLocale }])
     .filter((locale) => locale.enabled !== false).map((locale) => locale.code);
   const fallback = config.site.defaultOgImage || config.site.avatar;
-  const sources = fallback ? [fallback] : [];
+  const sources = [fallback, config.site.homeOgImage].filter(Boolean);
   const pages = [];
   const blogRoot = join(root, 'src/content/blogs');
   for (const entry of readdirSync(blogRoot, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {

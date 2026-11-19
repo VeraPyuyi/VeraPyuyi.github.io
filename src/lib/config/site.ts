@@ -48,6 +48,7 @@ export const siteConfig: ResolvedSiteConfig = {
   site: yamlConfig.site.url,
   startYear: yamlConfig.site.startYear,
   defaultOgImage: yamlConfig.site.defaultOgImage,
+  homeOgImage: yamlConfig.site.homeOgImage,
   keywords: yamlConfig.site.keywords,
   breadcrumbHome: yamlConfig.site.breadcrumbHome,
   enableSlugTransliteration: yamlConfig.site.enableSlugTransliteration,
