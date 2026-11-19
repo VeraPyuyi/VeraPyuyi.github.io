@@ -10,6 +10,7 @@ import Footer from '@/components/layout/Footer.astro';
 import { TableOfContents } from '@/components/layout/TableOfContents';
 import type { SkyEnvironment, SkyObject } from '@/lib/sky-catalog';
 import SkyBackdrop from './SkyBackdrop.astro';
+import LightTrip from './LightTrip.astro';
 import SkyHero from './SkyHero.astro';
 import '@/styles/components/sky-page.css';
 import '@/styles/components/sky-backdrop.css';
@@ -104,6 +105,7 @@ const {
           )
         }
       </div>
+      <LightTrip />
       <Footer />
     </div>
   </div>

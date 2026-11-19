@@ -115,12 +115,16 @@
   opacity: 0.75;
 }
 
+/* The still image is only a stand-in: it stays hidden while the live sky is on its way, so the
+   object appears once, and shows only when the live sky cannot run or is slow (is-still). */
 .sky-hero-galaxy {
-  transition: opacity 1.8s ease;
+  --still: 1;
+  opacity: 0;
+  transition: opacity 1.4s ease;
 }
 
-.sky-hero.is-live .sky-hero-galaxy {
-  opacity: 0;
+.sky-hero.is-still:not(.is-live) .sky-hero-galaxy {
+  opacity: var(--still);
 }
 
 /* Coming back to a page whose sky was already built this visit: swap at once, no fade. */
@@ -137,8 +141,8 @@
 }
 
 .is-compact .sky-hero-galaxy {
+  --still: 0.55;
   width: min(48vw, 40rem);
-  opacity: 0.55;
 }
 
 @keyframes sky-float {

@@ -50,11 +50,19 @@ export function mountSkyStage(hero: HTMLElement): () => void {
   const canvas = hero.querySelector<HTMLCanvasElement>('[data-sky-canvas]');
   const still =
     window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('motion-off');
-  if (!object || !canvas || still) return () => undefined;
+  // Where the live sky cannot run, the still image stands in for it.
+  const fallBack = () => {
+    hero.classList.add('is-still');
+    return () => undefined;
+  };
+  if (!object || !canvas || still) return fallBack();
   const index = object === 'hole' ? ROUTE.length - 1 : GALAXY_PLACEMENTS.findIndex((placement) => placement.kind === object);
-  if (index < 0) return () => undefined;
+  if (index < 0) return fallBack();
   const created = createGalaxyRenderer(canvas);
-  if (!created) return () => undefined;
+  if (!created) return fallBack();
+  // On a slow machine, show the still image after a moment rather than an empty sky; the live one
+  // still takes over when it is ready.
+  const stillTimer = window.setTimeout(() => hero.classList.add('is-still'), 2600);
   const renderer = created;
 
   const galaxy = GALAXY_PLACEMENTS[index];
@@ -213,6 +221,7 @@ export function mountSkyStage(hero: HTMLElement): () => void {
     });
     if (!shown && (galaxy ? galaxyIn : backdropIn)) {
       shown = true;
+      window.clearTimeout(stillTimer);
       if (instant) hero.classList.add('is-instant');
       hero.classList.add('is-live');
     }
@@ -225,7 +234,8 @@ export function mountSkyStage(hero: HTMLElement): () => void {
     resizeObserver.disconnect();
     visibility.disconnect();
     hero.removeEventListener('pointermove', onPointer);
-    hero.classList.remove('is-live', 'is-instant');
+    window.clearTimeout(stillTimer);
+    hero.classList.remove('is-live', 'is-instant', 'is-still');
     renderer.destroy();
   };
 }
