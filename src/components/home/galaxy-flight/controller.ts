@@ -20,6 +20,7 @@ import {
 import { blackHoleFrame, invert } from '@/lib/galaxy-flight/black-hole';
 import type { Vec3 } from '@/lib/galaxy-flight/scene';
 import { resolveDeepLink } from './deep-link';
+import { createFrameGuard } from './frame-guard';
 import { createOverscrollPull } from './overscroll';
 import { paintIntro } from './intro';
 import { loadModels } from './model-loader';
@@ -90,6 +91,8 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   }));
   const last = ROUTE.length - 1;
   let orbitClock = 0;
+  /** Turn of the star field about the route, so the sky drifts behind the black hole. */
+  let skyTurn = 0;
   const overscroll = createOverscrollPull();
   const galaxies: GalaxyState[] = GALAXY_PLACEMENTS.map((placement) => ({
     matrix: galaxyModelMatrix(placement),
@@ -102,16 +105,19 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   const renderer = createGalaxyRenderer(canvas);
   root.classList.toggle('is-flat', !renderer);
   const small = Math.min(window.innerWidth, window.innerHeight) < 700 || (navigator.hardwareConcurrency || 8) <= 4;
-  let maxRatio = small ? 1.25 : 2;
-  let detail = 1;
   let width = 1;
   let height = 1;
   let backdropReady = -1;
+  const guard = createFrameGuard({
+    maxRatio: small ? 1.25 : 2,
+    onRatioChange: () => resize(),
+    onDetailChange: (detail) => renderer?.setDetail(detail),
+  });
 
   const resize = () => {
     width = stage.clientWidth || window.innerWidth;
     height = stage.clientHeight || window.innerHeight;
-    renderer?.resize(width, height, Math.min(window.devicePixelRatio || 1, maxRatio));
+    renderer?.resize(width, height, Math.min(window.devicePixelRatio || 1, guard.maxRatio));
   };
   resize();
   const resizeObserver = new ResizeObserver(resize);
@@ -136,8 +142,6 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   const nudge = { x: 0, y: 0 };
   let camera: { eye: Vec3; target: Vec3 } = { eye: [0, 0, 0], target: [0, 0, -1] };
   let viewProjection: Float32Array = IDENTITY;
-  let slowFrames = 0;
-  let fastFrames = 0;
 
   const models = renderer
     ? loadModels({
@@ -222,6 +226,17 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     });
     if (!still && !warp && hoverStar !== last) orbitClock += dt * 0.035;
 
+    // The black hole joins in once the camera is close enough to see it. While it is in view the star
+    // field drifts slowly behind it, as if the hole were moving through space: stars passing behind it are
+    // lensed into arcs that sweep round the shadow. Away from it the sky settles back to where it was.
+    const toHole = Math.hypot(HOLE.center[0] - eye[0], HOLE.center[1] - eye[1], HOLE.center[2] - eye[2]);
+    const holeAlpha = clamp((330 - toHole) / 80);
+    if (!still && holeAlpha > 0.3) skyTurn += dt * 0.016 * holeAlpha;
+    else if (!still) {
+      const settled = Math.round(skyTurn / (2 * Math.PI)) * 2 * Math.PI;
+      skyTurn += (settled - skyTurn) * (1 - Math.exp(-dt * 1.2));
+    }
+
     if (renderer) {
       const layers: ParticleLayer[] = [];
       if (backdropReady >= 0) {
@@ -229,7 +244,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
           mesh: 'backdrop',
           model: IDENTITY,
           modelScale: 1,
-          spin: 0,
+          spin: skyTurn,
           wobble: 0,
           alpha: clamp((time - backdropReady) / 0.8),
           dust: false,
@@ -257,9 +272,6 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
         // than the light layer to keep lanes from reading darker than empty space.
         layers.push({ ...base, alpha: base.alpha * 0.55, mesh: `${placement.kind}-dust`, dust: true });
       }
-      // The black hole joins in once the camera is close enough to see it.
-      const toHole = Math.hypot(HOLE.center[0] - eye[0], HOLE.center[1] - eye[1], HOLE.center[2] - eye[2]);
-      const holeAlpha = clamp((330 - toHole) / 80);
       const blackHole =
         holeAlpha > 0
           ? {
@@ -283,7 +295,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     }
 
     updateOverlay();
-    adapt(dt);
+    guard.tick(dt, Boolean(renderer) && !models?.busy && document.visibilityState === 'visible');
   }
 
   /** Index of the galaxy being visited if (x, y) falls on its disk, else -1. */
@@ -349,31 +361,6 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     for (const element of fades) {
       const until = Number(element.dataset.flightFade) || 0.3;
       element.style.opacity = warp ? '0' : clamp(1 - progress / until).toFixed(3);
-    }
-  }
-
-  /** Keeps the frame rate smooth: first lower the resolution, then draw fewer particles. */
-  function adapt(dt: number) {
-    if (!renderer || models?.busy || document.visibilityState !== 'visible') return;
-    if (dt > 1 / 38) slowFrames++;
-    else if (dt < 1 / 57) fastFrames++;
-    if (slowFrames > 45) {
-      slowFrames = 0;
-      fastFrames = 0;
-      if (maxRatio > 1) {
-        maxRatio = 1;
-        resize();
-      } else if (detail > 0.35) {
-        detail *= 0.8;
-        renderer.setDetail(detail);
-      }
-    } else if (fastFrames > 240) {
-      fastFrames = 0;
-      slowFrames = 0;
-      if (detail < 1) {
-        detail = Math.min(1, detail * 1.1);
-        renderer.setDetail(detail);
-      }
     }
   }
 
