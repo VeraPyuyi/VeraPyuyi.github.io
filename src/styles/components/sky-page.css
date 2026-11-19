@@ -1,22 +1,12 @@
-/* Inner pages: night at the top (SkyHero), dawn below for reading (src/components/sky/SkyPage.astro). */
+/* Inner pages (src/components/sky/SkyPage.astro): a night sky all round (sky-backdrop.css), the
+   page's object at the top, and the reading area in a misty dawn-lit panel down the middle. */
 .sky-page {
   --night: #05061a;
-  --dawn-top: #f2e4f1;
-  background: var(--gradient-bg-end);
-}
-
-.dark .sky-page {
-  --dawn-top: #0c0e27;
-  background: var(--gradient-bg-start);
-}
-
-/* The reading area picks up exactly where the hero's sky ends, then settles into daylight. */
-.sky-dawn {
-  background: linear-gradient(180deg, var(--dawn-top) 0, #f8f0f7 12rem, #f7f8fc 34rem, var(--gradient-bg-end) 60rem);
-}
-
-.dark .sky-dawn {
-  background: linear-gradient(180deg, var(--dawn-top) 0, #12142f 24rem, var(--gradient-bg-start) 60rem);
+  position: relative;
+  min-height: 100vh;
+  overflow-x: clip;
+  isolation: isolate;
+  background: #06071a;
 }
 
 /* ---- Hero ---- */
@@ -29,16 +19,8 @@
   align-items: center;
   overflow: hidden;
   isolation: isolate;
-  background:
-    radial-gradient(55% 50% at 70% 42%, rgb(78 66 160 / 0.32), transparent 70%),
-    linear-gradient(180deg, var(--night) 0%, #0a0c28 50%, #1b1e50 68%, #5f5799 82%, #c3add6 93%, var(--dawn-top) 100%);
+  background: radial-gradient(55% 50% at 70% 42%, rgb(78 66 160 / 0.22), transparent 70%);
   color: #f4f2ff;
-}
-
-.dark .sky-hero {
-  background:
-    radial-gradient(55% 50% at 70% 42%, rgb(78 66 160 / 0.32), transparent 70%),
-    linear-gradient(180deg, var(--night) 0%, #0a0c28 62%, var(--dawn-top) 100%);
 }
 
 .sky-hero.is-compact {
@@ -280,7 +262,6 @@
 .sky-body {
   display: grid;
   width: 100%;
-  max-width: 76rem;
   margin: 0 auto;
   padding: 1.5rem clamp(1.25rem, 5vw, 3rem) 5rem;
   gap: 3rem;
@@ -306,7 +287,6 @@
 
 @media (min-width: 1280px) {
   .sky-body.has-toc {
-    max-width: 86rem;
     grid-template-columns: minmax(0, 1fr) 15rem;
   }
 

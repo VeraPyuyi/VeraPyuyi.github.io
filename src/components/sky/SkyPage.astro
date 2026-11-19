@@ -1,15 +1,27 @@
 ---
 /**
- * The frame shared by the inner pages: night at the top (SkyHero), dawn below it for reading,
- * no boxes and no side column. Articles get a slim table-of-contents rail on wide screens.
+ * The frame shared by the inner pages: the page's own sky all round (SkyBackdrop), its object
+ * at the top (SkyHero), and the reading area in a dawn-lit panel whose edges melt into the sky.
+ * No boxes and no side column; articles get a slim table-of-contents rail on wide screens.
  */
 import type { HomeSiderType } from '@constants/enum';
 import Layout from '@layouts/Layout.astro';
 import Footer from '@/components/layout/Footer.astro';
 import { TableOfContents } from '@/components/layout/TableOfContents';
-import type { SkyObject } from '@/lib/sky-catalog';
+import type { SkyEnvironment, SkyObject } from '@/lib/sky-catalog';
+import SkyBackdrop from './SkyBackdrop.astro';
 import SkyHero from './SkyHero.astro';
 import '@/styles/components/sky-page.css';
+import '@/styles/components/sky-backdrop.css';
+
+/** Each stop of the flight has its own sky. */
+const OBJECT_SKIES: Record<SkyObject, SkyEnvironment> = {
+  blogs: 'rose',
+  papers: 'gold',
+  photos: 'ring',
+  moments: 'cloud',
+  hole: 'disk',
+};
 
 interface Props {
   locale: string;
@@ -20,6 +32,8 @@ interface Props {
   /** Show the description under the heading in the hero. */
   showDescription?: boolean;
   object?: SkyObject;
+  /** Sky for pages that are not a stop of the flight. */
+  env?: SkyEnvironment;
   plate?: string;
   image?: string;
   imageAlt?: string;
@@ -38,6 +52,7 @@ const {
   description,
   showDescription = true,
   object,
+  env,
   plate,
   image,
   imageAlt,
@@ -60,6 +75,7 @@ const {
 >
   {Astro.slots.has('head') && <slot name="head" slot="head" />}
   <div class:list={['sky-page', { 'is-article': compact }]}>
+    <SkyBackdrop env={env ?? (object ? OBJECT_SKIES[object] : 'group')} />
     <SkyHero
       locale={locale}
       title={heading}
