@@ -1,4 +1,12 @@
 /* Homepage galaxy flight (src/components/home/GalaxyFlight.astro). Always deep space, in either theme. */
+
+/* No elastic page bounce on the homepage: the overscroll rule must sit on the root element to reach the
+   viewport, and the root is painted as space so nothing pale can ever show at the edges. Pushing past
+   either end zooms the camera instead (galaxy-flight/overscroll.ts). */
+html:has([data-flight]) {
+  overscroll-behavior: none;
+  background: #05061a;
+}
 .flight {
   --segment: 115vh;
   position: relative;
