@@ -5,6 +5,7 @@ coverTitle: "About Pyuyi"
 date: 2026-08-26 18:00:00
 description: "Pyuyi’s personal space for mathematics, code, papers, photographs, and the unfinished pieces of everyday life."
 comments: false
+sky: hole
 ---
 
 ## Hi, I’m Pyuyi

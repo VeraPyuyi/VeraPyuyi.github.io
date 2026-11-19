@@ -6,6 +6,8 @@ import { CONTENT_PADDING } from '@constants/layout';
 import { siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
+import SkyPlate from '@/components/sky/SkyPlate.astro';
+import type { SkyObject } from '@/lib/sky-catalog';
 
 interface Props {
   locale: string;
@@ -19,6 +21,8 @@ interface Props {
   keywords?: string[];
   contentType?: 'website' | 'article';
   mathStyles?: boolean;
+  /** The object on the homepage star map this page belongs to; shown as the header caption. */
+  sky?: SkyObject;
 }
 
 const {
@@ -33,6 +37,7 @@ const {
   keywords,
   contentType = 'website',
   mathStyles = false,
+  sky,
 } = Astro.props;
 ---
 
@@ -60,7 +65,13 @@ const {
       data-paper-font={paperFontProfile}
     >
       <header class="space-y-3 border-b border-black/5 pb-6 dark:border-white/10">
-        <p class="text-primary text-xs font-semibold tracking-[0.24em] uppercase">Pyuyi's log</p>
+        {
+          sky ? (
+            <SkyPlate object={sky} locale={locale} />
+          ) : (
+            <p class="text-primary text-xs font-semibold tracking-[0.24em] uppercase">Pyuyi's log</p>
+          )
+        }
         <h1
           class:list={['font-chill-round text-3xl font-bold tracking-wide', paperFontProfile && 'paper-page-heading']}
           data-paper-heading-fit={paperFontProfile ? 'page' : undefined}

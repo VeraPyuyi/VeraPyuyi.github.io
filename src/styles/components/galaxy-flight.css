@@ -120,6 +120,33 @@
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--star) 70%, transparent);
 }
 
+/* The star a post's "find it in the sky" link points at: brighter, with a slow beacon ring. */
+.flight-star.is-found svg {
+  transform: scale(1.6);
+  animation: none;
+}
+
+.flight-star.is-found::after {
+  position: absolute;
+  inset: 0.35rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--star);
+  content: '';
+  animation: flight-beacon 2.2s ease-out infinite;
+}
+
+@keyframes flight-beacon {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
 /* Links orbiting the black hole: a small glowing icon with its name beside it. */
 .flight-orbit {
   width: auto;
@@ -350,6 +377,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .flight-star.is-found::after,
   .flight-star svg,
   .flight-mouse::after,
   .flight-ask-dot::after {

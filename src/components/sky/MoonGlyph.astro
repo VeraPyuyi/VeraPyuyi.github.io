@@ -1,0 +1,48 @@
+---
+/** The moon as it was on a given night: a small lit disc drawn from the phase (0 = new, 0.5 = full). */
+import { MOON_PHASE_NAMES, MOON_PHASE_NAMES_EN, moonPhase } from '@/lib/galaxy';
+
+interface Props {
+  date: Date;
+  locale: string;
+  class?: string;
+}
+
+const { date, locale, class: className } = Astro.props;
+const { phase, index } = moonPhase(date.getTime());
+const name = locale === 'en' ? MOON_PHASE_NAMES_EN[index] : MOON_PHASE_NAMES[index];
+const r = 7;
+const k = Math.cos(2 * Math.PI * phase);
+const waxing = phase < 0.5;
+const limbSweep = waxing ? 1 : 0;
+const terminatorSweep = waxing === k > 0 ? 0 : 1;
+const lit = `M 0 ${-r} A ${r} ${r} 0 0 ${limbSweep} 0 ${r} A ${(r * Math.abs(k)).toFixed(2)} ${r} 0 0 ${terminatorSweep} 0 ${-r} Z`;
+---
+
+<svg class:list={['moon-glyph', className]} viewBox="-8 -8 16 16" role="img" aria-label={name}>
+  <title>{name}</title>
+  <circle r={r} class="moon-glyph-dark"></circle>
+  {phase > 0.02 && phase < 0.98 && <path d={lit} class="moon-glyph-lit"></path>}
+  <circle r={r} class="moon-glyph-rim"></circle>
+</svg>
+
+<style>
+  .moon-glyph {
+    overflow: visible;
+  }
+
+  .moon-glyph-dark {
+    fill: #2a2c55;
+  }
+
+  .moon-glyph-lit {
+    fill: #fff1c8;
+    filter: drop-shadow(0 0 2px rgb(255 230 170 / 0.8));
+  }
+
+  .moon-glyph-rim {
+    fill: none;
+    stroke: rgb(255 240 210 / 0.35);
+    stroke-width: 0.6;
+  }
+</style>
