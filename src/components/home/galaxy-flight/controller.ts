@@ -1,13 +1,10 @@
 /**
- * Drives the homepage galaxy flight: scroll position → camera along the route,
- * galaxies turning (slower under the pointer), post stars that follow their arms,
- * and the warp jump that pushes the camera into the chosen star.
+ * Drives the homepage flight: scroll position → camera along the route, galaxies turning
+ * (slower under the pointer), post stars that follow their arms, links orbiting the black hole
+ * at the end, and the warp jump that pushes the camera into the chosen star.
  */
 
-import { dayPart, MOON_PHASE_NAMES, MOON_PHASE_NAMES_EN, moonPhase } from '@/lib/galaxy';
 import {
-  buildBackdrop,
-  buildGalaxyModel,
   cameraAt,
   FIELD_OF_VIEW,
   GALAXY_PLACEMENTS,
@@ -18,32 +15,16 @@ import {
   multiply,
   perspective,
   project,
-  type Vec3,
+  ROUTE,
 } from '@/lib/galaxy-flight';
-import type { BuiltModel, ModelJob } from './model-worker';
+import { blackHoleFrame, invert } from '@/lib/galaxy-flight/black-hole';
+import type { Vec3 } from '@/lib/galaxy-flight/scene';
+import { paintIntro } from './intro';
+import { loadModels } from './model-loader';
 import { createGalaxyRenderer, type ParticleLayer } from './renderer';
-
-/** Light particles per galaxy on a capable desktop; phones and small machines get about half. */
-const BUDGETS = { blogs: 120_000, papers: 100_000, photos: 64_000, moments: 70_000 } as const;
-const BACKDROP_BUDGET = 16_000;
 /** Matches the warp overlay's aim + spool phases, so the camera arrives as the jump begins. */
 const WARP_CAMERA_MS = 2000;
 const IDENTITY = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-const GREETINGS = {
-  zh: {
-    morning: '早安，晨光照进小宇宙了',
-    afternoon: '午后好，今天也在认真观测',
-    evening: '晚上好，星星陆续亮起来了',
-    night: '夜深了，宇宙只为你亮着一盏灯',
-  },
-  en: {
-    morning: 'Good morning — first light in the small universe',
-    afternoon: 'Good afternoon — still observing',
-    evening: 'Good evening — the stars are coming out',
-    night: 'Late night — the universe keeps one light on for you',
-  },
-} as const;
-
 const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
 const mix = (a: Vec3, b: Vec3, t: number): Vec3 => [
   a[0] + (b[0] - a[0]) * t,
@@ -65,26 +46,22 @@ interface GalaxyState {
 
 interface StarLink {
   element: HTMLAnchorElement;
+  /** Index of the stop it belongs to. */
   galaxy: number;
   local: Vec3;
+  /** Links around the black hole orbit it; this is their starting angle. */
+  orbit?: number;
 }
+
+/** A point on the tilted ring the black hole's links orbit along (stop units). */
+const orbitPoint = (angle: number): Vec3 => [Math.cos(angle) * 1.0, Math.sin(angle) * 0.72, 0];
+const HOLE = blackHoleFrame();
 
 interface Warp {
   start: number;
   eye: Vec3;
   target: Vec3;
   point: Vec3;
-}
-
-function paintIntro(root: HTMLElement) {
-  const en = root.dataset.locale === 'en';
-  const greeting = root.querySelector('[data-flight-greeting]');
-  if (greeting) greeting.textContent = (en ? GREETINGS.en : GREETINGS.zh)[dayPart(new Date().getHours())];
-  const moon = root.querySelector('[data-flight-moon]');
-  if (moon) {
-    const { index } = moonPhase(Date.now());
-    moon.textContent = en ? `Tonight · ${MOON_PHASE_NAMES_EN[index]}` : `今晚 · ${MOON_PHASE_NAMES[index]}`;
-  }
 }
 
 /** Starts the flight inside `root`; returns a function that stops it and frees the GPU. */
@@ -99,12 +76,15 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   const gotos = [...root.querySelectorAll<HTMLButtonElement>('[data-flight-goto]')];
   const fades = [...root.querySelectorAll<HTMLElement>('[data-flight-fade]')];
   const ask = root.querySelector<HTMLElement>('[data-flight-ask]');
+  const askText = root.querySelector<HTMLElement>('[data-flight-ask-text]');
   const stars: StarLink[] = [...root.querySelectorAll<HTMLAnchorElement>('[data-flight-star]')].map((element) => ({
     element,
     galaxy: Number(element.dataset.galaxy),
     local: [Number(element.dataset.u), 0, Number(element.dataset.v)],
+    orbit: element.dataset.orbit === undefined ? undefined : Number(element.dataset.orbit),
   }));
-  const last = GALAXY_PLACEMENTS.length - 1;
+  const last = ROUTE.length - 1;
+  let orbitClock = 0;
   const galaxies: GalaxyState[] = GALAXY_PLACEMENTS.map((placement) => ({
     matrix: galaxyModelMatrix(placement),
     drift: galaxyDrift(0, 0),
@@ -153,53 +133,23 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   let slowFrames = 0;
   let fastFrames = 0;
 
-  // Build the particles nearest galaxy first, in a worker when possible so scrolling never stutters.
-  const jobs: ModelJob[] = [];
-  if (renderer) {
-    jobs.push({ id: 'backdrop', kind: 'backdrop', budget: BACKDROP_BUDGET * (small ? 0.6 : 1) });
-    const order = GALAXY_PLACEMENTS.map((_, index) => index).sort((a, b) => Math.abs(a - progress) - Math.abs(b - progress));
-    for (const index of order) {
-      const { kind } = GALAXY_PLACEMENTS[index];
-      jobs.push({ id: kind, kind, budget: BUDGETS[kind] * (small ? 0.5 : 1) });
-    }
-  }
-  const pending = new Set(jobs.map((job) => job.id));
-  const receive = ({ id, light, dust }: BuiltModel) => {
-    if (!renderer || !pending.delete(id)) return;
-    if (id === 'backdrop') {
-      renderer.upload('backdrop', light);
-      backdropReady = time;
-      return;
-    }
-    renderer.upload(`${id}-light`, light);
-    if (dust) renderer.upload(`${id}-dust`, dust);
-    const index = GALAXY_PLACEMENTS.findIndex((placement) => placement.kind === id);
-    if (index >= 0) galaxies[index].readyAt = time;
-  };
-  let buildTimer = 0;
-  const buildOnMainThread = () => {
-    const job = jobs.find((candidate) => pending.has(candidate.id));
-    if (!job) return;
-    if (job.kind === 'backdrop') receive({ id: job.id, light: buildBackdrop(job.budget) });
-    else receive({ id: job.id, ...buildGalaxyModel(job.kind, job.budget) });
-    buildTimer = window.setTimeout(buildOnMainThread, 16);
-  };
-  let worker: Worker | null = null;
-  if (jobs.length) {
-    try {
-      worker = new Worker(new URL('./model-worker.ts', import.meta.url), { type: 'module' });
-      worker.onmessage = (event: MessageEvent<BuiltModel>) => receive(event.data);
-      worker.onerror = () => {
-        worker?.terminate();
-        worker = null;
-        buildOnMainThread();
-      };
-      for (const job of jobs) worker.postMessage(job);
-    } catch {
-      worker = null;
-      buildTimer = window.setTimeout(buildOnMainThread, 0);
-    }
-  }
+  const models = renderer
+    ? loadModels({
+        small,
+        progress,
+        onBuilt: ({ id, light, dust }) => {
+          if (id === 'backdrop') {
+            renderer.upload('backdrop', light);
+            backdropReady = time;
+            return;
+          }
+          renderer.upload(`${id}-light`, light);
+          if (dust) renderer.upload(`${id}-dust`, dust);
+          const index = GALAXY_PLACEMENTS.findIndex((placement) => placement.kind === id);
+          if (index >= 0) galaxies[index].readyAt = time;
+        },
+      })
+    : null;
 
   const infoDefaults = labels.map((label) => ({
     head: label.querySelector('[data-flight-info-head]')?.textContent ?? '',
@@ -257,6 +207,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       galaxy.speed += (goal - galaxy.speed) * (1 - Math.exp(-dt / 0.45));
       galaxy.angle += GALAXY_PLACEMENTS[index].spin * galaxy.speed * dt;
     });
+    if (!still && !warp && hoverStar !== last) orbitClock += dt * 0.035;
 
     if (renderer) {
       const layers: ParticleLayer[] = [];
@@ -291,7 +242,21 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
         layers.push({ ...base, mesh: `${placement.kind}-light`, dust: false });
         layers.push({ ...base, mesh: `${placement.kind}-dust`, dust: true });
       }
-      renderer.render({ view, projection, fieldOfView: FIELD_OF_VIEW, time, exposure: 1.25, layers });
+      // The black hole joins in once the camera is close enough to see it.
+      const toHole = Math.hypot(HOLE.center[0] - eye[0], HOLE.center[1] - eye[1], HOLE.center[2] - eye[2]);
+      const holeAlpha = clamp((330 - toHole) / 80);
+      const blackHole =
+        holeAlpha > 0
+          ? {
+              ...HOLE,
+              eye,
+              viewProjection,
+              inverseViewProjection: invert(viewProjection) ?? IDENTITY,
+              time: still ? 0 : time,
+              alpha: holeAlpha,
+            }
+          : null;
+      renderer.render({ view, projection, fieldOfView: FIELD_OF_VIEW, time, exposure: 1.25, layers, blackHole });
     }
 
     updateOverlay();
@@ -302,8 +267,8 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   function galaxyAt(x: number, y: number): number {
     const active = Math.round(progress);
     if (warp || Math.abs(progress - active) > 0.3) return -1;
-    const placement = GALAXY_PLACEMENTS[active];
-    const { drift } = galaxies[active];
+    const placement = ROUTE[active];
+    const drift = galaxies[active]?.drift;
     const center = project(viewProjection, localToWorld(placement, 0, [0, 0, 0], drift), width, height);
     if (center.depth <= 0) return -1;
     let reach = 0;
@@ -319,9 +284,10 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
 
   function updateOverlay() {
     for (const star of stars) {
-      const placement = GALAXY_PLACEMENTS[star.galaxy];
-      const { angle, drift } = galaxies[star.galaxy];
-      const point = project(viewProjection, localToWorld(placement, angle, star.local, drift), width, height);
+      const placement = ROUTE[star.galaxy];
+      const galaxy = galaxies[star.galaxy];
+      const local = star.orbit === undefined ? star.local : orbitPoint(star.orbit + orbitClock);
+      const point = project(viewProjection, localToWorld(placement, galaxy?.angle ?? 0, local, galaxy?.drift), width, height);
       const near = clamp(1 - Math.abs(progress - star.galaxy) * 2.2);
       const opacity = point.depth > 0.5 && !warp ? near : 0;
       const scale = clamp((placement.radius * 2.3) / Math.max(point.depth, 0.01), 0.55, 1.5);
@@ -348,6 +314,8 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       const visible = !warp && revealed !== active && Math.abs(progress - active) < 0.2;
       ask.style.opacity = visible ? String(clamp(1 - Math.abs(progress - active) * 5)) : '0';
       ask.style.setProperty('--accent', labels[active]?.style.getPropertyValue('--accent') ?? '');
+      const text = labels[active]?.dataset.ask;
+      if (askText && text && askText.textContent !== text) askText.textContent = text;
     }
     const nearest = Math.round(progress);
     gotos.forEach((button, index) => {
@@ -363,7 +331,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
 
   /** Keeps the frame rate smooth: first lower the resolution, then draw fewer particles. */
   function adapt(dt: number) {
-    if (!renderer || pending.size || document.visibilityState !== 'visible') return;
+    if (!renderer || models?.busy || document.visibilityState !== 'visible') return;
     if (dt > 1 / 38) slowFrames++;
     else if (dt < 1 / 57) fastFrames++;
     if (slowFrames > 45) {
@@ -443,10 +411,9 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     event.preventDefault();
     const star = starOf(link);
     const galaxyIndex = star ? star.galaxy : Number(link.dataset.flightEnter);
-    const placement = GALAXY_PLACEMENTS[galaxyIndex] ?? GALAXY_PLACEMENTS[0];
-    const point = star
-      ? localToWorld(placement, galaxies[star.galaxy].angle, star.local, galaxies[star.galaxy].drift)
-      : localToWorld(placement, 0, [0, 0, 0], galaxies[galaxyIndex]?.drift);
+    const placement = ROUTE[galaxyIndex] ?? ROUTE[0];
+    const owner = galaxies[galaxyIndex];
+    const point = localToWorld(placement, owner?.angle ?? 0, star ? star.local : [0, 0, 0], owner?.drift);
     const onScreen = project(viewProjection, point, width, height);
     const rect = stage.getBoundingClientRect();
     warp = { start: performance.now(), eye: camera.eye, target: camera.target, point };
@@ -481,9 +448,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
 
   return () => {
     cancelAnimationFrame(raf);
-    window.clearTimeout(buildTimer);
-    pending.clear();
-    worker?.terminate();
+    models?.stop();
     resizeObserver.disconnect();
     window.removeEventListener('keydown', onKey);
     stage.removeEventListener('pointermove', onPointerMove);

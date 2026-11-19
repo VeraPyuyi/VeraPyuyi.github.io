@@ -11,10 +11,10 @@ import { createParticleBuilder, createRandom, mixRgb, type ParticleSet, type Rgb
 export type Vec3 = readonly [number, number, number];
 export type Mat4 = Float32Array;
 
-export interface GalaxyPlacement {
-  kind: GalaxyKind;
+/** A stop on the flight: where it hangs in space and where the camera rests to look at it. */
+export interface FlightStop {
   center: Vec3;
-  /** Galaxy radius in world units. */
+  /** Radius in world units (a galaxy's disk, or a black hole's accretion disk). */
   radius: number;
   /** Unit vector from the galaxy towards the camera's resting point. */
   view: Vec3;
@@ -26,6 +26,10 @@ export interface GalaxyPlacement {
   roll: number;
   /** Pattern speed in radians per second; spirals turn so their arms trail. */
   spin: number;
+}
+
+export interface GalaxyPlacement extends FlightStop {
+  kind: GalaxyKind;
 }
 
 /** Slow floating motion of a galaxy: offsets in galaxy radii, tilt in radians. */
@@ -100,8 +104,26 @@ export const GALAXY_PLACEMENTS: readonly GalaxyPlacement[] = [
   },
 ];
 
+/**
+ * The last stop: a supermassive black hole, its accretion disk seen almost edge-on so that
+ * lensing lifts the far side of the disk over (and under) the shadow, as in Interstellar.
+ * `radius` is the disk's outer edge; the event horizon is radius / 14.
+ */
+export const BLACK_HOLE: FlightStop = {
+  center: [26, -4, -455],
+  radius: 14,
+  view: normalize([0.12, 0.14, 1]),
+  distance: 2.25,
+  inclination: Math.PI / 2 - 0.16,
+  roll: 0,
+  spin: 0,
+};
+
+/** Every stop the camera visits, in order. */
+export const ROUTE: readonly FlightStop[] = [...GALAXY_PLACEMENTS, BLACK_HOLE];
+
 /** The galaxy's own axes in world space: `x` and `z` span the disk, `y` is its spin axis. */
-function galaxyBasis(placement: GalaxyPlacement, tilt = 0): { x: Vec3; y: Vec3; z: Vec3 } {
+export function stopBasis(placement: FlightStop, tilt = 0): { x: Vec3; y: Vec3; z: Vec3 } {
   const { view, roll } = placement;
   const inclination = placement.inclination + tilt;
   const tiltTowards = normalize(sub(UP, scale(view, dot(view, UP))));
@@ -129,14 +151,14 @@ export function galaxyDrift(index: number, time: number): GalaxyDrift {
 }
 
 /** World position of the galaxy's centre once it has drifted. */
-function driftedCenter(placement: GalaxyPlacement, drift: GalaxyDrift): Vec3 {
+function driftedCenter(placement: FlightStop, drift: GalaxyDrift): Vec3 {
   const side = normalize(cross(UP, placement.view));
   return add(placement.center, add(scale(UP, drift.lift * placement.radius), scale(side, drift.sway * placement.radius)));
 }
 
 /** Model matrix taking galaxy units (radius 1) to world space. */
-export function galaxyModelMatrix(placement: GalaxyPlacement, drift: GalaxyDrift = NO_DRIFT): Mat4 {
-  const { x, y, z } = galaxyBasis(placement, drift.tilt);
+export function galaxyModelMatrix(placement: FlightStop, drift: GalaxyDrift = NO_DRIFT): Mat4 {
+  const { x, y, z } = stopBasis(placement, drift.tilt);
   const r = placement.radius;
   const [cx, cy, cz] = driftedCenter(placement, drift);
   return new Float32Array([
@@ -160,10 +182,10 @@ export function galaxyModelMatrix(placement: GalaxyPlacement, drift: GalaxyDrift
 }
 
 /** World position of a point given in galaxy units, after the galaxy has turned by `angle` and drifted. */
-export function localToWorld(placement: GalaxyPlacement, angle: number, local: Vec3, drift: GalaxyDrift = NO_DRIFT): Vec3 {
+export function localToWorld(placement: FlightStop, angle: number, local: Vec3, drift: GalaxyDrift = NO_DRIFT): Vec3 {
   const radius = Math.hypot(local[0], local[2]);
   const theta = Math.atan2(local[2], local[0]) + angle;
-  const { x, y, z } = galaxyBasis(placement, drift.tilt);
+  const { x, y, z } = stopBasis(placement, drift.tilt);
   const r = placement.radius;
   return add(
     driftedCenter(placement, drift),
@@ -173,7 +195,7 @@ export function localToWorld(placement: GalaxyPlacement, angle: number, local: V
 
 /** Where the camera rests to look at galaxy `index`, for a viewport of the given aspect ratio. */
 function restingPose(index: number, aspect: number): { eye: Vec3; target: Vec3 } {
-  const placement = GALAXY_PLACEMENTS[index];
+  const placement = ROUTE[index];
   const halfWidth = Math.tan(FIELD_OF_VIEW / 2) * aspect;
   const fit = Math.max(1, Math.min(2.4, 1.25 / halfWidth / placement.distance));
   const eye = add(placement.center, scale(placement.view, placement.distance * placement.radius * fit));
@@ -202,13 +224,13 @@ function catmullRom(p0: Vec3, p1: Vec3, p2: Vec3, p3: Vec3, t: number): Vec3 {
  * sideways and up (world units) while it keeps looking at the same point, for pointer parallax.
  */
 export function cameraAt(progress: number, aspect: number, nudge: readonly [number, number] = [0, 0]): CameraPose {
-  const last = GALAXY_PLACEMENTS.length - 1;
+  const last = ROUTE.length - 1;
   const p = Math.min(last, Math.max(0, progress));
   const index = Math.min(last - 1, Math.floor(p));
   const raw = p - index;
   // Linger a little near each galaxy, travel faster in between.
   const t = raw + (smoothstep(raw) - raw) * 0.55;
-  const poses = GALAXY_PLACEMENTS.map((_, i) => restingPose(i, aspect));
+  const poses = ROUTE.map((_, i) => restingPose(i, aspect));
   const eye = (i: number): Vec3 => {
     if (i < 0) return lerp(poses[0].eye, poses[1].eye, -0.5);
     if (i > last) return lerp(poses[last].eye, poses[last - 1].eye, -0.5);
@@ -283,7 +305,7 @@ export function project(
   return { x: ((x / w + 1) / 2) * width, y: ((1 - y / w) / 2) * height, depth: w };
 }
 
-const ROUTE_CENTER: Vec3 = [0, 0, -165];
+const ROUTE_CENTER: Vec3 = [0, 0, -220];
 
 /** Stars, faint nebulae and far-off galaxies around the route, in world units. */
 export function buildBackdrop(budget: number): ParticleSet {
@@ -325,11 +347,11 @@ export function buildBackdrop(budget: number): ParticleSet {
     const tint = [STAR.violet, STAR.rose, STAR.teal, STAR.young][index % 4];
     builder.add(at[0], at[1], at[2], tint, 0.006, distance * random.between(0.04, 0.08));
   }
-  for (let index = 0; index < budget * 0.4; index++) {
+  for (let index = 0; index < budget * 0.48; index++) {
     builder.add(
       random.between(-150, 150),
       random.between(-95, 95),
-      random.between(-440, 90),
+      random.between(-560, 90),
       temperature(),
       random.between(0.12, 0.5),
       random.between(0.05, 0.1),

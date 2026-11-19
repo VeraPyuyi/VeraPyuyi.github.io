@@ -7,6 +7,8 @@
  */
 
 import type { Mat4, ParticleSet } from '@/lib/galaxy-flight';
+import { type BlackHoleInput, createBlackHolePass } from './black-hole-pass';
+import { compile, createTarget, deleteTarget, FULLSCREEN_VERTEX, type Program, type Target } from './gl-utils';
 
 export interface ParticleLayer {
   /** Id given to `upload`. */
@@ -33,6 +35,8 @@ export interface FrameInput {
   time: number;
   exposure: number;
   layers: readonly ParticleLayer[];
+  /** The black hole, when it is close enough to be seen. */
+  blackHole?: BlackHoleInput | null;
 }
 
 export interface GalaxyRenderer {
@@ -99,14 +103,6 @@ void main() {
   outColor = vec4(v_color * mix(star, puff, v_soft), 1.0);
 }`;
 
-const FULLSCREEN_VERTEX = `#version 300 es
-out vec2 v_uv;
-void main() {
-  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
-  v_uv = p;
-  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
-}`;
-
 const DOWN_FRAGMENT = `#version 300 es
 precision highp float;
 in vec2 v_uv;
@@ -142,6 +138,18 @@ void main() {
   outColor = vec4(c / 12.0, 1.0);
 }`;
 
+// Deep space behind everything. Drawn into the scene first, so the black hole can swallow it too.
+const SKY_FRAGMENT = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+out vec4 outColor;
+void main() {
+  vec2 c = v_uv - 0.5;
+  vec3 space = mix(vec3(0.004, 0.005, 0.016), vec3(0.012, 0.011, 0.034), v_uv.y)
+    + vec3(0.012, 0.008, 0.026) * exp(-dot(c, c) * 3.0);
+  outColor = vec4(space, 1.0);
+}`;
+
 const COMPOSITE_FRAGMENT = `#version 300 es
 precision highp float;
 in vec2 v_uv;
@@ -157,9 +165,7 @@ vec3 aces(vec3 x) {
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void main() {
   vec2 c = v_uv - 0.5;
-  vec3 space = mix(vec3(0.004, 0.005, 0.016), vec3(0.012, 0.011, 0.034), v_uv.y)
-    + vec3(0.012, 0.008, 0.026) * exp(-dot(c, c) * 3.0);
-  vec3 hdr = texture(u_scene, v_uv).rgb + texture(u_bloom, v_uv).rgb * u_bloomStrength + space;
+  vec3 hdr = texture(u_scene, v_uv).rgb + texture(u_bloom, v_uv).rgb * u_bloomStrength;
   vec3 mapped = aces(hdr * u_exposure);
   mapped = max(mix(vec3(dot(mapped, vec3(0.2126, 0.7152, 0.0722))), mapped, 1.2), 0.0);
   vec3 color = pow(mapped, vec3(1.0 / 2.2));
@@ -168,50 +174,13 @@ void main() {
   outColor = vec4(color, 1.0);
 }`;
 
-interface Program {
-  program: WebGLProgram;
-  uniform: (name: string) => WebGLUniformLocation | null;
-}
-
 interface Mesh {
   vao: WebGLVertexArrayObject;
   buffers: WebGLBuffer[];
   count: number;
 }
 
-interface Target {
-  framebuffer: WebGLFramebuffer;
-  texture: WebGLTexture;
-  width: number;
-  height: number;
-}
-
 const BLOOM_LEVELS = 5;
-
-function compile(gl: WebGL2RenderingContext, vertex: string, fragment: string): Program {
-  const program = gl.createProgram();
-  for (const [type, source] of [
-    [gl.VERTEX_SHADER, vertex],
-    [gl.FRAGMENT_SHADER, fragment],
-  ] as const) {
-    const shader = gl.createShader(type);
-    if (!shader) throw new Error('shader');
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader) ?? 'shader');
-    gl.attachShader(program, shader);
-  }
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) ?? 'link');
-  const cache = new Map<string, WebGLUniformLocation | null>();
-  return {
-    program,
-    uniform: (name) => {
-      if (!cache.has(name)) cache.set(name, gl.getUniformLocation(program, name));
-      return cache.get(name) ?? null;
-    },
-  };
-}
 
 /** Creates the renderer, or returns null when WebGL2 is unavailable. */
 export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer | null {
@@ -227,11 +196,13 @@ export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer 
   let down: Program;
   let up: Program;
   let composite: Program;
+  let sky: Program;
   try {
     particles = compile(gl, PARTICLE_VERTEX, PARTICLE_FRAGMENT);
     down = compile(gl, FULLSCREEN_VERTEX, DOWN_FRAGMENT);
     up = compile(gl, FULLSCREEN_VERTEX, UP_FRAGMENT);
     composite = compile(gl, FULLSCREEN_VERTEX, COMPOSITE_FRAGMENT);
+    sky = compile(gl, FULLSCREEN_VERTEX, SKY_FRAGMENT);
   } catch {
     return null;
   }
@@ -239,42 +210,19 @@ export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer 
   const maxPoint = (gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE) as Float32Array)[1] ?? 64;
   const emptyVao = gl.createVertexArray();
   const meshes = new Map<string, Mesh>();
+  const blackHolePass = createBlackHolePass(gl, hdr);
   let scene: Target | null = null;
+  let lensed: Target | null = null;
   let bloom: Target[] = [];
   let ratio = 1;
   let detail = 1;
 
-  function createTarget(width: number, height: number): Target {
-    const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      hdr ? gl.RGBA16F : gl.RGBA8,
-      width,
-      height,
-      0,
-      gl.RGBA,
-      hdr ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE,
-      null,
-    );
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    const framebuffer = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-    return { framebuffer, texture, width, height };
-  }
+  const createTargetSized = (width: number, height: number) => createTarget(gl, hdr, width, height);
 
   function dropTargets() {
-    for (const target of [scene, ...bloom]) {
-      if (!target) continue;
-      gl.deleteFramebuffer(target.framebuffer);
-      gl.deleteTexture(target.texture);
-    }
+    for (const target of [scene, lensed, ...bloom]) deleteTarget(gl, target);
     scene = null;
+    lensed = null;
     bloom = [];
   }
 
@@ -320,13 +268,15 @@ export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer 
       canvas.width = width;
       canvas.height = height;
       dropTargets();
-      scene = createTarget(width, height);
+      scene = createTargetSized(width, height);
+      lensed = createTargetSized(width, height);
+      blackHolePass?.resize(width, height);
       let w = width;
       let h = height;
       for (let level = 0; level < BLOOM_LEVELS; level++) {
         w = Math.max(1, Math.floor(w / 2));
         h = Math.max(1, Math.floor(h / 2));
-        bloom.push(createTarget(w, h));
+        bloom.push(createTargetSized(w, h));
       }
     },
 
@@ -338,8 +288,9 @@ export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer 
       if (!scene || gl.isContextLost()) return;
       gl.bindFramebuffer(gl.FRAMEBUFFER, scene.framebuffer);
       gl.viewport(0, 0, scene.width, scene.height);
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.useProgram(sky.program);
+      gl.bindVertexArray(emptyVao);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.enable(gl.BLEND);
       gl.useProgram(particles.program);
       const u = particles.uniform;
@@ -364,8 +315,15 @@ export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer 
       }
       gl.disable(gl.BLEND);
 
+      // The black hole bends everything already drawn; the lensed copy replaces the scene from here on.
+      let lit = scene;
+      if (frame.blackHole && blackHolePass && lensed) {
+        blackHolePass.draw(scene, lensed, frame.blackHole, emptyVao);
+        lit = lensed;
+      }
+
       // Bloom: threshold and halve down the chain, then add each level back up.
-      fullscreen(down, bloom[0], scene, scene, () => gl.uniform1f(down.uniform('u_threshold'), 1.1));
+      fullscreen(down, bloom[0], lit, lit, () => gl.uniform1f(down.uniform('u_threshold'), 1.1));
       for (let level = 1; level < bloom.length; level++) {
         fullscreen(down, bloom[level], bloom[level - 1], bloom[level - 1], () => gl.uniform1f(down.uniform('u_threshold'), 0));
       }
@@ -380,7 +338,7 @@ export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer 
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
       gl.useProgram(composite.program);
       gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, scene.texture);
+      gl.bindTexture(gl.TEXTURE_2D, lit.texture);
       gl.uniform1i(composite.uniform('u_scene'), 0);
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, bloom[0].texture);
@@ -394,6 +352,7 @@ export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer 
 
     destroy() {
       dropTargets();
+      blackHolePass?.destroy();
       for (const mesh of meshes.values()) {
         gl.deleteVertexArray(mesh.vao);
         for (const buffer of mesh.buffers) gl.deleteBuffer(buffer);
