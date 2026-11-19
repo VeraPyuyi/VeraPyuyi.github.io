@@ -65,10 +65,27 @@ const stars = Array.from({ length: compact ? 90 : 140 }, () => {
   </div>
 
   <div class="sky-hero-art" aria-hidden={image || Astro.slots.has('art') ? undefined : 'true'}>
-    <slot name="art">
-      {art && <img class="sky-hero-galaxy" src={art} alt="" width="1200" height={object ? ART_HEIGHT[object] : 960} decoding="async" fetchpriority="high" />}
-      {image && <img class="sky-hero-photo" src={image} alt={imageAlt ?? ''} decoding="async" />}
-    </slot>
+    {art && <canvas class="sky-hero-canvas" data-sky-canvas aria-hidden="true"></canvas>}
+    {
+      art && (
+        <img
+          class="sky-hero-galaxy"
+          src={art}
+          alt=""
+          width="1200"
+          height={object ? ART_HEIGHT[object] : 960}
+          decoding="async"
+          fetchpriority="high"
+        />
+      )
+    }
+    {image && <img class="sky-hero-photo" src={image} alt={imageAlt ?? ''} decoding="async" />}
+    <slot name="art" />
+  </div>
+
+  <div class="sky-hero-meteors" aria-hidden="true">
+    <span class="sky-meteor" style="--top:12%;--left:38%;--every:13s;--delay:3s"></span>
+    <span class="sky-meteor" style="--top:4%;--left:62%;--every:19s;--delay:11s"></span>
   </div>
 
   <div class="sky-hero-text" data-paper-font={paperFontProfile}>
@@ -100,7 +117,20 @@ const stars = Array.from({ length: compact ? 90 : 140 }, () => {
 </section>
 
 <script>
-  // Gentle parallax: as the page scrolls, the object sinks a little and the night lets go of the text.
+  import { mountSkyStage } from './sky-stage';
+
+  // The page's object, live: the homepage's WebGL galaxy (or black hole) for this stop.
+  let stopStage: (() => void) | null = null;
+  let mounted: HTMLElement | null = null;
+  function mountStage() {
+    const hero = document.querySelector<HTMLElement>('[data-sky-hero][data-object]');
+    if (hero === mounted) return;
+    stopStage?.();
+    mounted = hero;
+    stopStage = hero ? mountSkyStage(hero) : null;
+  }
+
+  // Gentle parallax: as the page scrolls, the night lets go of the text (and a still image sinks a little).
   let frame = 0;
   function paint() {
     frame = 0;
@@ -117,7 +147,16 @@ const stars = Array.from({ length: compact ? 90 : 140 }, () => {
     paint();
     window.addEventListener('scroll', onScroll, { passive: true });
   }
-  if (document.readyState !== 'loading') init();
-  document.addEventListener('astro:page-load', init);
-  document.addEventListener('astro:before-swap', () => window.removeEventListener('scroll', onScroll));
+  function start() {
+    init();
+    mountStage();
+  }
+  if (document.readyState !== 'loading') start();
+  document.addEventListener('astro:page-load', start);
+  document.addEventListener('astro:before-swap', () => {
+    window.removeEventListener('scroll', onScroll);
+    stopStage?.();
+    stopStage = null;
+    mounted = null;
+  });
 </script>

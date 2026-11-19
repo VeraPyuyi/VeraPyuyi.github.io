@@ -44,6 +44,7 @@ const peaks = times.map((time) => ({ x: xOf(time), y: yOf(time) }));
     <line class="light-curve-axis" x1="0" x2={WIDTH} y1={HEIGHT - 8} y2={HEIGHT - 8}></line>
     <polygon points={`0,${HEIGHT - 8} ${curve} ${WIDTH},${HEIGHT - 8}`} fill="url(#light-curve-fill)"></polygon>
     <polyline class="light-curve-line" points={curve} pathLength="1"></polyline>
+    <polyline class="light-curve-glint" points={curve} pathLength="1"></polyline>
     {peaks.map((peak) => <circle class="light-curve-peak" cx={peak.x} cy={peak.y} r="2.6" />)}
     <circle class="light-curve-now" cx={WIDTH} cy={yOf(now)} r="2.2"></circle>
   </svg>
@@ -80,6 +81,34 @@ const peaks = times.map((time) => ({ x: xOf(time), y: yOf(time) }));
     animation: light-curve-draw 2.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
   }
 
+  .light-curve-glint {
+    fill: none;
+    stroke: #fff;
+    stroke-dasharray: 0.035 0.965;
+    stroke-dashoffset: 0.035;
+    stroke-linecap: round;
+    stroke-width: 2.2;
+    opacity: 0;
+    filter: drop-shadow(0 0 5px #f7c6dd);
+    animation: light-curve-glint 7s linear 3.2s infinite;
+  }
+
+  @keyframes light-curve-glint {
+    0% {
+      opacity: 1;
+      stroke-dashoffset: 0.035;
+    }
+
+    96% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0;
+      stroke-dashoffset: -0.965;
+    }
+  }
+
   .light-curve-peak {
     fill: #fff;
     filter: drop-shadow(0 0 5px #f7a8c8);
@@ -113,6 +142,10 @@ const peaks = times.map((time) => ({ x: xOf(time), y: yOf(time) }));
     .light-curve-line {
       stroke-dashoffset: 0;
       animation: none;
+    }
+
+    .light-curve-glint {
+      display: none;
     }
 
     .light-curve-now {

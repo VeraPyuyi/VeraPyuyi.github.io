@@ -70,6 +70,7 @@ while (cursor.getTime() <= last + 1) {
 
 <figure class="star-chart">
   <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-labelledby="star-chart-caption">
+    <g class="star-chart-sky">
     <g class="star-chart-grid" aria-hidden="true">
       {[90, 170, 250].map((y) => <line x1="20" x2={WIDTH - 20} y1={y} y2={y} />)}
       {ticks.map((tick) => <line x1={tick.x} x2={tick.x} y1="30" y2={HEIGHT - 36} />)}
@@ -107,6 +108,7 @@ while (cursor.getTime() <= last + 1) {
         </a>
       ))
     }
+    </g>
   </svg>
   <figcaption id="star-chart-caption" class="star-chart-caption">
     {
@@ -142,12 +144,20 @@ while (cursor.getTime() <= last + 1) {
     text-anchor: middle;
   }
 
+  /* The sky turns a hair; the dotted constellation lines flow forward in time. */
+  .star-chart-sky {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    animation: star-chart-drift 48s ease-in-out infinite;
+  }
+
   .star-chart-line {
     fill: none;
     stroke: var(--star);
     stroke-dasharray: 2 4;
     stroke-opacity: 0.45;
     stroke-width: 1;
+    animation: star-chart-flow 3.2s linear infinite;
   }
 
   .star-chart-name {
@@ -203,6 +213,23 @@ while (cursor.getTime() <= last + 1) {
     text-align: right;
   }
 
+  @keyframes star-chart-drift {
+    0%,
+    100% {
+      transform: rotate(0deg) translate(0, 0);
+    }
+
+    50% {
+      transform: rotate(0.7deg) translate(-4px, 3px);
+    }
+  }
+
+  @keyframes star-chart-flow {
+    to {
+      stroke-dashoffset: -12;
+    }
+  }
+
   @keyframes star-chart-twinkle {
     0%,
     100% {
@@ -225,6 +252,8 @@ while (cursor.getTime() <= last + 1) {
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .star-chart-sky,
+    .star-chart-line,
     .star-chart-core {
       animation: none;
     }

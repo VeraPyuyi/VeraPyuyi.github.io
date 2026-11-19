@@ -39,7 +39,6 @@ const description = frontmatter.description ?? '';
   {
     frontmatter.sky === 'hole' && (
       <div slot="art" class="about-sky">
-        <img class="about-hole" src="/img/sky/hole-hero.webp" alt="" width="1200" height="667" decoding="async" />
         <img class="about-girl" src="/img/sky/about-girl.webp" alt="" width="522" height="340" decoding="async" />
         <img class="about-cat" src="/img/sky/about-cat.webp" alt="" width="178" height="143" decoding="async" />
       </div>
@@ -65,16 +64,6 @@ const description = frontmatter.description ?? '';
     inset: 0;
   }
 
-  .about-hole {
-    position: absolute;
-    top: 8%;
-    right: -4%;
-    width: min(64vw, 60rem);
-    -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
-    mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
-    animation: about-float 18s ease-in-out infinite;
-  }
-
   /* She leans on the line where night turns to dawn, chin in hand, facing the hole. */
   .about-girl,
   .about-cat {
@@ -87,6 +76,8 @@ const description = frontmatter.description ?? '';
   .about-girl {
     right: 36%;
     width: min(30vw, 24rem);
+    transform-origin: 70% 100%;
+    animation: about-girl 9s ease-in-out infinite;
   }
 
   .about-cat {
@@ -95,14 +86,15 @@ const description = frontmatter.description ?? '';
     animation: about-cat 7s ease-in-out infinite;
   }
 
-  @keyframes about-float {
+  /* She breathes and leans a touch closer, as if the disk had just flared. */
+  @keyframes about-girl {
     0%,
     100% {
-      translate: 0 0;
+      transform: translateY(0) rotate(0deg);
     }
 
-    50% {
-      translate: 0 -1.5%;
+    40% {
+      transform: translateY(-3px) rotate(0.6deg);
     }
   }
 
@@ -118,12 +110,6 @@ const description = frontmatter.description ?? '';
   }
 
   @media (max-width: 768px) {
-    .about-hole {
-      top: 4%;
-      right: -30%;
-      width: 150vw;
-    }
-
     .about-girl {
       right: 18%;
       width: 64vw;
@@ -136,7 +122,7 @@ const description = frontmatter.description ?? '';
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .about-hole,
+    .about-girl,
     .about-cat {
       animation: none;
     }

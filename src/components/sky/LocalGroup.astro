@@ -74,8 +74,10 @@ const home = galaxy(seedOf('Pyuyi'));
   <div class="local-group-member is-home" style="--x:50%;--y:50%;--hue:#f7c6dd">
     <svg viewBox="-50 -50 100 100" aria-hidden="true">
       <g transform="rotate(-20) scale(1 0.6)">
-        <circle r="7" fill="#fff4e2" opacity="0.9"></circle>
-        {home.dots.map((dot) => <circle cx={dot.x.toFixed(1)} cy={dot.y.toFixed(1)} r={dot.r.toFixed(2)} opacity={dot.o.toFixed(2)} />)}
+        <g class="local-group-spin" style="--turn:110s">
+          <circle r="7" fill="#fff4e2" opacity="0.9"></circle>
+          {home.dots.map((dot) => <circle cx={dot.x.toFixed(1)} cy={dot.y.toFixed(1)} r={dot.r.toFixed(2)} opacity={dot.o.toFixed(2)} />)}
+        </g>
       </g>
     </svg>
     <span class="local-group-name">{en ? 'You are here' : '你在这里'}</span>
@@ -92,10 +94,12 @@ const home = galaxy(seedOf('Pyuyi'));
       >
         <svg viewBox="-50 -50 100 100" aria-hidden="true">
           <g transform={`rotate(${friend.galaxy.turn.toFixed(0)}) scale(1 ${friend.galaxy.tilt.toFixed(2)})`}>
-            <circle r="6" fill="#fff" opacity="0.85" />
-            {friend.galaxy.dots.map((dot) => (
-              <circle cx={dot.x.toFixed(1)} cy={dot.y.toFixed(1)} r={dot.r.toFixed(2)} opacity={dot.o.toFixed(2)} />
-            ))}
+            <g class="local-group-spin" style={`--turn:${(70 + friend.galaxy.size * 60).toFixed(0)}s`}>
+              <circle r="6" fill="#fff" opacity="0.85" />
+              {friend.galaxy.dots.map((dot) => (
+                <circle cx={dot.x.toFixed(1)} cy={dot.y.toFixed(1)} r={dot.r.toFixed(2)} opacity={dot.o.toFixed(2)} />
+              ))}
+            </g>
           </g>
         </svg>
         <span class="local-group-name">
@@ -136,6 +140,10 @@ const home = galaxy(seedOf('Pyuyi'));
     stroke-dasharray: 0.6 1.2;
     stroke-width: 0.25;
     vector-effect: non-scaling-stroke;
+  }
+
+  .local-group-threads line {
+    animation: local-group-signal 2.4s linear infinite;
   }
 
   .local-group-threads line.is-vacant {
@@ -213,6 +221,25 @@ const home = galaxy(seedOf('Pyuyi'));
     letter-spacing: 0.24em;
   }
 
+  /* Spirals turn arms-trailing; each galaxy at its own pace. */
+  .local-group-spin {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    animation: local-group-turn var(--turn) linear infinite reverse;
+  }
+
+  @keyframes local-group-turn {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes local-group-signal {
+    to {
+      stroke-dashoffset: -1.8;
+    }
+  }
+
   @keyframes local-group-drift {
     0%,
     100% {
@@ -239,6 +266,8 @@ const home = galaxy(seedOf('Pyuyi'));
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .local-group-spin,
+    .local-group-threads line,
     .local-group-member {
       animation: none;
     }
