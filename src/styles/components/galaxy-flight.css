@@ -2,7 +2,7 @@
 .flight {
   --segment: 115vh;
   position: relative;
-  height: calc(100vh + 3 * var(--segment));
+  height: calc(100vh + (var(--stops, 5) - 1) * var(--segment));
   background: #05061a;
   color: #eef0ff;
 }
@@ -10,7 +10,7 @@
 @supports (height: 100svh) {
   .flight {
     --segment: 115svh;
-    height: calc(100svh + 3 * var(--segment));
+    height: calc(100svh + (var(--stops, 5) - 1) * var(--segment));
   }
 }
 
@@ -118,6 +118,36 @@
 .flight-star:focus-visible {
   outline: none;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--star) 70%, transparent);
+}
+
+/* Links orbiting the black hole: a small glowing icon with its name beside it. */
+.flight-orbit {
+  width: auto;
+  padding-right: 0.5rem;
+  place-items: initial;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: start;
+  gap: 0.35rem;
+  border-radius: 1.25rem;
+  color: #ffe9c7;
+  padding-left: 0.7rem;
+  white-space: nowrap;
+}
+
+.flight-orbit-name {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+  text-shadow:
+    0 0 10px rgb(255 190 110 / 0.6),
+    0 1px 8px rgb(5 6 26 / 0.9);
+  transition: opacity 0.3s ease;
+}
+
+.flight-orbit:hover .flight-orbit-name,
+.flight-orbit:focus-visible .flight-orbit-name {
+  opacity: 1;
 }
 
 @keyframes flight-star-breathe {
@@ -286,6 +316,14 @@
 
   .flight-name {
     font-size: 2rem;
+  }
+
+  .flight-me-text {
+    font-size: 0.8rem;
+  }
+
+  .flight-me-text + .flight-me-text {
+    display: none;
   }
 
   .flight-quote {

@@ -5,7 +5,7 @@
  * riding its galaxy's arms, ring or clumps.
  */
 import { getCollection } from 'astro:content';
-import { siteConfig } from '@constants/site-config';
+import { siteConfig, socialConfig } from '@constants/site-config';
 import { Icon } from 'astro-icon/components';
 import { localizedPath } from '@/i18n';
 import { getBlogArticles } from '@/lib/blogs';
@@ -156,13 +156,68 @@ const placed = galaxies.map((galaxy) => {
   return { ...galaxy, stars, newest: stars.find((star) => star.newest) };
 });
 const total = placed.reduce((sum, galaxy) => sum + galaxy.stars.length, 0);
+
+/** The last stop: the black hole at the heart of the Milky Way, holding the self-introduction. */
+const hole = {
+  index: placed.length,
+  section: en ? 'About me' : '关于我',
+  name: en ? 'Sagittarius A*' : '人马座 A*',
+  type: en
+    ? 'The supermassive black hole at the heart of the Milky Way · not even light leaves its horizon'
+    : '银河系中心的超大质量黑洞 · 视界之内，连光也无法离开',
+  quote: en
+    ? 'Starlight cannot answer anything for anyone; it only keeps the long night from going completely dark.'
+    : '星光并不能替人回答什么，只是让漫长的夜晚不至于完全黑下去。',
+  about: en
+    ? [
+        'Welcome. I am Pyuyi. I tend to keep company with questions that have no answers yet, study a few things of uncertain use, and slowly write down what I have read, thought, and not yet fully understood.',
+        'This site is more like a small room with the light left on: papers, blogs, photos, and a few things I never managed to say. If you are passing by, look around. There may be no standard answers here, but I hope a page or a photo keeps you quiet company for a while.',
+      ]
+    : [
+        '欢迎来到这里。我是 Pyuyi，平时会和一些暂时没有答案的问题待在一起，也在研究一些不知所谓的东西，会把读过、想过和还没有完全想明白的东西慢慢写下来。',
+        '这个网站更像一间留着灯的小房间，放着论文、博客、照片，以及一些来不及说出口的心事。如果你偶然经过，可以随意看看，这里也许没有标准答案，但希望某一页文字、某一张照片，能陪你安静一会儿。',
+      ],
+  note: en
+    ? 'Every ray bends and turns back here, the way each sentence I write circles back to me in the end. My links orbit it; catch one.'
+    : '所有的光都在这里弯折、回头，像我写下的每一句话，最后都绕回自己。我的联系方式在它周围绕行，伸手就能接住。',
+  ask: en ? 'Click the black hole to read about me' : '轻点黑洞，读一读我',
+  href: localizedPath('/about', locale),
+  accent: '#ffcf8a',
+};
+
+/** Links that orbit the black hole: social profiles first, then a few doors inside the site. */
+const orbitLinks = [
+  ...Object.entries(socialConfig).map(([key, link]) => ({
+    key,
+    label: (link.label ?? key).replace(/\s*\(.*\)|\s*@\S+/g, ''),
+    href: link.url,
+    icon: link.icon,
+    external: /^https?:/.test(link.url),
+  })),
+  {
+    key: 'guestbook',
+    label: en ? 'Guestbook' : '留言板',
+    href: localizedPath('/guestbook', locale),
+    icon: 'ri:chat-smile-2-line',
+    external: false,
+  },
+  { key: 'friends', label: en ? 'Friends' : '友链', href: localizedPath('/friends', locale), icon: 'ri:links-line', external: false },
+  { key: 'about', label: en ? 'About' : '关于', href: hole.href, icon: 'ri:user-heart-line', external: false },
+];
 /** `placeGalaxyItems` returns 0–100 % of the drawing square; the 3D models use units of the radius. */
 const toUnit = (percent: number) => ((percent - 50) / 46).toFixed(4);
 const starPath =
   'M12 1.5c.6 5.2 2.3 8.3 10.5 10.5C14.3 14.2 12.6 17.3 12 22.5 11.4 17.3 9.7 14.2 1.5 12 9.7 9.8 11.4 6.7 12 1.5z';
 ---
 
-<section class="flight" aria-labelledby="flight-title" data-flight data-locale={locale} data-pagefind-ignore="all">
+<section
+  class="flight"
+  aria-labelledby="flight-title"
+  style={`--stops:${placed.length + 1}`}
+  data-flight
+  data-locale={locale}
+  data-pagefind-ignore="all"
+>
   <div class="flight-stage" data-flight-stage>
     <canvas class="flight-canvas" data-flight-canvas aria-hidden="true"></canvas>
 
@@ -173,8 +228,8 @@ const starPath =
       <p class="flight-lead">
         {
           en
-            ? `Four galaxies, ${total} stars. Each star was once a night spent with a question. Rest your cursor on a galaxy and it slows for you; click it and it tells you about itself.`
-            : `四个星系，${total} 颗星，每一颗都曾是一个和问题待在一起的夜晚。停在星系上，它会为你慢下来；轻点一下，它会说起自己。`
+            ? `Four galaxies, ${total} stars, and a black hole at the end of the route. Each star was once a night spent with a question. Rest your cursor on a galaxy and it slows for you; click it and it tells you about itself.`
+            : `四个星系，${total} 颗星，航线尽头是一个黑洞。每一颗星都曾是一个和问题待在一起的夜晚。停在星系上，它会为你慢下来；轻点一下，它会说起自己。`
         }
       </p>
     </div>
@@ -209,11 +264,39 @@ const starPath =
           )),
         )
       }
+      {
+        orbitLinks.map((link, order) => (
+          <a
+            class="flight-star flight-orbit"
+            href={link.href}
+            target={link.external ? '_blank' : undefined}
+            rel={link.external ? 'noopener noreferrer' : undefined}
+            style={`--star:${hole.accent};--delay:${(order * 0.41) % 3}s`}
+            data-flight-star
+            data-galaxy={hole.index}
+            data-u="0"
+            data-v="0"
+            data-orbit={((order / orbitLinks.length) * Math.PI * 2).toFixed(4)}
+            data-title={link.label}
+            data-date={link.external ? new URL(link.href).hostname.replace(/^www\./, '') : en ? 'on this site' : '站内'}
+            data-kind={en ? 'Link' : '链接'}
+          >
+            <Icon name={link.icon} aria-hidden="true" />
+            <span class="flight-orbit-name">{link.label}</span>
+          </a>
+        ))
+      }
     </div>
 
     {
       placed.map((galaxy, index) => (
-        <article id={`flight-story-${index}`} class="flight-label" data-flight-label style={`--accent:${galaxy.accent}`}>
+        <article
+          id={`flight-story-${index}`}
+          class="flight-label"
+          data-flight-label
+          data-ask={en ? 'Click the galaxy to hear its story' : '轻点星系，听它说说自己'}
+          style={`--accent:${galaxy.accent}`}
+        >
           <p class="flight-kicker">
             <span class="flight-number">{String(index + 1).padStart(2, '0')}</span>
             {galaxy.section}
@@ -253,7 +336,44 @@ const starPath =
       ))
     }
 
-    <nav class="flight-nav" aria-label={en ? 'The four galaxies' : '四个星系'}>
+    <article
+      id={`flight-story-${hole.index}`}
+      class="flight-label flight-about"
+      data-flight-label
+      data-ask={hole.ask}
+      style={`--accent:${hole.accent}`}
+    >
+      <p class="flight-kicker">
+        <span class="flight-number">{String(hole.index + 1).padStart(2, '0')}</span>
+        {hole.section}
+        <span class="flight-count">{en ? `${orbitLinks.length} links in orbit` : `${orbitLinks.length} 条航线在绕行`}</span>
+      </p>
+      <h2>
+        <a
+          class="flight-name font-chill-round"
+          href={hole.href}
+          data-warp
+          data-warp-color={hole.accent}
+          data-flight-enter={hole.index}
+          aria-label={en ? `${hole.section}: ${hole.name}` : `${hole.section}：${hole.name}`}
+        >
+          {hole.name}
+          <Icon name="ri:arrow-right-line" aria-hidden="true" />
+        </a>
+      </h2>
+      <p class="flight-type">{hole.type}</p>
+      <div class="flight-me">
+        <img src={siteConfig.avatar ?? '/img/avatar.webp'} alt="" width="56" height="56" loading="lazy" decoding="async" />
+        <div>
+          <p class="flight-me-name">{siteConfig.name}</p>
+          {hole.about.map((paragraph) => <p class="flight-me-text">{paragraph}</p>)}
+        </div>
+      </div>
+      <p class="flight-quote">{hole.quote}</p>
+      <p class="flight-note">{hole.note}</p>
+    </article>
+
+    <nav class="flight-nav" aria-label={en ? 'Four galaxies and a black hole' : '四个星系和一个黑洞'}>
       {
         placed.map((galaxy, index) => (
           <button
@@ -268,11 +388,21 @@ const starPath =
           </button>
         ))
       }
+      <button
+        type="button"
+        data-flight-goto={hole.index}
+        aria-controls={`flight-story-${hole.index}`}
+        aria-expanded="false"
+        style={`--accent:${hole.accent}`}
+      >
+        <span class="flight-nav-name">{hole.name}</span>
+        <span class="flight-nav-dot"></span>
+      </button>
     </nav>
 
     <p class="flight-ask" data-flight-ask aria-hidden="true">
       <span class="flight-ask-dot"></span>
-      {en ? 'Click the galaxy to hear its story' : '轻点星系，听它说说自己'}
+      <span data-flight-ask-text>{en ? 'Click the galaxy to hear its story' : '轻点星系，听它说说自己'}</span>
     </p>
 
     <p class="flight-hint" data-flight-fade="0.12" aria-hidden="true">

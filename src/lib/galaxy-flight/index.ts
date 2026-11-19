@@ -13,5 +13,5 @@ export {
   multiply,
   perspective,
   project,
-  type Vec3,
+  ROUTE,
 } from './scene';

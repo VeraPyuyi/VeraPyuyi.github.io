@@ -13,7 +13,9 @@ import {
   multiply,
   perspective,
   project,
+  ROUTE,
 } from '../../src/lib/galaxy-flight';
+import { blackHoleFrame, invert } from '../../src/lib/galaxy-flight/black-hole';
 
 const KINDS = ['blogs', 'papers', 'photos', 'moments'] as const;
 
@@ -39,7 +41,7 @@ test('galaxy models are deterministic, finite and close to their budget', () => 
 test('the camera route is continuous and rests on each galaxy in turn', () => {
   for (const aspect of [0.5, 1, 1.6, 2.4]) {
     let previous = cameraAt(0, aspect).eye;
-    for (let step = 1; step <= 300; step++) {
+    for (let step = 1; step <= (ROUTE.length - 1) * 100; step++) {
       const { eye } = cameraAt(step / 100, aspect);
       const jump = Math.hypot(eye[0] - previous[0], eye[1] - previous[1], eye[2] - previous[2]);
       assert.ok(jump < 6, `aspect ${aspect}, progress ${step / 100}: jumped ${jump.toFixed(2)}`);
@@ -47,7 +49,7 @@ test('the camera route is continuous and rests on each galaxy in turn', () => {
     }
   }
   assert.deepEqual(cameraAt(-5, 1.6), cameraAt(0, 1.6));
-  assert.deepEqual(cameraAt(99, 1.6), cameraAt(GALAXY_PLACEMENTS.length - 1, 1.6));
+  assert.deepEqual(cameraAt(99, 1.6), cameraAt(ROUTE.length - 1, 1.6));
 });
 
 test('at rest each galaxy is on screen, right of centre on wide screens and centred on phones', () => {
@@ -93,4 +95,31 @@ test('galaxies float gently: small, smooth drift that moves their stars with the
   const still = localToWorld(placement, 0, [0, 0, 0]);
   const floated = localToWorld(placement, 0, [0, 0, 0], { lift: 0.05, sway: 0, tilt: 0 });
   assert.ok(Math.abs(floated[1] - still[1] - 0.05 * placement.radius) < 1e-9);
+});
+
+test('the route ends at the black hole, framed on screen with its disk seen nearly edge-on', () => {
+  const last = ROUTE.length - 1;
+  const hole = ROUTE[last];
+  const centre = project(viewProjection(last, 16 / 9), hole.center, 1600, 900);
+  assert.ok(centre.depth > 0 && centre.x > 800 && centre.x < 1400 && centre.y > 250 && centre.y < 650);
+  const { toLocal, scale } = blackHoleFrame();
+  assert.ok(Math.abs(scale - hole.radius / 14) < 1e-9);
+  // The local spin axis (second row) is nearly perpendicular to the line of sight.
+  const axis = [toLocal[1], toLocal[4], toLocal[7]];
+  const sight = hole.view;
+  const cosine = axis[0] * sight[0] + axis[1] * sight[1] + axis[2] * sight[2];
+  assert.ok(Math.abs(cosine) < 0.25 && Math.abs(cosine) > 0.05, `cos ${cosine}`);
+});
+
+test('invert undoes a camera matrix', () => {
+  const matrix = viewProjection(2.5, 1.6);
+  const inverse = invert(matrix);
+  assert.ok(inverse);
+  for (let row = 0; row < 4; row++) {
+    for (let column = 0; column < 4; column++) {
+      let sum = 0;
+      for (let k = 0; k < 4; k++) sum += matrix[k * 4 + row] * (inverse as Float32Array)[column * 4 + k];
+      assert.ok(Math.abs(sum - (row === column ? 1 : 0)) < 1e-3, `${row},${column}: ${sum}`);
+    }
+  }
 });
