@@ -20,6 +20,8 @@ export interface SiteBasicConfig {
   url: string;
   startYear?: number;
   defaultOgImage?: string;
+  /** Share card for the homepage only (X / Open Graph); other pages keep `defaultOgImage`. */
+  homeOgImage?: string;
   keywords?: string[];
   /** 面包屑导航中首页的显示名称 @default '首页' */
   breadcrumbHome?: string;

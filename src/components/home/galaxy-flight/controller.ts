@@ -240,7 +240,9 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
           soft: [0.018, 0.045] as const,
         };
         layers.push({ ...base, mesh: `${placement.kind}-light`, dust: false });
-        layers.push({ ...base, mesh: `${placement.kind}-dust`, dust: true });
+        // Dust also dims the deep-space background drawn under it, so it needs a lighter hand
+        // than the light layer to keep lanes from reading darker than empty space.
+        layers.push({ ...base, alpha: base.alpha * 0.55, mesh: `${placement.kind}-dust`, dust: true });
       }
       // The black hole joins in once the camera is close enough to see it.
       const toHole = Math.hypot(HOLE.center[0] - eye[0], HOLE.center[1] - eye[1], HOLE.center[2] - eye[2]);
