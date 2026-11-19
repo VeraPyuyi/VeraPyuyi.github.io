@@ -3,24 +3,22 @@ layout: ../../layouts/PageLayout.astro
 title: "About Pyuyi"
 coverTitle: "About Pyuyi"
 date: 2026-08-26 18:00:00
-description: "Studying things that do not have names yet, and writing down questions that do not have answers yet."
+description: "Pyuyi’s personal space for mathematics, code, papers, photographs, and the unfinished pieces of everyday life."
 comments: false
 sky: hole
 ---
 
 ## Hi, I’m Pyuyi
 
-Most of what I study does not have a name yet. By day I read papers, push symbols and write code; by night I write down what I understood, what I did not, and what I only thought I had. The last kind is the most common, and the most worth keeping.
+Welcome. I’m Pyuyi. I often spend time with questions that do not yet have answers. I am also researching a few things that may or may not make much sense, while slowly writing down what I have read, wondered about, and not quite figured out.
 
-Here are papers, blog posts, photographs, and a few things I did not get round to saying. They are not sorted by importance, only by when they set out: every page tells you how long its light has been travelling.
+This website feels more like a small room with the light still on—a place for papers, blogs, photographs, and a few thoughts that were never spoken in time. If you happen to pass by, feel free to look around. There may be no definite answers here, but I hope a page or a photograph can keep you company for a quiet moment.
 
-You are standing close to the centre of the Milky Way. There is a black hole here and nothing gets out of it, so I have left everything I meant to say just outside the horizon, within reach.
+> Starlight cannot answer our questions; it only keeps the long night from becoming completely dark.
 
-> I am in no hurry to answer my questions. An answer ends a question, and I would like to keep it company a little longer.
+### Contact
 
-### Write back
-
-If you would like to write back, these will reach me:
+You can find me here:
 
 - [GitHub](https://github.com/VeraPyuyi)
 - [Xiaohongshu](https://www.xiaohongshu.com/user/profile/60aa2bc40000000001002d6e)

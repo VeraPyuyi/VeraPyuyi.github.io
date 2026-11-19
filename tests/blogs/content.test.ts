@@ -202,8 +202,8 @@ test('blog routes, shared comments, indexing, and CMS collections are wired expl
   assert.match(listPage, /id=\{category\}/);
   assert.match(listPage, /category=\{category\}/);
   assert.doesNotMatch(listPage, /BlogSiteList|Independent sites|独立站点/);
-  assert.ok(listPage.includes('M51 的旋臂，是被身旁的伴星系一路牵出来的。'));
-  assert.ok(listPage.includes('M51’s arms were drawn out by the companion galaxy beside it.'));
+  assert.match(listPage, /字句一行行亮起，回应它们的始终只有深夜。/);
+  assert.match(listPage, /Lines of words light up one by one; only the night ever answers\./);
   assert.match(blogList, /<ResponsiveImage/);
   assert.match(blogList, /aspect-video/);
   assert.match(blogList, /getBlogCategoryLabel/);
