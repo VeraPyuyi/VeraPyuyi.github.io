@@ -155,7 +155,6 @@ const placed = galaxies.map((galaxy) => {
   const stars = placeGalaxyItems(galaxy.kind, itemsByKind[galaxy.kind]);
   return { ...galaxy, stars, newest: stars.find((star) => star.newest) };
 });
-const total = placed.reduce((sum, galaxy) => sum + galaxy.stars.length, 0);
 
 /** The last stop: the black hole at the heart of the Milky Way, holding the self-introduction. */
 const hole = {
@@ -228,8 +227,8 @@ const starPath =
       <p class="flight-lead">
         {
           en
-            ? `Four galaxies, ${total} stars, and a black hole at the end of the route. Each star was once a night spent with a question. Rest your cursor on a galaxy and it slows for you; click it and it tells you about itself.`
-            : `四个星系，${total} 颗星，航线尽头是一个黑洞。每一颗星都曾是一个和问题待在一起的夜晚。停在星系上，它会为你慢下来；轻点一下，它会说起自己。`
+            ? 'Every star you see is light it sent long ago. These words are the same: the one who wrote them has already moved on.'
+            : '你看见的每一颗星，都是它很久以前发出的光。这里的字也一样——写下它们的那个我，已经走远了。'
         }
       </p>
     </div>
