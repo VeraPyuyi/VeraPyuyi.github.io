@@ -26,6 +26,8 @@ export interface ParticleLayer {
   dust: boolean;
   /** Sprite sizes (model units) over which stars turn into soft puffs. */
   soft: readonly [number, number];
+  /** 0–1: draw stars as sharp points with faint diffraction spikes (the background sky). */
+  spikes?: number;
 }
 
 export interface FrameInput {
@@ -102,12 +104,17 @@ const PARTICLE_FRAGMENT = `#version 300 es
 precision highp float;
 in vec3 v_color;
 in float v_soft;
+uniform float u_spikes;
 out vec4 outColor;
 void main() {
   vec2 p = gl_PointCoord * 2.0 - 1.0;
   float d2 = dot(p, p);
   if (d2 > 1.0) discard;
-  float star = exp(-d2 * 7.0) + 0.12 * exp(-d2 * 2.2);
+  // Background stars are sharper points, and the larger (brighter) ones carry the faint cross of
+  // diffraction spikes a telescope gives them.
+  float star = exp(-d2 * mix(7.0, 20.0, u_spikes)) + mix(0.12, 0.06, u_spikes) * exp(-d2 * 2.2);
+  vec2 a = abs(p);
+  star += u_spikes * 0.3 * (exp(-a.y * 38.0) * (1.0 - a.x) + exp(-a.x * 38.0) * (1.0 - a.y));
   float puff = exp(-d2 * 3.0) * (1.0 - d2);
   outColor = vec4(v_color * mix(star, puff, v_soft), 1.0);
 }`;
@@ -319,6 +326,7 @@ export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer 
         gl.uniform1f(u('u_wobble'), layer.wobble);
         gl.uniform1f(u('u_alpha'), layer.alpha);
         gl.uniform2f(u('u_soft'), layer.soft[0], layer.soft[1]);
+        gl.uniform1f(u('u_spikes'), layer.spikes ?? 0);
         gl.bindVertexArray(mesh.vao);
         gl.drawArrays(gl.POINTS, 0, Math.floor(mesh.count * detail));
       }

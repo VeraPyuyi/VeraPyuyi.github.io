@@ -249,6 +249,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
           alpha: clamp((time - backdropReady) / 0.8),
           dust: false,
           soft: [6.5, 8],
+          spikes: 1,
         });
       }
       const byDistance = GALAXY_PLACEMENTS.map((placement, index) => ({
