@@ -1,0 +1,155 @@
+---
+/**
+ * A light curve, the way variable stars in the Small Magellanic Cloud are read: the low swell is
+ * moonlight waxing and waning night by night, and each spike is a day that got written down.
+ * Spans from shortly before the first moment to the day the site was built.
+ */
+import { moonPhase } from '@/lib/galaxy';
+
+interface Props {
+  dates: Date[];
+  locale: string;
+}
+
+const { dates, locale } = Astro.props;
+const en = locale === 'en';
+const WIDTH = 360;
+const HEIGHT = 92;
+const DAY = 86_400_000;
+const now = Date.now();
+const times = dates.map((date) => date.getTime());
+const start = Math.min(now - 90 * DAY, ...times.map((time) => time - 12 * DAY));
+const span = now - start;
+const xOf = (time: number) => ((time - start) / span) * WIDTH;
+const flare = (time: number) =>
+  times.reduce((sum, moment) => sum + Math.exp(-(((time - moment) / (1.6 * DAY)) ** 2)), 0);
+const yOf = (time: number) => HEIGHT - 8 - (moonPhase(time).illumination * 0.22 + Math.min(1.4, flare(time)) * 0.55) * (HEIGHT - 16);
+
+const STEPS = 320;
+const curve = Array.from({ length: STEPS + 1 }, (_, index) => {
+  const time = start + (index / STEPS) * span;
+  return `${xOf(time).toFixed(1)},${yOf(time).toFixed(1)}`;
+}).join(' ');
+const peaks = times.map((time) => ({ x: xOf(time), y: yOf(time) }));
+---
+
+<figure class="light-curve">
+  <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-labelledby="light-curve-caption">
+    <defs>
+      <linearGradient id="light-curve-fill" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stop-color="#f7c6dd" stop-opacity="0.35"></stop>
+        <stop offset="1" stop-color="#f7c6dd" stop-opacity="0"></stop>
+      </linearGradient>
+    </defs>
+    <line class="light-curve-axis" x1="0" x2={WIDTH} y1={HEIGHT - 8} y2={HEIGHT - 8}></line>
+    <polygon points={`0,${HEIGHT - 8} ${curve} ${WIDTH},${HEIGHT - 8}`} fill="url(#light-curve-fill)"></polygon>
+    <polyline class="light-curve-line" points={curve} pathLength="1"></polyline>
+    <polyline class="light-curve-glint" points={curve} pathLength="1"></polyline>
+    {peaks.map((peak) => <circle class="light-curve-peak" cx={peak.x} cy={peak.y} r="2.6" />)}
+    <circle class="light-curve-now" cx={WIDTH} cy={yOf(now)} r="2.2"></circle>
+  </svg>
+  <figcaption id="light-curve-caption">
+    {en ? 'Light curve · the swell is moonlight, the spikes are days written down' : '光变曲线 · 起伏的是月光，亮起的是被记下的日子'}
+  </figcaption>
+</figure>
+
+<style>
+  .light-curve {
+    width: min(100%, 24rem);
+    margin-top: 0.4rem;
+  }
+
+  .light-curve svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .light-curve-axis {
+    stroke: rgb(232 230 255 / 0.18);
+    stroke-dasharray: 2 4;
+  }
+
+  .light-curve-line {
+    fill: none;
+    stroke: #f7c6dd;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    stroke-linejoin: round;
+    stroke-width: 1.4;
+    filter: drop-shadow(0 0 4px rgb(247 168 200 / 0.7));
+    animation: light-curve-draw 2.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+  }
+
+  .light-curve-glint {
+    fill: none;
+    stroke: #fff;
+    stroke-dasharray: 0.035 0.965;
+    stroke-dashoffset: 0.035;
+    stroke-linecap: round;
+    stroke-width: 2.2;
+    opacity: 0;
+    filter: drop-shadow(0 0 5px #f7c6dd);
+    animation: light-curve-glint 7s linear 3.2s infinite;
+  }
+
+  @keyframes light-curve-glint {
+    0% {
+      opacity: 1;
+      stroke-dashoffset: 0.035;
+    }
+
+    96% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0;
+      stroke-dashoffset: -0.965;
+    }
+  }
+
+  .light-curve-peak {
+    fill: #fff;
+    filter: drop-shadow(0 0 5px #f7a8c8);
+  }
+
+  .light-curve-now {
+    fill: #f7c6dd;
+    animation: light-curve-pulse 2.4s ease-in-out infinite;
+  }
+
+  .light-curve figcaption {
+    margin-top: 0.5rem;
+    color: rgb(232 230 255 / 0.6);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+  }
+
+  @keyframes light-curve-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes light-curve-pulse {
+    50% {
+      opacity: 0.25;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .light-curve-line {
+      stroke-dashoffset: 0;
+      animation: none;
+    }
+
+    .light-curve-glint {
+      display: none;
+    }
+
+    .light-curve-now {
+      animation: none;
+    }
+  }
+</style>

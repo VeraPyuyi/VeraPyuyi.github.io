@@ -32,12 +32,18 @@ const starHref = `${localizedPath('/', locale)}${skyHash('papers', `paper-${pape
   cover={paper.cover}
   coverAlt={(en ? paper.coverAltEn : paper.coverAlt) ?? (en ? 'Pyuyi paper cover' : 'Pyuyi 论文封面')}
   sky="papers"
+  showDescription={false}
 >
-  <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/55 p-4 text-sm dark:border-white/10 dark:bg-white/5">
-    <p class="text-muted-foreground">
-      {paper.authors.join(', ')} · <time datetime={paper.date}>{paper.date}</time> · <LightAge date={paper.date} locale={locale} />
-      · <a class="text-primary font-semibold hover:underline" href={starHref}>{en ? 'Find it in the sky' : '在星图中找到它'}</a>
-    </p>
+  <Fragment slot="meta">
+    <span>{paper.authors.join(', ')}</span>
+    <time datetime={paper.date}>{paper.date}</time>
+    <LightAge date={paper.date} locale={locale} />
+    <a class="inline-flex items-center gap-1" href={starHref}>
+      <Icon name="ri:sparkling-2-line" />
+      {en ? 'Find it in the sky' : '在星图中找到它'}
+    </a>
+  </Fragment>
+  <div class="flex flex-wrap items-center gap-3 text-sm">
     <div class="flex flex-wrap gap-3">
       <a class="bg-primary inline-flex items-center gap-2 rounded-full px-4 py-2 font-semibold text-white shadow-sm hover:opacity-90" href={paper.pdfPath} download><Icon name="ri:file-pdf-2-line" />PDF</a>
       <a class="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 font-semibold hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10" href={paper.arxivUrl} target="_blank" rel="noopener noreferrer"><Icon name="ri:external-link-line" />arXiv {paper.arxivVersion}</a>

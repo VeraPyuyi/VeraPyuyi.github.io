@@ -13,6 +13,7 @@ test('the all-posts index is composed only from reusable paper and blog lists', 
   const rootPage = read('src/pages/posts.astro');
   const localePage = read('src/pages/[lang]/posts.astro');
   const pageChrome = read('src/components/personal/PageChrome.astro');
+  const skyPage = read('src/components/sky/SkyPage.astro');
 
   assert.match(rootPage, /<PaperList\b/);
   assert.match(rootPage, /<BlogList\b/);
@@ -20,7 +21,7 @@ test('the all-posts index is composed only from reusable paper and blog lists', 
   assert.match(rootPage, /showDescription=\{false\}/);
   assert.match(pageChrome, /showDescription\?: boolean/);
   assert.match(pageChrome, /showDescription = true/);
-  assert.match(pageChrome, /\{showDescription && <p/);
+  assert.match(skyPage, /description=\{showDescription \? description : undefined\}/);
   assert.doesNotMatch(rootPage, /PostList|getCollection\(['"]blog['"]\)/);
   assert.match(localePage, /<PostsPage locale=\{locale\}/);
 });

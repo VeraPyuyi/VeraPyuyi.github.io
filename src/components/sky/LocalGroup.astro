@@ -1,0 +1,275 @@
+---
+/**
+ * The friends page as a Local Group: this site in the middle and each friend a neighbouring
+ * galaxy around it. Every friend's galaxy is drawn from their URL, so its arms, tilt and size stay
+ * the same build after build and no two look alike. A dashed, unnamed one waits for the next friend.
+ */
+import { createRandom } from '@/lib/galaxy-flight/particles';
+
+interface Neighbour {
+  site: string;
+  url: string;
+  owner: string;
+  color?: string;
+}
+
+interface Props {
+  friends: Neighbour[];
+  locale: string;
+}
+
+const { friends, locale } = Astro.props;
+const en = locale === 'en';
+
+const seedOf = (text: string) => {
+  let value = 2166136261;
+  for (const char of text) value = Math.imul(value ^ char.charCodeAt(0), 16777619);
+  return value >>> 0;
+};
+
+/** Dots along logarithmic arms, in a -50..50 box, plus the galaxy's tilt and turn. */
+function galaxy(seed: number) {
+  const random = createRandom(seed);
+  const arms = 2 + Math.floor(random.next() * 3);
+  const pitch = random.between(0.22, 0.42);
+  const dots = Array.from({ length: 150 }, () => {
+    const arm = Math.floor(random.next() * arms);
+    const t = random.next() ** 0.8;
+    const radius = 4 + 40 * t;
+    const angle = (arm / arms) * Math.PI * 2 + Math.log(radius / 4) / pitch + random.normal() * 0.22;
+    return {
+      x: radius * Math.cos(angle) + random.normal() * 1.6,
+      y: radius * Math.sin(angle) + random.normal() * 1.6,
+      r: random.between(0.5, 1.5) * (1.2 - t * 0.5),
+      o: random.between(0.35, 0.95),
+    };
+  });
+  return { dots, tilt: random.between(0.42, 0.85), turn: random.between(-40, 40), size: random.between(0.8, 1.15) };
+}
+
+const ORBIT = [
+  { x: 24, y: 30 },
+  { x: 78, y: 26 },
+  { x: 82, y: 74 },
+  { x: 20, y: 76 },
+  { x: 52, y: 12 },
+  { x: 50, y: 90 },
+];
+const neighbours = friends.slice(0, ORBIT.length - 1).map((friend, index) => ({
+  ...friend,
+  ...ORBIT[index],
+  galaxy: galaxy(seedOf(friend.url)),
+  hue: friend.color && friend.color !== '#ffc0cb' ? friend.color : `hsl(${seedOf(friend.site) % 360} 80% 78%)`,
+}));
+const vacancy = ORBIT[neighbours.length];
+const home = galaxy(seedOf('Pyuyi'));
+---
+
+<div class="local-group">
+  <svg class="local-group-threads" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    {neighbours.map((friend) => <line x1="50" y1="50" x2={friend.x} y2={friend.y} />)}
+    <line class="is-vacant" x1="50" y1="50" x2={vacancy.x} y2={vacancy.y}></line>
+  </svg>
+
+  <div class="local-group-member is-home" style="--x:50%;--y:50%;--hue:#f7c6dd">
+    <svg viewBox="-50 -50 100 100" aria-hidden="true">
+      <g transform="rotate(-20) scale(1 0.6)">
+        <g class="local-group-spin" style="--turn:110s">
+          <circle r="7" fill="#fff4e2" opacity="0.9"></circle>
+          {home.dots.map((dot) => <circle cx={dot.x.toFixed(1)} cy={dot.y.toFixed(1)} r={dot.r.toFixed(2)} opacity={dot.o.toFixed(2)} />)}
+        </g>
+      </g>
+    </svg>
+    <span class="local-group-name">{en ? 'You are here' : '你在这里'}</span>
+  </div>
+
+  {
+    neighbours.map((friend, index) => (
+      <a
+        class="local-group-member"
+        href={friend.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={`--x:${friend.x}%;--y:${friend.y}%;--hue:${friend.hue};--scale:${friend.galaxy.size.toFixed(2)};--delay:${index * -3}s`}
+      >
+        <svg viewBox="-50 -50 100 100" aria-hidden="true">
+          <g transform={`rotate(${friend.galaxy.turn.toFixed(0)}) scale(1 ${friend.galaxy.tilt.toFixed(2)})`}>
+            <g class="local-group-spin" style={`--turn:${(70 + friend.galaxy.size * 60).toFixed(0)}s`}>
+              <circle r="6" fill="#fff" opacity="0.85" />
+              {friend.galaxy.dots.map((dot) => (
+                <circle cx={dot.x.toFixed(1)} cy={dot.y.toFixed(1)} r={dot.r.toFixed(2)} opacity={dot.o.toFixed(2)} />
+              ))}
+            </g>
+          </g>
+        </svg>
+        <span class="local-group-name">
+          {friend.site}
+          <small>{friend.owner}</small>
+        </span>
+      </a>
+    ))
+  }
+
+  <a class="local-group-member is-vacant" href="#friend-application" style={`--x:${vacancy.x}%;--y:${vacancy.y}%;--hue:#c9c6ff`}>
+    <svg viewBox="-50 -50 100 100" aria-hidden="true">
+      <ellipse rx="34" ry="18" transform="rotate(-15)"></ellipse>
+    </svg>
+    <span class="local-group-name">
+      {en ? 'Unnamed' : '尚未命名'}
+      <small>{en ? 'yours, if you like' : '等你来认领'}</small>
+    </span>
+  </a>
+</div>
+
+<style>
+  .local-group {
+    position: relative;
+    width: min(54vw, 46rem);
+    aspect-ratio: 4 / 3;
+  }
+
+  .local-group-threads {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .local-group-threads line {
+    stroke: rgb(220 215 255 / 0.22);
+    stroke-dasharray: 0.6 1.2;
+    stroke-width: 0.25;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .local-group-threads line {
+    animation: local-group-signal 2.4s linear infinite;
+  }
+
+  .local-group-threads line.is-vacant {
+    stroke: rgb(220 215 255 / 0.12);
+  }
+
+  .local-group-member {
+    position: absolute;
+    top: var(--y);
+    left: var(--x);
+    display: flex;
+    width: calc(8.5rem * var(--scale, 1));
+    flex-direction: column;
+    align-items: center;
+    color: #fff;
+    pointer-events: auto;
+    translate: -50% -50%;
+    animation: local-group-drift 14s ease-in-out var(--delay, 0s) infinite;
+  }
+
+  .local-group-member.is-home {
+    width: 10rem;
+    pointer-events: none;
+  }
+
+  .local-group-member svg {
+    width: 100%;
+    overflow: visible;
+    fill: var(--hue);
+    filter: drop-shadow(0 0 6px var(--hue));
+    transition:
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      filter 0.6s ease;
+  }
+
+  .local-group-member:hover svg,
+  .local-group-member:focus-visible svg {
+    filter: drop-shadow(0 0 12px var(--hue)) brightness(1.3);
+    transform: scale(1.12) rotate(-12deg);
+  }
+
+  .local-group-member:focus-visible {
+    outline: none;
+  }
+
+  .local-group-member.is-vacant svg {
+    width: 70%;
+    fill: none;
+    stroke: var(--hue);
+    stroke-dasharray: 3 4;
+    stroke-width: 1;
+    opacity: 0.6;
+  }
+
+  .local-group-name {
+    margin-top: -0.6rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: center;
+    text-shadow: 0 1px 10px rgb(5 6 26 / 0.9);
+  }
+
+  .local-group-name small {
+    display: block;
+    color: rgb(232 230 255 / 0.6);
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+  }
+
+  .is-home .local-group-name {
+    color: #f7c6dd;
+    font-size: 0.72rem;
+    letter-spacing: 0.24em;
+  }
+
+  /* Spirals turn arms-trailing; each galaxy at its own pace. */
+  .local-group-spin {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    animation: local-group-turn var(--turn) linear infinite reverse;
+  }
+
+  @keyframes local-group-turn {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes local-group-signal {
+    to {
+      stroke-dashoffset: -1.8;
+    }
+  }
+
+  @keyframes local-group-drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+
+    50% {
+      transform: translate3d(0, -6px, 0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .local-group {
+      width: 100%;
+    }
+
+    .local-group-member {
+      width: calc(6rem * var(--scale, 1));
+    }
+
+    .local-group-member.is-home {
+      width: 7rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .local-group-spin,
+    .local-group-threads line,
+    .local-group-member {
+      animation: none;
+    }
+  }
+</style>

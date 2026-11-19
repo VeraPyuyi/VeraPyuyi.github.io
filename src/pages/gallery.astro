@@ -12,9 +12,27 @@ const en = locale === 'en';
 const albums = (await getCollection('albums'))
   .filter((entry) => entry.data.language === 'zh' || entry.data.language === locale)
   .sort((a, b) => (b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0));
+// Hoag's Object: every photo becomes a knot on the ring around the old yellow core, at most twelve.
+const ringPhotos = albums.flatMap((album) => album.data.photos).slice(0, 12);
 ---
 
 <PageChrome locale={locale} sky="photos" title={en ? 'Photo Wall' : '照片墙'} description={en ? 'When the shutter closes, the light finally has somewhere to stay.' : '快门落下的那一刻，光终于有了去处。'}>
+  {/* Each photo rides Hoag's ring in the live scene (src/components/sky/sky-stage.ts). */}
+  <div slot="art" class="hoag-riders">
+    {ringPhotos.map((photo, index) => (
+      <button
+        type="button"
+        class="photo-trigger hoag-photo"
+        data-ring-angle={((index / ringPhotos.length) * Math.PI * 2 - Math.PI / 2).toFixed(3)}
+        data-src={photo.src}
+        data-alt={photo.alt}
+        aria-label={photo.alt}
+      >
+        <ResponsiveImage src={photo.src} alt="" sizes="6rem" class="size-full object-cover" pictureClass="size-full" />
+      </button>
+    ))}
+  </div>
+  <p slot="meta">{en ? `${ringPhotos.length} on the ring · each new photo lights another knot` : `环上 ${ringPhotos.length} 张 · 每多一张照片，环上就多亮一处`}</p>
   <div class="space-y-10" data-pagefind-body>
     {albums.map((album) => (
       <section class="space-y-4">
@@ -41,6 +59,46 @@ const albums = (await getCollection('albums'))
     </div>
   </dialog>
 </PageChrome>
+
+<style>
+  .hoag-riders {
+    position: absolute;
+    inset: 0;
+    display: none;
+  }
+
+  :global(.sky-hero.is-live) .hoag-riders {
+    display: block;
+  }
+
+  /* Placed each frame at its point on the ring; the box's centre sits on the point. */
+  .hoag-photo {
+    position: absolute;
+    top: calc(clamp(3rem, 5.5vw, 4.8rem) / -2);
+    left: calc(clamp(3rem, 5.5vw, 4.8rem) / -2);
+    width: clamp(3rem, 5.5vw, 4.8rem);
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 2px rgb(255 255 255 / 0.75),
+      0 0 22px rgb(170 190 255 / 0.85),
+      0 0 60px rgb(150 170 255 / 0.45);
+    cursor: zoom-in;
+    pointer-events: auto;
+    will-change: transform;
+    transition: box-shadow 0.4s ease;
+  }
+
+  .hoag-photo:hover,
+  .hoag-photo:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px #fff,
+      0 0 28px rgb(255 214 240 / 0.95),
+      0 0 80px rgb(247 168 200 / 0.6);
+  }
+</style>
 
 <script>
   function installGallery() {

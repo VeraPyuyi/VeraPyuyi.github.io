@@ -1,0 +1,94 @@
+---
+/**
+ * The frame shared by the inner pages: night at the top (SkyHero), dawn below it for reading,
+ * no boxes and no side column. Articles get a slim table-of-contents rail on wide screens.
+ */
+import type { HomeSiderType } from '@constants/enum';
+import Layout from '@layouts/Layout.astro';
+import Footer from '@/components/layout/Footer.astro';
+import { TableOfContents } from '@/components/layout/TableOfContents';
+import type { SkyObject } from '@/lib/sky-catalog';
+import SkyHero from './SkyHero.astro';
+import '@/styles/components/sky-page.css';
+
+interface Props {
+  locale: string;
+  /** Browser-tab title (the hero shows `heading`). */
+  title: string;
+  heading: string;
+  description?: string;
+  /** Show the description under the heading in the hero. */
+  showDescription?: boolean;
+  object?: SkyObject;
+  plate?: string;
+  image?: string;
+  imageAlt?: string;
+  compact?: boolean;
+  toc?: boolean;
+  paperFontProfile?: string;
+  siderType?: HomeSiderType;
+  keywords?: string[];
+  contentType?: 'website' | 'article';
+}
+
+const {
+  locale,
+  title,
+  heading,
+  description,
+  showDescription = true,
+  object,
+  plate,
+  image,
+  imageAlt,
+  compact = false,
+  toc = false,
+  paperFontProfile,
+  siderType,
+  keywords,
+  contentType = 'website',
+} = Astro.props;
+---
+
+<Layout
+  locale={locale}
+  title={title}
+  description={description}
+  siderType={siderType}
+  keywords={keywords}
+  openGraph={{ type: contentType, title: heading, image, imageAlt }}
+>
+  {Astro.slots.has('head') && <slot name="head" slot="head" />}
+  <div class:list={['sky-page', { 'is-article': compact }]}>
+    <SkyHero
+      locale={locale}
+      title={heading}
+      object={object}
+      plate={plate}
+      description={showDescription ? description : undefined}
+      image={image}
+      imageAlt={imageAlt}
+      compact={compact}
+      paperFontProfile={paperFontProfile}
+    >
+      {Astro.slots.has('art') && <slot name="art" slot="art" />}
+      {Astro.slots.has('meta') && <slot name="meta" slot="meta" />}
+    </SkyHero>
+    <div class="sky-dawn">
+      <div class:list={['sky-body', { 'has-toc': toc }]}>
+        <div class="sky-body-main" data-paper-font={paperFontProfile}>
+          <slot />
+        </div>
+        {
+          toc && (
+            <aside class="sky-toc" aria-label={locale === 'en' ? 'Contents' : '目录'}>
+              <p class="sky-toc-label">{locale === 'en' ? 'Contents' : '目录'}</p>
+              <TableOfContents client:only="react" enableNumbering />
+            </aside>
+          )
+        }
+      </div>
+      <Footer />
+    </div>
+  </div>
+</Layout>

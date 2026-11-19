@@ -45,29 +45,16 @@ const starHref = `${localizedPath('/', locale)}${skyHash('blogs', `blog-${entry.
   mathStyles
   sky="blogs"
 >
-  <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/55 p-4 text-sm dark:border-white/10 dark:bg-white/5">
-    <div class="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
-      <a class="text-primary rounded-full bg-primary/10 px-2.5 py-1 font-semibold hover:bg-primary/15" href={categoryHref}>
-        {categoryLabel}
-      </a>
-      <Icon name="ri:calendar-line" />
-      <time datetime={entry.data.publishedAt.toISOString()}>{publishedDate}</time>
-      <span aria-hidden="true">·</span>
-      <span>{en ? `${minutes} min read` : `约 ${minutes} 分钟阅读`}</span>
-      <span aria-hidden="true">·</span>
-      <LightAge date={entry.data.publishedAt} locale={locale} />
-    </div>
-    <div class="flex flex-wrap items-center gap-4">
-      <a class="text-primary inline-flex items-center gap-1 font-semibold hover:underline" href={starHref}>
-        <Icon name="ri:sparkling-2-line" />
-        {en ? 'Find it in the sky' : '在星图中找到它'}
-      </a>
-      <a class="text-primary inline-flex items-center gap-1 font-semibold hover:underline" href={localizedPath('/blogs', locale)}>
-        <Icon name="ri:arrow-left-line" />
-        {en ? 'All blogs' : '全部博客'}
-      </a>
-    </div>
-  </div>
+  <Fragment slot="meta">
+    <a href={categoryHref}>{categoryLabel}</a>
+    <time datetime={entry.data.publishedAt.toISOString()}>{publishedDate}</time>
+    <span>{en ? `${minutes} min read` : `约 ${minutes} 分钟阅读`}</span>
+    <LightAge date={entry.data.publishedAt} locale={locale} />
+    <a class="inline-flex items-center gap-1" href={starHref}>
+      <Icon name="ri:sparkling-2-line" />
+      {en ? 'Find it in the sky' : '在星图中找到它'}
+    </a>
+  </Fragment>
   <article class="blog-content prose dark:prose-invert max-w-none" data-pagefind-body>
     <span class="sr-only" data-pagefind-meta="title">{entry.data.title}</span>
     <span class="sr-only" data-pagefind-meta="category">{categoryLabel}</span>

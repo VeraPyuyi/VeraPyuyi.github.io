@@ -1,0 +1,162 @@
+---
+/**
+ * The night at the top of every inner page: a field of twinkling stars, the page's own object
+ * from the homepage flight (or custom art in the `art` slot), its atlas caption and the title.
+ * The bottom of the hero fades from night into the page's dawn, so reading happens in daylight.
+ */
+import { createRandom } from '@/lib/galaxy-flight/particles';
+import { SKY_CATALOG, type SkyObject } from '@/lib/sky-catalog';
+import SkyPlate from './SkyPlate.astro';
+
+interface Props {
+  locale: string;
+  title: string;
+  /** Object this page belongs to: its caption and hero art. */
+  object?: SkyObject;
+  /** A custom caption line for pages that do not sit at a stop of the flight. */
+  plate?: string;
+  description?: string;
+  /** A photograph to pin in the sky beside the title, e.g. a post's cover. */
+  image?: string;
+  imageAlt?: string;
+  /** Shorter hero for articles. */
+  compact?: boolean;
+  /** Font profile for paper titles. */
+  paperFontProfile?: string;
+}
+
+const { locale, title, object, plate, description, image, imageAlt, compact = false, paperFontProfile } = Astro.props;
+const art = object ? `/img/sky/${object}-hero.webp` : undefined;
+// Intrinsic sizes of the hero renders, so the browser reserves the right shape before they load.
+const ART_HEIGHT: Record<SkyObject, number> = { blogs: 960, papers: 960, photos: 1043, moments: 981, hole: 667 };
+
+// A fixed, seeded starfield: the same sky on every visit, a third of it twinkling.
+const random = createRandom(title.length * 97 + (object?.length ?? 3) * 13);
+const stars = Array.from({ length: compact ? 90 : 140 }, () => {
+  const bright = random.next() ** 5;
+  return {
+    x: random.between(0, 100).toFixed(2),
+    y: random.between(0, 82).toFixed(2),
+    size: (0.6 + bright * 2.2).toFixed(2),
+    opacity: (0.35 + bright * 0.65).toFixed(2),
+    twinkle: random.next() < 0.33,
+    duration: random.between(2.4, 6.5).toFixed(2),
+    delay: random.between(-6, 0).toFixed(2),
+    warm: random.next() < 0.18,
+  };
+});
+---
+
+<section
+  class:list={['sky-hero', { 'is-compact': compact }]}
+  data-sky-hero
+  data-object={object}
+  aria-labelledby="sky-hero-title"
+>
+  <div class="sky-hero-stars" aria-hidden="true">
+    {
+      stars.map((star) => (
+        <span
+          class:list={['sky-star', { 'is-twinkling': star.twinkle, 'is-warm': star.warm }]}
+          style={`left:${star.x}%;top:${star.y}%;--size:${star.size}px;--opacity:${star.opacity};--duration:${star.duration}s;--delay:${star.delay}s`}
+        ></span>
+      ))
+    }
+  </div>
+
+  <div class="sky-hero-art" aria-hidden={image || Astro.slots.has('art') ? undefined : 'true'}>
+    {art && <canvas class="sky-hero-canvas" data-sky-canvas aria-hidden="true"></canvas>}
+    {
+      art && (
+        <img
+          class="sky-hero-galaxy"
+          src={art}
+          alt=""
+          width="1200"
+          height={object ? ART_HEIGHT[object] : 960}
+          decoding="async"
+          fetchpriority="high"
+        />
+      )
+    }
+    {image && <img class="sky-hero-photo" src={image} alt={imageAlt ?? ''} decoding="async" />}
+    <slot name="art" />
+  </div>
+
+  <div class="sky-hero-meteors" aria-hidden="true">
+    <span class="sky-meteor" style="--top:12%;--left:38%;--every:13s;--delay:3s"></span>
+    <span class="sky-meteor" style="--top:4%;--left:62%;--every:19s;--delay:11s"></span>
+  </div>
+
+  <div class="sky-hero-text" data-paper-font={paperFontProfile}>
+    {
+      object ? (
+        <SkyPlate object={object} locale={locale} />
+      ) : (
+        <p class="sky-hero-plate">
+          <span aria-hidden="true">✦</span> {plate ?? (locale === 'en' ? 'Pyuyi’s small universe' : 'Pyuyi 的小宇宙')}
+        </p>
+      )
+    }
+    <h1
+      id="sky-hero-title"
+      class:list={['sky-hero-title font-chill-round', paperFontProfile && 'paper-page-heading']}
+      data-paper-heading-fit={paperFontProfile ? 'page' : undefined}
+    >
+      {title}
+    </h1>
+    {description && <p class="sky-hero-note">{description}</p>}
+    {
+      Astro.slots.has('meta') && (
+        <div class="sky-hero-meta">
+          <slot name="meta" />
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  import { mountSkyStage } from './sky-stage';
+
+  // The page's object, live: the homepage's WebGL galaxy (or black hole) for this stop.
+  let stopStage: (() => void) | null = null;
+  let mounted: HTMLElement | null = null;
+  function mountStage() {
+    const hero = document.querySelector<HTMLElement>('[data-sky-hero][data-object]');
+    if (hero === mounted) return;
+    stopStage?.();
+    mounted = hero;
+    stopStage = hero ? mountSkyStage(hero) : null;
+  }
+
+  // Gentle parallax: as the page scrolls, the night lets go of the text (and a still image sinks a little).
+  let frame = 0;
+  function paint() {
+    frame = 0;
+    const hero = document.querySelector<HTMLElement>('[data-sky-hero]');
+    if (!hero) return;
+    const progress = Math.min(1, Math.max(0, window.scrollY / Math.max(1, hero.offsetHeight)));
+    hero.style.setProperty('--sky-scroll', progress.toFixed(4));
+  }
+  const onScroll = () => {
+    if (!frame) frame = requestAnimationFrame(paint);
+  };
+  function init() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    paint();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+  function start() {
+    init();
+    mountStage();
+  }
+  if (document.readyState !== 'loading') start();
+  document.addEventListener('astro:page-load', start);
+  document.addEventListener('astro:before-swap', () => {
+    window.removeEventListener('scroll', onScroll);
+    stopStage?.();
+    stopStage = null;
+    mounted = null;
+  });
+</script>

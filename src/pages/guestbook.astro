@@ -1,6 +1,7 @@
 ---
 import { Comment } from '@/components/comment';
 import PageChrome from '@/components/personal/PageChrome.astro';
+import PulsarArt from '@/components/sky/PulsarArt.astro';
 import { commentConfig } from '@/constants/site-config';
 import { defaultLocale } from '@/i18n';
 
@@ -10,7 +11,7 @@ interface Props {
 const { locale = defaultLocale } = Astro.props;
 const en = locale === 'en';
 const isWaline = commentConfig.provider === 'waline';
-const description = isWaline
+const note = isWaline
   ? en
     ? 'Sign in with GitHub to leave a message, reply, upload an image, or choose a sticker without leaving this page.'
     : '使用 GitHub 登录后即可直接在本页留言、回复、上传图片或选择表情包。'
@@ -19,9 +20,25 @@ const description = isWaline
     : '使用 GitHub 登录后留言、回复和发表情；访客图片可在对应 Discussion 中上传并自动回显。';
 ---
 
-<PageChrome locale={locale} title={en ? 'Guestbook' : '留言板'} description={description}>
-  <div class="rounded-3xl border border-blue-200/70 bg-gradient-to-br from-pink-50 to-blue-50 p-6 text-sm leading-7 dark:border-white/10 dark:from-pink-500/10 dark:to-blue-500/10">
-    <h2 class="text-lg font-bold">{en ? 'Before you write' : '留言之前'}</h2>
+<PageChrome
+  locale={locale}
+  title={en ? 'Guestbook' : '留言板'}
+  plate={en ? 'PSR B1919+21 · Vulpecula · ~2,300 light-years' : 'PSR B1919+21 · 狐狸座 · 约 2300 光年'}
+  description={
+    en
+      ? 'In 1967 the first pulsar was logged as "LGM-1", in case it was a letter from someone out there. Leave yours here.'
+      : '1967 年，第一颗脉冲星的信号被记作“LGM-1”，人们以为那是远方寄来的信。你的，就留在这里。'
+  }
+>
+  <PulsarArt slot="art" />
+  <p slot="meta">
+    {en ? 'Since you opened this page, its light has travelled ' : '自你打开这一页，它发出的光已经走过 '}
+    <span class="guestbook-light" data-light-run>0</span>
+    {en ? ' km' : ' 公里'}
+  </p>
+  <div class="guestbook-note">
+    <p class="sky-section-kicker">{en ? 'Before you transmit' : '发出信号之前'}</p>
+    <p class="mt-2">{note}</p>
     <p class="text-muted-foreground mt-2">
       {
         isWaline
@@ -48,3 +65,49 @@ const description = isWaline
   </div>
   <Comment contentId="guestbook" />
 </PageChrome>
+
+<style>
+  .guestbook-note {
+    margin-bottom: 2.5rem;
+    padding-left: 1.25rem;
+    border-left: 2px solid rgb(150 180 255 / 0.6);
+    font-size: 0.9rem;
+    line-height: 1.85;
+  }
+
+  .guestbook-light {
+    display: inline-block;
+    min-width: 7ch;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+</style>
+
+<script>
+  // The page's own light, counted at c from the moment it was opened.
+  const SPEED_KM_PER_MS = 299.792458;
+  let frame = 0;
+
+  function runLight() {
+    cancelAnimationFrame(frame);
+    const counter = document.querySelector<HTMLElement>('[data-light-run]');
+    if (!counter) return;
+    const opened = performance.now();
+    const format = new Intl.NumberFormat(document.documentElement.lang || undefined);
+    let shown = -1;
+    const tick = (time: number) => {
+      const kilometres = Math.floor(((time - opened) * SPEED_KM_PER_MS) / 1000) * 1000;
+      if (kilometres !== shown) {
+        shown = kilometres;
+        counter.textContent = format.format(kilometres);
+      }
+      if (counter.isConnected) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+  }
+
+  if (document.readyState !== 'loading') runLight();
+  document.addEventListener('astro:page-load', runLight);
+  document.addEventListener('astro:before-swap', () => cancelAnimationFrame(frame));
+</script>

@@ -1,0 +1,28 @@
+---
+/** One spiral arm of M51, drawn as a tapering logarithmic curve; `arm` 1 or 2 turns it half a revolution. */
+interface Props {
+  arm: 1 | 2;
+  color: string;
+  class?: string;
+}
+
+const { arm, color, class: className } = Astro.props;
+const points = Array.from({ length: 40 }, (_, index) => {
+  const t = index / 39;
+  const radius = 2 + 18 * t;
+  const angle = (arm - 1) * Math.PI + 2.7 * Math.log(radius / 2) * 0.62;
+  return `${(24 + radius * Math.cos(angle)).toFixed(2)},${(24 + radius * Math.sin(angle)).toFixed(2)}`;
+});
+---
+
+<svg class:list={['arm-glyph', className]} viewBox="0 0 48 48" aria-hidden="true" style={`--arm:${color}`}>
+  <circle cx="24" cy="24" r="3.2" fill="#fff4e2"></circle>
+  <polyline points={points.join(' ')} fill="none" stroke="var(--arm)" stroke-width="2.4" stroke-linecap="round"></polyline>
+</svg>
+
+<style>
+  .arm-glyph {
+    overflow: visible;
+    filter: drop-shadow(0 0 4px var(--arm));
+  }
+</style>

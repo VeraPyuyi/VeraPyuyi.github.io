@@ -4,6 +4,7 @@ import CustomContent from '@components/common/CustomContent.astro';
 import { Icon } from 'astro-icon/components';
 import PageChrome from '@/components/personal/PageChrome.astro';
 import ResponsiveImage from '@/components/personal/ResponsiveImage.astro';
+import LightCurve from '@/components/sky/LightCurve.astro';
 import MoonGlyph from '@/components/sky/MoonGlyph.astro';
 import { defaultLocale } from '@/i18n';
 import { MOON_PHASE_NAMES, MOON_PHASE_NAMES_EN, moonPhase } from '@/lib/galaxy';
@@ -20,12 +21,13 @@ const rendered = await Promise.all(moments.map(async (entry) => ({ entry, Conten
 ---
 
 <PageChrome locale={locale} sky="moments" title={en ? 'Moments' : '生活动态'} description={en ? 'Days too small for an essay still deserve a quiet line.' : '撑不起一篇文章的日子，也值得被轻轻记下一行。'}>
+  <LightCurve slot="meta" dates={moments.map((entry) => entry.data.date)} locale={locale} />
   <ol class="relative ml-3 space-y-8 border-l border-pink-300/70 pl-8 dark:border-pink-400/25" data-pagefind-body>
     {rendered.map(({ entry, Content }) => (
       <li class="relative">
         {/* The timeline is a run of moons: each moment is marked by the moon of the night it was written. */}
         <MoonGlyph date={entry.data.date} locale={locale} class="moments-moon absolute -left-[2.62rem] top-0.5 size-[1.1rem]" />
-        <article class="rounded-3xl border border-black/5 bg-white/55 p-6 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
+        <article class="rounded-3xl bg-white/60 p-6 shadow-[0_18px_50px_-30px_rgb(80_60_140/0.45)] backdrop-blur dark:bg-white/5">
           <div class="text-muted-foreground mb-4 flex flex-wrap items-center gap-3 text-xs">
             <time datetime={entry.data.date.toISOString()}>{new Intl.DateTimeFormat(en ? 'en' : 'zh-CN', { dateStyle: 'long', timeStyle: 'short' }).format(entry.data.date)}</time>
             <span class="moments-moon-name">{(en ? MOON_PHASE_NAMES_EN : MOON_PHASE_NAMES)[moonPhase(entry.data.date.getTime()).index]}{en ? '' : '之夜'}</span>

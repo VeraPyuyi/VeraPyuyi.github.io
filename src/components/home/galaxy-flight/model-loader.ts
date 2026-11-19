@@ -3,6 +3,7 @@
  * possible (so scrolling never stutters) and on the main thread one model per tick otherwise.
  */
 
+import type { GalaxyKind } from '@/lib/galaxy';
 import { buildBackdrop, buildGalaxyModel, GALAXY_PLACEMENTS } from '@/lib/galaxy-flight';
 import type { BuiltModel, ModelJob } from './model-worker';
 
@@ -16,13 +17,22 @@ export interface ModelLoader {
   stop(): void;
 }
 
-export function loadModels(options: { small: boolean; progress: number; onBuilt: (model: BuiltModel) => void }): ModelLoader {
-  const { small, progress, onBuilt } = options;
+export function loadModels(options: {
+  small: boolean;
+  progress: number;
+  onBuilt: (model: BuiltModel) => void;
+  /** Build only these galaxies (the backdrop always comes), e.g. one page's own galaxy. */
+  only?: readonly GalaxyKind[];
+  /** Share of the full particle budget. */
+  share?: number;
+}): ModelLoader {
+  const { small, progress, onBuilt, only, share = 1 } = options;
   const jobs: ModelJob[] = [{ id: 'backdrop', kind: 'backdrop', budget: BACKDROP_BUDGET * (small ? 0.6 : 1) }];
   const order = GALAXY_PLACEMENTS.map((_, index) => index).sort((a, b) => Math.abs(a - progress) - Math.abs(b - progress));
   for (const index of order) {
     const { kind } = GALAXY_PLACEMENTS[index];
-    jobs.push({ id: kind, kind, budget: BUDGETS[kind] * (small ? 0.5 : 1) });
+    if (only && !only.includes(kind)) continue;
+    jobs.push({ id: kind, kind, budget: BUDGETS[kind] * (small ? 0.5 : 1) * share });
   }
   const pending = new Set(jobs.map((job) => job.id));
   const receive = (model: BuiltModel) => {
