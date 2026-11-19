@@ -19,7 +19,14 @@ const description = isWaline
     : '使用 GitHub 登录后留言、回复和发表情；访客图片可在对应 Discussion 中上传并自动回显。';
 ---
 
-<PageChrome locale={locale} title={en ? 'Guestbook' : '留言板'} description={description}>
+<PageChrome
+  locale={locale}
+  title={en ? 'Guestbook' : '留言板'}
+  description={description}
+  mega="assembly"
+  megaItems={[{ title: en ? 'Take your seat' : '点亮你的席位', href: '#guestbook-comments' }]}
+  megaReadout={en ? 'One seat is still waiting · it is yours' : '还有一个席位空着 · 是留给你的'}
+>
   <div class="rounded-3xl border border-blue-200/70 bg-gradient-to-br from-pink-50 to-blue-50 p-6 text-sm leading-7 dark:border-white/10 dark:from-pink-500/10 dark:to-blue-500/10">
     <h2 class="text-lg font-bold">{en ? 'Before you write' : '留言之前'}</h2>
     <p class="text-muted-foreground mt-2">
@@ -46,5 +53,7 @@ const description = isWaline
       )
     }
   </div>
-  <Comment contentId="guestbook" />
+  <div id="guestbook-comments" class="scroll-mt-24">
+    <Comment contentId="guestbook" />
+  </div>
 </PageChrome>

@@ -6,6 +6,7 @@ date: 2026-08-26 18:00:00
 description: "Pyuyi 的个人空间，收藏数学、代码、论文、照片与未说完的日常。"
 comments: false
 sky: hole
+mega: decompressor
 ---
 
 ## 你好，我是 Pyuyi

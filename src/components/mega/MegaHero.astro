@@ -1,0 +1,171 @@
+---
+/**
+ * The header band of a section page: a deep-space view of the page's megastructure, the galaxy
+ * it belongs to on the homepage hanging faintly behind it. Items (posts, albums, friends…) are
+ * part of the structure; hovering one here, or its link further down the page, lights it up.
+ */
+import WaveSvg from '@/components/ui/cover/wave';
+import { MEGA_CATALOG, type MegaItem, type MegaKind } from '@/lib/megastructures';
+import { SKY_CATALOG } from '@/lib/sky-catalog';
+
+interface Props {
+  kind: MegaKind;
+  locale: string;
+  title: string;
+  items?: MegaItem[];
+  /** Status line shown until something is hovered. */
+  readout?: string;
+}
+
+const { kind, locale, title, items = [], readout } = Astro.props;
+const en = locale === 'en';
+const entry = MEGA_CATALOG[kind];
+const name = en ? entry.name.en : entry.name.zh;
+const defaultReadout =
+  readout ?? (en ? `${items.length} lights on the structure · point at one` : `结构上有 ${items.length} 处光点 · 指向它看看`);
+// JSON inside a <script> must not be able to close it.
+const json = JSON.stringify(items).replace(/</g, '\\u003c');
+---
+
+<section class="mega-hero" data-mega-hero={kind} data-mega-galaxy={SKY_CATALOG[entry.sky].image} aria-label={name}>
+  <canvas class="mega-canvas" data-mega-canvas aria-hidden="true"></canvas>
+  <div class="mega-caption">
+    <p class="mega-kicker">
+      <span class="mega-kicker-mark" aria-hidden="true"></span>
+      {en ? `Megastructure · ${entry.name.en}` : `巨构 · ${entry.name.zh} · ${entry.name.en}`}
+    </p>
+    <p class="mega-title font-chill-round">{title}</p>
+    <p class="mega-line">{en ? entry.line.en : entry.line.zh}</p>
+    <p class="mega-readout" data-mega-readout aria-live="polite">{defaultReadout}</p>
+  </div>
+  <script type="application/json" data-mega-items set:html={json} />
+  <WaveSvg />
+</section>
+
+<script>
+  import { mountMegaHero } from './engine';
+  import { SCENES } from './scenes';
+  import type { MegaKind } from '@/lib/megastructures';
+
+  let cleanups: (() => void)[] = [];
+
+  function cleanup() {
+    for (const stop of cleanups) stop();
+    cleanups = [];
+  }
+
+  function init() {
+    cleanup();
+    document.querySelectorAll<HTMLElement>('[data-mega-hero]').forEach((root) => {
+      const factory = SCENES[root.dataset.megaHero as MegaKind];
+      if (factory) cleanups.push(mountMegaHero(root, factory));
+    });
+  }
+
+  if (document.readyState !== 'loading') init();
+  document.addEventListener('astro:page-load', init);
+  document.addEventListener('astro:before-swap', cleanup);
+</script>
+
+<style>
+  .mega-hero {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    height: 46dvh;
+    min-height: 20rem;
+    max-height: 32rem;
+    overflow: hidden;
+    background: linear-gradient(#0b0d2a, #151a42);
+    color: #fff;
+  }
+
+  .mega-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: pan-y;
+  }
+
+  .mega-caption {
+    position: relative;
+    z-index: 1;
+    width: min(32rem, 44%);
+    margin-left: max(1.5rem, 6vw);
+    margin-bottom: 4dvh;
+    pointer-events: none;
+    text-shadow: 0 1px 12px rgb(5 6 26 / 0.85);
+  }
+
+  .mega-kicker {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #ffd27a;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .mega-kicker-mark {
+    width: 1.6rem;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #ffd27a);
+    box-shadow: 0 0 6px #ffd27a;
+  }
+
+  .mega-title {
+    margin-top: 0.75rem;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: 0.08em;
+  }
+
+  .mega-line {
+    margin-top: 0.9rem;
+    color: rgb(223 230 255 / 0.82);
+    font-size: 0.9rem;
+    line-height: 1.75;
+  }
+
+  .mega-readout {
+    margin-top: 1rem;
+    min-height: 1.5em;
+    color: #b8e6fe;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mega-readout::before {
+    content: '› ';
+    color: #f7a8c8;
+  }
+
+  /* Narrow screens: the structure takes the upper part, the caption sits beneath it. */
+  @media (max-aspect-ratio: 23/20) {
+    .mega-hero {
+      align-items: flex-end;
+      height: 62dvh;
+      min-height: 26rem;
+      max-height: 40rem;
+    }
+
+    .mega-caption {
+      width: auto;
+      margin: 0 1.25rem max(4.5rem, 12dvh);
+    }
+
+    .mega-line {
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+  }
+</style>

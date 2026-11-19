@@ -5,6 +5,7 @@ import { Icon } from 'astro-icon/components';
 import PageChrome from '@/components/personal/PageChrome.astro';
 import ResponsiveImage from '@/components/personal/ResponsiveImage.astro';
 import MoonGlyph from '@/components/sky/MoonGlyph.astro';
+import { momentItems } from '@/components/mega/items';
 import { defaultLocale } from '@/i18n';
 import { MOON_PHASE_NAMES, MOON_PHASE_NAMES_EN, moonPhase } from '@/lib/galaxy';
 
@@ -19,7 +20,7 @@ const moments = (await getCollection('moments'))
 const rendered = await Promise.all(moments.map(async (entry) => ({ entry, Content: (await render(entry)).Content })));
 ---
 
-<PageChrome locale={locale} sky="moments" title={en ? 'Moments' : '生活动态'} description={en ? 'Days too small for an essay still deserve a quiet line.' : '撑不起一篇文章的日子，也值得被轻轻记下一行。'}>
+<PageChrome locale={locale} sky="moments" mega="habitat" megaItems={await momentItems(locale)} megaReadout={en ? `${moments.length} windows lit · the rest are ordinary days` : `亮着 ${moments.length} 扇窗 · 其余是寻常日子`} title={en ? 'Moments' : '生活动态'} description={en ? 'Days too small for an essay still deserve a quiet line.' : '撑不起一篇文章的日子，也值得被轻轻记下一行。'}>
   <ol class="relative ml-3 space-y-8 border-l border-pink-300/70 pl-8 dark:border-pink-400/25" data-pagefind-body>
     {rendered.map(({ entry, Content }) => (
       <li class="relative">

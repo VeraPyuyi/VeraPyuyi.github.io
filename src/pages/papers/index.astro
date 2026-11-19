@@ -1,6 +1,7 @@
 ---
 import PageChrome from '@/components/personal/PageChrome.astro';
 import PaperList from '@/components/personal/PaperList.astro';
+import { paperItems } from '@/components/mega/items';
 import { defaultLocale } from '@/i18n';
 
 interface Props {
@@ -14,6 +15,8 @@ const en = locale === 'en';
 <PageChrome
   locale={locale}
   sky="papers"
+  mega="nexus"
+  megaItems={paperItems(locale)}
   title={en ? 'Papers' : '论文'}
   description={en ? 'Every Q.E.D. is a small stake driven into the edge of the unknown.' : '每一个“证毕”，都是在未知的边界上钉下的一枚小小界桩。'}
 >

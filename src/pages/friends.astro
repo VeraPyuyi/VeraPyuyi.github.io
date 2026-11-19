@@ -2,12 +2,13 @@
 import FriendRequestForm from '@components/friends/FriendRequestForm';
 import FriendsGrid from '@components/friends/FriendsGrid';
 import HomeSider from '@components/layout/HomeSider.astro';
-import Cover from '@components/ui/cover/Cover.astro';
 import { CONTENT_PADDING } from '@constants/layout';
 import { siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
 import { Comment } from '@/components/comment';
+import { friendItems } from '@/components/mega/items';
+import MegaHero from '@/components/mega/MegaHero.astro';
 import { defaultLocale, t } from '@/i18n';
 
 interface Props {
@@ -18,11 +19,20 @@ interface Props {
 const { locale = defaultLocale } = Astro.props;
 const title = `${t(locale, 'friends.title')} | ${siteConfig.title}`;
 const description = t(locale, 'friends.title');
+const friends = friendItems();
+const en = locale === 'en';
 ---
 
 <Layout locale={locale} title={title} description={description}>
   <TwoColumnLayout>
-    <Cover slot="cover" title={t(locale, 'friends.title')} />
+    <MegaHero
+      slot="cover"
+      kind="gateway"
+      locale={locale}
+      title={t(locale, 'friends.title')}
+      items={friends}
+      readout={en ? `${friends.length} beacons on the rim · each a way through` : `门环上有 ${friends.length} 座信标 · 每一座都通往别处`}
+    />
     <HomeSider slot="sider" />
     <div
       class={`bg-gradient-start shadow-box tablet:shadow-none flex min-w-0 flex-col gap-10 ${CONTENT_PADDING.standard}`}
