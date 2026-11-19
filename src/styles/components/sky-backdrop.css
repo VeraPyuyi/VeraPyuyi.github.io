@@ -22,21 +22,22 @@
   will-change: transform;
 }
 
-/* Each cloud drifts on its own long, slow loop. */
-.sky-cloud {
-  transform-box: view-box;
-  transform-origin: 50% 50%;
-  animation: sky-cloud-drift var(--drift) ease-in-out var(--delay) infinite alternate;
+/* The whole field drifts and breathes very slowly. Only this composited layer moves: the SVG's
+   filters are drawn once and never repainted. */
+.sky-nebula-field {
+  width: 100%;
+  height: 100%;
+  animation: sky-nebula-drift 90s ease-in-out infinite alternate;
   will-change: transform;
 }
 
-@keyframes sky-cloud-drift {
+@keyframes sky-nebula-drift {
   from {
-    transform: translate(-18px, 10px) scale(1);
+    transform: translate3d(-0.6%, 0.4%, 0) scale(1);
   }
 
   to {
-    transform: translate(22px, -14px) scale(1.04);
+    transform: translate3d(0.6%, -0.4%, 0) scale(1.025);
   }
 }
 
@@ -58,26 +59,6 @@
 
 .sky-stars-2 {
   animation: sky-stars-breathe 3.4s ease-in-out -1.2s infinite alternate;
-}
-
-/* Spiked young stars in the reflection nebulae pulse slowly. */
-.sky-sparkle {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: sky-sparkle 6s ease-in-out var(--delay) infinite;
-}
-
-@keyframes sky-sparkle {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-
-  50% {
-    opacity: 0.55;
-    transform: scale(0.8) rotate(8deg);
-  }
 }
 
 @keyframes sky-stars-breathe {
@@ -139,6 +120,11 @@
 }
 
 @media (max-width: 768px) {
+  /* The panel covers the margins on a phone; skip drawing the dust columns there. */
+  .sky-pillars {
+    display: none;
+  }
+
   .sky-dawn {
     --feather: 5rem;
   }
@@ -150,8 +136,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sky-cloud,
-  .sky-sparkle,
+  .sky-nebula-field,
   .sky-stars {
     animation: none;
   }
@@ -162,7 +147,7 @@
   }
 }
 
-html.motion-off :is(.sky-cloud, .sky-sparkle, .sky-stars) {
+html.motion-off :is(.sky-nebula-field, .sky-stars) {
   animation: none;
 }
 

@@ -32,7 +32,7 @@ const RING_RADIUS = 0.74;
  * How a hero frames its object compared with the homepage: `back` moves the camera further away,
  * `aside` (in object radii) slides the object right, clear of the title on wide screens.
  */
-const HERO_FRAMING: Record<string, { back: number; aside: number }> = { hole: { back: 1.45, aside: 0.42 } };
+const HERO_FRAMING: Record<string, { back: number; aside: number }> = { hole: { back: 1.45, aside: 0.15 } };
 const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
 const mix = (a: Vec3, b: Vec3, t: number): Vec3 => [
   a[0] + (b[0] - a[0]) * t,
