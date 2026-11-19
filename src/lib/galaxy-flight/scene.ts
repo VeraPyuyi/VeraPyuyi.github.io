@@ -6,7 +6,6 @@
  */
 
 import type { GalaxyKind } from '../galaxy';
-import { createParticleBuilder, createRandom, mixRgb, type ParticleSet, type Rgb, STAR } from './particles';
 
 export type Vec3 = readonly [number, number, number];
 export type Mat4 = Float32Array;
@@ -310,104 +309,4 @@ export function project(
   const w = m[3] * point[0] + m[7] * point[1] + m[11] * point[2] + m[15];
   if (w <= 1e-4) return { x: 0, y: 0, depth: w };
   return { x: ((x / w + 1) / 2) * width, y: ((1 - y / w) / 2) * height, depth: w };
-}
-
-const ROUTE_CENTER: Vec3 = [0, 0, -220];
-
-/** Stars, faint nebulae and far-off galaxies around the route, in world units. */
-export function buildBackdrop(budget: number): ParticleSet {
-  const random = createRandom(4242);
-  const builder = createParticleBuilder();
-  const temperature = (): Rgb => {
-    const pick = random.next();
-    if (pick < 0.12) return STAR.old;
-    if (pick < 0.35) return STAR.warm;
-    if (pick < 0.7) return STAR.white;
-    if (pick < 0.9) return STAR.young;
-    return STAR.hot;
-  };
-  const direction = (): Vec3 => normalize([random.normal(), random.normal(), random.normal()]);
-  // A faint band across the sky, like our own Milky Way seen from inside.
-  const bandAxis = normalize([0.35, 1, 0.2]);
-  const inBand = (): Vec3 => {
-    const d = direction();
-    return normalize(sub(d, scale(bandAxis, dot(d, bandAxis) * (0.92 + random.next() * 0.08))));
-  };
-
-  for (let index = 0; index < budget * 0.55; index++) {
-    const d = random.next() < 0.35 ? inBand() : direction();
-    const distance = random.between(450, 700);
-    const at = add(ROUTE_CENTER, scale(d, distance));
-    const bright = random.next() ** 6;
-    builder.add(
-      at[0],
-      at[1],
-      at[2],
-      temperature(),
-      0.25 + bright * 1.6,
-      distance * random.between(0.0028, 0.0045) * (1 + bright),
-    );
-  }
-  for (let index = 0; index < budget * 0.03; index++) {
-    const distance = random.between(500, 650);
-    const at = add(ROUTE_CENTER, scale(inBand(), distance));
-    const tint = [STAR.violet, STAR.rose, STAR.teal, STAR.young][index % 4];
-    builder.add(at[0], at[1], at[2], tint, 0.006, distance * random.between(0.04, 0.08));
-  }
-  for (let index = 0; index < budget * 0.48; index++) {
-    builder.add(
-      random.between(-150, 150),
-      random.between(-95, 95),
-      random.between(-560, 90),
-      temperature(),
-      random.between(0.12, 0.5),
-      random.between(0.05, 0.1),
-    );
-  }
-
-  const clouds: { at: Vec3; tints: [Rgb, Rgb] }[] = [
-    { at: [-90, 30, -60], tints: [STAR.violet, STAR.rose] },
-    { at: [95, -40, -150], tints: [STAR.teal, STAR.young] },
-    { at: [-110, -20, -260], tints: [STAR.hydrogen, STAR.violet] },
-    { at: [100, 45, -360], tints: [STAR.rose, STAR.young] },
-    { at: [10, -70, -200], tints: [STAR.violet, STAR.teal] },
-  ];
-  for (const cloud of clouds) {
-    for (let index = 0; index < budget * 0.02; index++) {
-      const at = add(cloud.at, [random.normal() * 34, random.normal() * 20, random.normal() * 34]);
-      builder.add(at[0], at[1], at[2], mixRgb(cloud.tints[0], cloud.tints[1], random.next()), 0.006, random.between(8, 20));
-    }
-  }
-
-  for (let galaxy = 0; galaxy < 50; galaxy++) {
-    const center = add(ROUTE_CENTER, scale(direction(), random.between(300, 480)));
-    const axes = [random.between(1.2, 3), random.between(0.3, 0.9), random.between(1.2, 3)] as const;
-    for (let index = 0; index < 60; index++) {
-      builder.add(
-        center[0] + random.normal() * axes[0],
-        center[1] + random.normal() * axes[1],
-        center[2] + random.normal() * axes[2],
-        mixRgb(STAR.warm, STAR.white, random.next()),
-        0.05,
-        0.9,
-      );
-    }
-  }
-
-  // Through the gap of Hoag's Object, a second, far more distant ring galaxy shows through.
-  const hoag = GALAXY_PLACEMENTS[2];
-  const hoagRight = normalize(cross(scale(hoag.view, -1), UP));
-  const hoagUp = cross(hoagRight, scale(hoag.view, -1));
-  const behind = add(
-    hoag.center,
-    add(scale(hoag.view, -hoag.radius * 5), add(scale(hoagUp, hoag.radius * 1.1), scale(hoagRight, hoag.radius * 0.8))),
-  );
-  for (let index = 0; index < 700; index++) {
-    const core = index < 140;
-    const angle = random.between(0, Math.PI * 2);
-    const radius = core ? Math.abs(random.normal()) * 0.25 : 1.25 + random.normal() * 0.12;
-    const at = add(behind, add(scale(hoagRight, radius * Math.cos(angle)), scale(hoagUp, radius * Math.sin(angle))));
-    builder.add(at[0], at[1], at[2], core ? STAR.old : mixRgb(STAR.old, STAR.hydrogen, 0.4), core ? 0.2 : 0.14, 0.14);
-  }
-  return builder.build(random);
 }

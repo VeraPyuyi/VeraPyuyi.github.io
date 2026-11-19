@@ -1,7 +1,7 @@
+export { buildBackdrop } from './backdrop';
 export { buildGalaxyModel } from './models';
 export type { ParticleSet } from './particles';
 export {
-  buildBackdrop,
   cameraAt,
   FIELD_OF_VIEW,
   GALAXY_PLACEMENTS,

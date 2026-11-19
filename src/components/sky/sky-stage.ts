@@ -156,6 +156,7 @@ export function mountSkyStage(hero: HTMLElement): () => void {
         alpha: clamp((time - backdropReady) / 0.8),
         dust: false,
         soft: [6.5, 8],
+        spikes: 1,
       });
     }
     const drift = galaxyDrift(Math.max(0, index), time);
