@@ -119,14 +119,23 @@ vec4 disk(vec3 p, vec3 dir) {
   return vec4(color * density * 1.25 * beaming, clamp(density * 1.8, 0.0, 0.97));
 }
 
+// The smooth space gradient the scene is painted on (SKY_FRAGMENT in renderer.ts, keep in step).
+vec3 space(vec2 uv) {
+  vec2 c = uv - 0.5;
+  return mix(vec3(0.004, 0.005, 0.016), vec3(0.012, 0.011, 0.034), uv.y)
+    + vec3(0.012, 0.008, 0.026) * exp(-dot(c, c) * 3.0);
+}
+
 vec3 sky(vec3 direction) {
   // Rays bent off screen (or behind us) see the rendered sky mirrored back in at the edges, so the
-  // lensed region keeps the scene's own colour and stars instead of a synthetic field.
+  // lensed region keeps the scene's own stars instead of a synthetic field. Only what lies on top
+  // of the smooth space gradient is bent: the gradient is laid back down at the pixel's own place,
+  // so the lens cannot drag the brighter middle of the sky outwards into a glowing disc.
   vec4 clip = u_viewProjection * vec4(u_eye + direction * 900.0, 1.0);
   if (clip.w <= 0.0) clip = u_viewProjection * vec4(u_eye - direction * 900.0, 1.0);
   vec2 uv = clip.xy / max(clip.w, 1e-4) * 0.5 + 0.5;
   uv = 1.0 - abs(1.0 - mod(uv, 2.0));
-  return texture(u_scene, uv).rgb;
+  return max(texture(u_scene, uv).rgb - space(uv), 0.0) + space(v_uv);
 }
 
 void main() {
@@ -180,9 +189,25 @@ void main() {
   // stars into a dotted ring round the shadow. Just outside the shadow the whole sky is squeezed
   // into a sliver, so there it is dimmed a little rather than crowding into bright specks.
   float clear = smoothstep(2.62, 3.4, sqrt(h2));
-  vec3 background = escaped ? sky(normalize(transpose(u_toLocal) * vel)) * mix(0.3, 1.0, clear) : vec3(0.0);
-  // Lensing fades out towards the bounding sphere, where it meets the unbent scene seamlessly.
-  float cover = 1.0 - smoothstep(BOUND * 0.72, BOUND * 0.98, sqrt(h2));
+  // Far from the hole real light is still bent, and cutting the bend off at the bounding sphere
+  // would leave a seam: a circle where the shifted sky meets the unshifted one. So the bend itself
+  // tapers away with distance, easing the lensed view into the plain scene until, at the edge, the
+  // two are the same and there is nothing to see.
+  float reach = 1.0 - smoothstep(BOUND * 0.18, BOUND * 0.92, sqrt(h2));
+  vec3 bent = normalize(mix(direction, normalize(transpose(u_toLocal) * vel), reach * reach * (3.0 - 2.0 * reach)));
+  vec3 background = escaped ? sky(bent) * mix(0.3, 1.0, clear) : vec3(0.0);
+  // How much the lensed view replaces the plain scene follows how far the ray was actually bent,
+  // measured in screen pixels: where the bend is under a pixel the untouched full-resolution
+  // scene shows, and the lensing grows in smoothly from there. There is no edge to see; the
+  // bounding sphere only trims what is already invisible.
+  float bend = 1.0;
+  if (escaped) {
+    vec4 clip = u_viewProjection * vec4(u_eye + bent * 900.0, 1.0);
+    vec2 landed = clip.w > 0.0 ? clip.xy / clip.w * 0.5 + 0.5 : vec2(-9.0);
+    float pixels = length((landed - v_uv) * vec2(textureSize(u_scene, 0)));
+    bend = smoothstep(0.5, 14.0, pixels);
+  }
+  float cover = (1.0 - smoothstep(BOUND * 0.8, BOUND * 0.98, sqrt(h2))) * max(alpha, bend);
   outColor = vec4(color + (1.0 - alpha) * background, cover * u_alpha);
 }`;
 
