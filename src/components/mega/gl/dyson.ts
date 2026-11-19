@@ -1,56 +1,103 @@
 /**
- * Blogs — a Dyson sphere under construction. A plated shell closes around a star; along a band
- * still being built the shell gives way to its bare frame, latitude rings and meridian ribs black
- * against the light, the inner face of the far shell glowing in the star's heat. Polar hubs carry
- * radiator fins. Each post is a lit panel on the shell, ringed in its category colour.
+ * Blogs — a Dyson sphere after the Stellaris design: a truncated icosahedron of armoured panels
+ * (12 pentagons, 20 hexagons) around a blue-white star. Every panel has a heavy raised frame,
+ * inset concentric rings, spokes to its corners, a hub, and greebles and running lights across
+ * it. Each post is one of the pentagonal panels, its hub burning in the post's colour; a few
+ * hexagons are still open, and the star blazes through them.
  */
 
-import { lerp3, rotY, scale } from './fib';
 import { SDF_KIT } from './prelude';
 import type { Mega3D, ShipPose, Vec3 } from './types';
 
-const SPIN = 0.02;
-const BAND_LAT = 0.2;
+const PHI = (1 + Math.sqrt(5)) / 2;
+const TILT = 0.38;
+const SPIN = 0.025;
+/** Distance of the pentagonal faces when the hexagonal ones sit at 1 (a true truncated icosahedron). */
+const PENT_D = 1.02651;
+/** Hexagonal faces left open: the panels still missing. */
+const OPEN = [12, 15, 17, 22, 25, 29, 31];
 
-/** Where a post's panel sits on the shell: spread in longitude, kept off the open band and the poles. */
-function itemDir(index: number): Vec3 {
-  const t = (index * 0.618 + 0.13) % 1;
-  const lat = t < 0.5 ? -0.85 + t * 1.3 : 0.55 + (t - 0.5) * 0.6;
-  const lon = index * 2.39996 + 0.4;
-  return [Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)];
+const normalize = (v: Vec3): Vec3 => {
+  const l = Math.hypot(v[0], v[1], v[2]);
+  return [v[0] / l, v[1] / l, v[2] / l];
+};
+
+/** Face normals: 12 pentagons (icosahedron vertices), then 20 hexagons (dodecahedron vertices). */
+function faceNormals(): Vec3[] {
+  const faces: Vec3[] = [];
+  for (const a of [-1, 1]) {
+    for (const b of [-1, 1]) {
+      faces.push([0, a, b * PHI], [a, b * PHI, 0], [b * PHI, 0, a]);
+    }
+  }
+  for (const a of [-1, 1]) for (const b of [-1, 1]) for (const c of [-1, 1]) faces.push([a, b, c]);
+  for (const a of [-1, 1]) {
+    for (const b of [-1, 1]) {
+      // Centres of the icosahedron's faces (the dodecahedron of matching chirality).
+      faces.push([0, a * PHI, b / PHI], [a / PHI, 0, b * PHI], [a * PHI, b / PHI, 0]);
+    }
+  }
+  return faces.map(normalize);
+}
+
+const FACES = faceNormals();
+const glslVec = (v: Vec3) => `vec3(${v.map((x) => x.toFixed(6)).join(', ')})`;
+
+const rotX = (v: Vec3, a: number): Vec3 => {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return [v[0], c * v[1] - s * v[2], s * v[1] + c * v[2]];
+};
+const rotYv = (v: Vec3, a: number): Vec3 => {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return [c * v[0] - s * v[2], v[1], s * v[0] + c * v[2]];
+};
+const toWorld = (v: Vec3, time: number) => rotX(rotYv(v, time * SPIN), TILT);
+
+/** Posts take the pentagons first, then closed hexagons. */
+function itemFace(index: number): number {
+  if (index < 12) return index;
+  const closed = FACES.map((_, face) => face).filter((face) => face >= 12 && !OPEN.includes(face));
+  return closed[(index - 12) % closed.length];
 }
 
 export const dyson3d: Mega3D = {
-  camera: { distance: 4.2, pitch: 0.22, yaw: 0.6, extent: 1.25 },
+  camera: { distance: 4.3, pitch: 0.12, yaw: 0.4, extent: 1.25, sway: 0.1 },
   nebula: [
-    [0.45, 0.2, 0.38],
-    [0.16, 0.22, 0.6],
+    [0.22, 0.42, 0.95],
+    [0.42, 0.3, 0.9],
   ],
-  bloom: 0.16,
-  itemData: (index) => [...itemDir(index), 0],
+  bloom: 0.32,
+  itemData: (index) => [itemFace(index), 0, 0, 0],
   marker(index, _count, time, camera) {
-    const world = rotY(itemDir(index), time * SPIN);
-    const facing = world[0] * camera.eye[0] + world[1] * camera.eye[1] + world[2] * camera.eye[2];
-    return facing > 1.3 ? scale(world, 1.03) : null;
+    const face = itemFace(index);
+    const normal = toWorld(FACES[face], time);
+    const d = (face < 12 ? PENT_D : 1) + 0.03;
+    const at: Vec3 = [normal[0] * d, normal[1] * d, normal[2] * d];
+    const view: Vec3 = [camera.eye[0] - at[0], camera.eye[1] - at[1], camera.eye[2] - at[2]];
+    return normal[0] * view[0] + normal[1] * view[1] + normal[2] * view[2] > 0.8 ? at : null;
   },
   ships(time) {
     const ships: ShipPose[] = [];
     for (let k = 0; k < 2; k++) {
-      const local = (time + k * 12) % 24;
-      const t = local / 17;
+      const t = ((time + k * 13) % 26) / 18;
       if (t > 1) continue;
-      const lon = 0.6 + k * 0.5 + time * SPIN;
-      const target: Vec3 = scale(
-        [Math.cos(BAND_LAT) * Math.cos(lon), Math.sin(BAND_LAT), Math.cos(BAND_LAT) * Math.sin(lon)],
-        1.06,
-      );
-      const from: Vec3 = k ? [2.6, -0.6, 2.2] : [-2.3, 1.0, 2.4];
+      const face = OPEN[(k * 3 + Math.floor((time + k * 13) / 26)) % OPEN.length];
+      const normal = toWorld(FACES[face], time);
+      const target: Vec3 = [normal[0] * 1.12, normal[1] * 1.12, normal[2] * 1.12];
+      const from: Vec3 = k ? [2.8, -0.7, 2.0] : [-2.5, 1.1, 2.2];
+      const e = 1 - (1 - t) ** 2;
       ships.push({
         kind: 'constructor',
-        position: lerp3(from, target, 1 - (1 - t) ** 2),
+        position: [
+          from[0] + (target[0] - from[0]) * e,
+          from[1] + (target[1] - from[1]) * e,
+          from[2] + (target[2] - from[2]) * e,
+        ],
         heading: [target[0] - from[0], target[1] - from[1], target[2] - from[2]],
         length: 0.07,
-        color: '#ffd27a',
+        color: '#b8e6fe',
         alpha: Math.min(1, t * 8, (1 - t) * 8),
       });
     }
@@ -58,119 +105,192 @@ export const dyson3d: Mega3D = {
   },
   fragment: /* glsl */ `
 ${SDF_KIT}
-const float STAR_R = 0.27;
-const float BAND = ${BAND_LAT};
-const vec3 HOT = vec3(1.0, 0.7, 0.4);
-const vec3 KEY = normalize(vec3(-0.75, 0.55, 0.45));
-const vec3 HOLE = normalize(vec3(-0.5, -0.55, 0.65));
-const float HOLE_R = 0.1;
+const vec3 FN[32] = vec3[32](${FACES.map(glslVec).join(',\n  ')});
+const float PENT_D = ${PENT_D};
+const float STAR_R = 0.56;
+const vec3 STAR = vec3(0.45, 0.68, 1.0);
+const vec3 KEY = normalize(vec3(-0.6, 0.65, 0.5));
+const float SHELL = 0.04;
 
-mat3 toLocal() { return rotY(-u_time * ${SPIN}); }
+mat3 toLocal() { return rotY(-u_time * ${SPIN}) * rotX(-${TILT}); }
 
-float bandWidth(float lon) {
-  return 0.1 + 0.035 * sin(lon * 3.0 + 1.0) + 0.02 * sin(lon * 7.0);
+float faceD(int i) { return i < 12 ? PENT_D : 1.0; }
+float apothem(int i) { return i < 12 ? 0.3035 : 0.382; }
+
+bool isOpen(int i) {
+  return ${OPEN.map((face) => `i == ${face}`).join(' || ')};
 }
 
-vec2 shellUV(vec3 n) {
-  float lat = asin(clamp(n.y, -1.0, 1.0));
-  float lon = atan(n.z, n.x);
-  return vec2(lon / TAU * 96.0, lat / PI * 48.0);
+int itemOf(int face) {
+  for (int k = 0; k < 32; k++) {
+    if (k >= u_count) break;
+    if (int(u_items[k].x + 0.5) == face) return k;
+  }
+  return -1;
 }
 
-// id: 1 shell, 2 frame, 3 polar hubs, 4 star
+// Which face a point belongs to, how far it lies off that face's plane (g), its distance to the
+// nearest edge (edge) and how close it is to a spoke running out to a corner (gap).
+void faceOf(vec3 p, out int id, out float g, out float edge, out float gap) {
+  float gs[32];
+  g = -1e9;
+  id = 0;
+  for (int i = 0; i < 32; i++) {
+    gs[i] = dot(p, FN[i]) - faceD(i);
+    if (gs[i] > g) {
+      g = gs[i];
+      id = i;
+    }
+  }
+  float e1 = 1e9;
+  float e2 = 1e9;
+  vec3 n = FN[id];
+  for (int j = 0; j < 32; j++) {
+    if (j == id) continue;
+    float c = dot(n, FN[j]);
+    if (c < 0.6) continue;
+    float e = (g - gs[j]) / sqrt(1.0 - c * c);
+    if (e < e1) {
+      e2 = e1;
+      e1 = e;
+    } else if (e < e2) {
+      e2 = e;
+    }
+  }
+  edge = e1;
+  gap = e2 - e1;
+}
+
+// A line of half-width w at distance d, antialiased over one pixel of size px.
+float aaLine(float d, float w, float px) {
+  return clamp(1.0 - (d - w) / px, 0.0, 1.0) * min(1.0, (2.0 * w + 0.25 * px) / px);
+}
+
+vec2 faceCoords(vec3 p, vec3 n) {
+  vec3 t1 = normalize(cross(n, abs(n.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
+  vec3 t2 = cross(n, t1);
+  return vec2(dot(p, t1), dot(p, t2));
+}
+
+// Height of the panel surface above its base plane, by where on the panel we are.
+float relief(vec3 p, int id, float edge, float gap) {
+  float u = edge / apothem(id);
+  float h = 0.022 * (1.0 - smoothstep(0.075, 0.1, u));
+  h += 0.008 * (1.0 - smoothstep(0.1, 0.13, u));
+  h += 0.006 * (smoothstep(0.24, 0.255, u) - smoothstep(0.29, 0.305, u));
+  h -= 0.006 * (smoothstep(0.47, 0.485, u) - smoothstep(0.53, 0.545, u));
+  h -= 0.012 * smoothstep(0.62, 0.64, u);
+  float spoke = 1.0 - smoothstep(0.006, 0.011, gap);
+  h += 0.007 * spoke * smoothstep(0.1, 0.12, u) * (1.0 - smoothstep(0.6, 0.62, u));
+  vec2 c = faceCoords(p, FN[id]);
+  float rad = length(c - faceCoords(FN[id] * faceD(id), FN[id]));
+  h += 0.024 * (1.0 - smoothstep(0.045, 0.052, rad)) - 0.01 * (smoothstep(0.052, 0.058, rad) - smoothstep(0.075, 0.082, rad));
+  // Greebles: small boxes scattered over the panel bands.
+  vec2 cell = floor(c * 70.0);
+  vec2 f = fract(c * 70.0);
+  // Smooth-edged so the surface stays continuous and its normals stay sane.
+  float box = step(0.72, hash2(cell + float(id) * 13.0)) * smoothstep(0.08, 0.22, f.x) * smoothstep(0.92, 0.78, f.x)
+    * smoothstep(0.08, 0.22, f.y) * smoothstep(0.92, 0.78, f.y);
+  h += 0.003 * box * smoothstep(0.13, 0.15, u) * (1.0 - smoothstep(0.6, 0.62, u));
+  return h;
+}
+
+// id: 1 shell, 4 star
 float map(vec3 p, out float id) {
   float r = length(p);
-  vec3 n = p / max(r, 1e-4);
-  float lat = asin(clamp(n.y, -1.0, 1.0));
-  float lon = atan(n.z, n.x);
-  vec2 uv = shellUV(n);
-  float relief = plateRelief(uv) * 0.007 + plateRelief(uv * 3.0 + 5.0) * 0.0025;
-  float shell = max(r - (1.012 + relief), 0.985 - r);
-  // The open band, and a smaller opening on the lower side.
-  float band = (abs(lat - BAND) - bandWidth(lon)) * r;
-  shell = max(shell, -band);
-  float holeAngle = acos(clamp(dot(n, HOLE), -1.0, 1.0));
-  shell = max(shell, -(holeAngle - HOLE_R) * r);
-  // Frame across the band: latitude rings at its edges and middle, meridian ribs between.
-  float frame = 1e3;
-  for (int k = -1; k <= 1; k++) {
-    float l = BAND + float(k) * 0.12;
-    frame = min(frame, length(vec2(length(p.xz) - cos(l), p.y - sin(l))) - (k == 0 ? 0.008 : 0.013));
-  }
-  vec3 q = foldY(p, 36.0);
-  frame = min(frame, max(length(vec2(q.z, r - 0.995)) - 0.008, abs(lat - BAND) - 0.17));
-  // A reinforced rim round the lower opening.
-  frame = min(frame, length(vec2((holeAngle - HOLE_R) * r, r - 0.998)) - 0.012);
-  // Polar hubs: a drum, radiator fins and a mast.
-  vec3 a = vec3(p.x, abs(p.y), p.z);
-  float hub = sdCapsule(a, vec3(0.0, 0.96, 0.0), vec3(0.0, 1.08, 0.0), 0.11);
-  hub = min(hub, sdCapsule(a, vec3(0.0, 1.0, 0.0), vec3(0.0, 1.34, 0.0), 0.012));
-  vec3 f = foldY(a, 10.0);
-  hub = min(hub, sdBox(f - vec3(0.2, 1.02, 0.0), vec3(0.09, 0.006, 0.035)));
   float star = r - STAR_R;
-  float d = shell;
-  id = 1.0;
-  if (frame < d) { d = frame; id = 2.0; }
-  if (hub < d) { d = hub; id = 3.0; }
-  if (star < d) { d = star; id = 4.0; }
-  return d;
+  id = 4.0;
+  if (r > 1.2) return min(star, r - 1.12);
+  int face;
+  float g;
+  float edge;
+  float gap;
+  faceOf(p, face, g, edge, gap);
+  float shell = max(g - relief(p, face, edge, gap), -(g + SHELL));
+  if (isOpen(face)) shell = max(shell, edge - apothem(face) * 0.1);
+  if (shell < star) {
+    id = 1.0;
+    return shell;
+  }
+  return star;
 }
 
-// How much of the star's light reaches p, marching towards the centre.
 float starVisibility(vec3 p) {
   vec3 l = -normalize(p);
   float t = 0.01;
   float res = 1.0;
   float limit = length(p) - STAR_R - 0.02;
-  for (int i = 0; i < 24; i++) {
+  for (int i = 0; i < 20; i++) {
     float id;
     float h = map(p + l * t, id);
     if (id == 4.0) break;
-    res = min(res, 12.0 * h / t);
-    t += clamp(h, 0.006, 0.12);
+    res = min(res, 10.0 * h / t);
+    t += clamp(h, 0.008, 0.1);
     if (res < 0.02 || t > limit) break;
   }
   return clamp(res, 0.0, 1.0);
 }
 
-vec3 shade(vec3 p, vec3 n, vec3 rd, float id, mat3 M) {
-  float r = length(p);
-  vec3 refl = reflect(rd, n);
+vec3 shadePanel(vec3 p, vec3 n, vec3 rd, mat3 M) {
+  int face;
+  float g;
+  float edge;
+  float gap;
+  faceOf(p, face, g, edge, gap);
+  float ap = apothem(face);
+  float u = edge / ap;
+  vec3 fn = FN[face];
+  vec2 c = faceCoords(p, fn);
+  float rad = length(c - faceCoords(fn * faceD(face), fn));
+  bool inner = g < -SHELL * 0.6;
   float ao = occlusion(p, n);
-  // Starlight from the centre, falling off with distance, blocked by the shell.
-  float starDiffuse = max(dot(n, -normalize(p)), 0.0);
-  vec3 starLight = HOT * 3.2 / (r * r * 4.0 + 0.2);
-  float vis = starDiffuse > 0.0 ? starVisibility(p + n * 0.004) : 0.0;
-  // A cold key light from outside, and the nebula in the reflections.
+  vec3 refl = reflect(rd, n);
+  // Dark gunmetal, varied cell by cell; the frames a shade lighter.
+  vec3 base = vec3(0.07, 0.075, 0.09) * (0.75 + 0.5 * hash2(floor(c * 70.0) + float(face)));
+  base = mix(base, vec3(0.13, 0.13, 0.15), 1.0 - smoothstep(0.08, 0.1, u));
+  // The cold light of the nebula from one side.
   vec3 key = M * KEY;
-  float keyDiffuse = max(dot(n, key), 0.0) * shadowRay(p + n * 0.004, key);
-  float spec = pow(max(dot(refl, key), 0.0), 40.0);
-  vec2 uv = shellUV(p / r);
-  vec3 base = id == 1.0 ? vec3(0.09, 0.085, 0.09) : id == 2.0 ? vec3(0.12, 0.11, 0.1) : vec3(0.16, 0.16, 0.17);
-  base *= 0.75 + 0.5 * hash2(floor(uv));
-  vec3 color = base * (starLight * starDiffuse * vis + vec3(0.55, 0.62, 0.9) * keyDiffuse * 0.9 + 0.02 * ao)
-    + vec3(0.6, 0.65, 0.9) * spec * 0.25 * keyDiffuse + nebula(refl) * 0.25 * ao;
-  if (id == 1.0 && r > 1.0) {
-    // Hull lights, and heat bleeding through the seams near the open band.
-    float lat = asin(clamp(p.y / r, -1.0, 1.0));
-    float lon = atan(p.z, p.x);
-    vec2 f = fract(uv);
-    float seam = 1.0 - smoothstep(0.0, 0.07, min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y)));
-    float nearBand = 1.0 - smoothstep(0.0, 0.1, abs(lat - BAND) - bandWidth(lon));
-    color += HOT * seam * nearBand * 0.6;
-    float lamp = step(0.985, hash2(floor(uv * 2.0) + 3.0)) * step(0.5, fract(u_time * 0.3 + hash2(floor(uv)) * 4.0));
-    color += vec3(1.0, 0.5, 0.3) * lamp * 2.0 * smoothstep(0.35, 0.1, length(fract(uv * 2.0) - 0.5));
-    // Posts: a lit panel ringed in its colour.
-    for (int k = 0; k < 32; k++) {
-      if (k >= u_count) break;
-      float c = dot(p / r, u_items[k].xyz);
-      float ring = smoothstep(0.9985, 0.9989, c) * smoothstep(0.9996, 0.9992, c);
-      float fill = smoothstep(0.9989, 0.9994, c);
-      float focus = k == u_focus ? 1.0 : 0.0;
-      color += u_colors[k] * (ring * (3.0 + 8.0 * focus) + fill * (0.25 + 1.6 * focus));
-    }
+  float diffuse = max(dot(n, key), 0.0);
+  float spec = pow(max(dot(refl, key), 0.0), 50.0);
+  vec3 color = base * (vec3(0.6, 0.7, 1.0) * diffuse * 0.9 + 0.03 * ao) + vec3(0.7, 0.8, 1.0) * spec * 0.6 * diffuse;
+  color += nebula(refl) * 0.6 * ao;
+  // Starlight on everything that faces the star through an opening.
+  float toStar = max(dot(n, -normalize(p)), 0.0);
+  if (toStar > 0.0) color += base * STAR * 5.0 * toStar * starVisibility(p + n * 0.004) / dot(p, p);
+  if (inner) return color;
+  // Running lights: thin dashed strips along the frame and the rings, and fine tech lines between.
+  // Lines thinner than a pixel fade by coverage instead of breaking up into speckles.
+  float px = clamp(fwidth(edge), 0.0006, 0.01);
+  vec2 cc = c - faceCoords(fn * faceD(face), fn);
+  float ang = atan(cc.y, cc.x) / TAU;
+  float seed = hash1(float(face) * 3.1);
+  float strip = aaLine(abs(u - 0.102) * ap, 0.0012, px) * step(0.3, fract(ang * 30.0 + seed));
+  float ring = aaLine(abs(u - 0.31) * ap, 0.001, px) * step(0.45, fract(ang * 24.0 + seed * 2.0));
+  float ring2 = aaLine(abs(u - 0.6) * ap, 0.001, px) * step(0.25, fract(ang * 12.0 + 0.3));
+  float band = floor(u * 18.0);
+  float lines = aaLine(abs(fract(u * 18.0) - 0.5) / 18.0 * ap, 0.0007, px) * smoothstep(0.33, 0.35, u)
+    * (1.0 - smoothstep(0.45, 0.47, u)) * step(0.55, fract(ang * 20.0 + hash1(band + seed * 9.0)));
+  float frameEdge = aaLine(abs(u - 0.075) * ap, 0.0012, px);
+  vec3 cold = vec3(0.8, 0.9, 1.0);
+  color += cold * (strip * 2.0 + ring * 1.8 + ring2 * 1.5 + lines * 1.2 + frameEdge * 0.6);
+  // Tiny lamps among the greebles.
+  vec2 cell = floor(c * 140.0);
+  float lamp = step(0.985, hash2(cell + 7.0 + float(face))) * smoothstep(0.13, 0.15, u) * (1.0 - smoothstep(0.6, 0.62, u));
+  color += vec3(0.75, 0.88, 1.0) * lamp * 3.0 * step(0.3, fract(u_time * 0.2 + hash2(cell)));
+  // Pentagons glow violet in their grooves.
+  if (face < 12) color += vec3(0.55, 0.3, 1.0) * (smoothstep(0.47, 0.49, u) - smoothstep(0.52, 0.54, u)) * 1.4;
+  // The hub: the post's colour, brighter when its link is in focus.
+  int item = itemOf(face);
+  float hub = 1.0 - smoothstep(0.03, 0.045, rad);
+  float hubRing = smoothstep(0.05, 0.056, rad) * (1.0 - smoothstep(0.07, 0.078, rad));
+  if (item >= 0) {
+    float focus = item == u_focus ? 1.0 : 0.0;
+    float pulse = 0.8 + 0.2 * sin(u_time * 1.6 + float(item));
+    color += u_colors[item] * (hub * (3.0 + 8.0 * focus) * pulse + hubRing * (0.6 + 4.0 * focus));
+    color += u_colors[item] * focus * 0.6 * strip;
+  } else {
+    color += (face < 12 ? vec3(0.6, 0.35, 1.0) : vec3(0.4, 0.7, 1.0)) * hub * 1.2;
   }
-  if (id == 3.0) color += vec3(1.0, 0.3, 0.2) * step(1.3, abs(p.y)) * step(0.6, fract(u_time * 0.5)) * 4.0;
   return color;
 }
 
@@ -181,23 +301,29 @@ vec3 render(vec3 ro, vec3 rd, vec2 px) {
   vec3 bg = space(rd, px);
   vec2 cp = rayPoint(lro, lrd, vec3(0.0));
   float dc = cp.x;
-  vec3 corona = HOT * (3.0 * exp(-max(dc - STAR_R, 0.0) * 14.0) + 0.45 * exp(-max(dc - STAR_R, 0.0) * 4.0));
-  // Beams of light escaping through the band, out into space beside the sphere.
-  vec3 dirC = normalize(lro + lrd * cp.y);
-  float latC = asin(clamp(dirC.y, -1.0, 1.0));
-  float open = 1.0 - smoothstep(-0.02, 0.03, abs(latC - BAND) - bandWidth(atan(dirC.z, dirC.x)));
-  vec3 beams = HOT * open * exp(-max(dc - 1.0, 0.0) * 2.6) * 0.5 * (0.7 + 0.3 * noise3(dirC * 30.0)) * step(1.0, dc);
-  vec2 bound = sphereHits(lro, lrd, vec3(0.0), 1.4);
-  if (bound.y < 0.0) return bg + beams;
+  // Light scattered round the sphere from its openings.
+  vec3 haze = STAR * (0.06 * exp(-max(dc - 1.0, 0.0) * 3.0) + 0.012 * exp(-max(dc - 1.0, 0.0) * 0.8));
+  vec2 bound = sphereHits(lro, lrd, vec3(0.0), 1.1);
+  if (bound.y < 0.0) return bg + haze;
   float id;
   float t = march(lro, lrd, bound.x, bound.y, id);
-  if (t < 0.0) return bg + beams;
+  if (t < 0.0) return bg + haze;
   vec3 lp = lro + lrd * t;
-  if (id == 4.0) return starSurface(normalize(lp), lrd, HOT, u_time) + corona * 0.3;
-  vec3 color = shade(lp, normalAt(lp), lrd, id, M);
-  // Glare of the star across the opening, in front of whatever lies behind it.
-  if (cp.y < t) color += corona;
-  return color;
+  if (id == 4.0) {
+    vec3 sn = normalize(lp);
+    float mu = max(dot(sn, -lrd), 0.0);
+    float cells = fbm(sn * 7.0 + vec3(0.0, u_time * 0.04, 0.0));
+    float veins = smoothstep(0.45, 0.5, fbm(sn * 4.0 - vec3(u_time * 0.02)));
+    return STAR * (2.5 + 5.0 * cells * cells + 5.0 * veins) * (0.45 + 0.55 * pow(mu, 0.4));
+  }
+  vec3 color = shadePanel(lp, normalAt(lp), lrd, M);
+  // Glare of the star across an opening, in front of the frame behind it.
+  // Seen through an opening the inside is full of the star's light.
+  if (cp.y < t && dc < 1.0) {
+    float x = max(dc - STAR_R, 0.0);
+    color += STAR * (3.5 * exp(-x * 7.0) + 1.1 * exp(-x * 2.0));
+  }
+  return color + haze * 0.3;
 }
 `,
 };
