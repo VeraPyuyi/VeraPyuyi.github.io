@@ -1,0 +1,114 @@
+---
+/**
+ * A page's caption in the site's star atlas: a tiny eyepiece view of its galaxy beside the
+ * catalogue line, linking back to that galaxy on the homepage flight.
+ */
+import { localizedPath } from '@/i18n';
+import { plateLine, SKY_CATALOG, type SkyObject, skyHash } from '@/lib/sky-catalog';
+
+interface Props {
+  object: SkyObject;
+  locale: string;
+}
+
+const { object, locale } = Astro.props;
+const entry = SKY_CATALOG[object];
+const en = locale === 'en';
+const rest = plateLine(object, locale).slice(entry.catalog.length + 3);
+const href = `${localizedPath('/', locale)}${skyHash(object)}`;
+const title = en ? `Fly back to ${entry.name.en} on the star map` : `飞回星图中的${entry.name.zh}`;
+---
+
+<a class="sky-plate group" href={href} title={title} data-spin={object === 'hole' ? undefined : ''}>
+  <span class="sky-eyepiece" aria-hidden="true">
+    <img src={entry.image} alt="" width="40" height="40" loading="lazy" decoding="async" />
+  </span>
+  <span class="sky-plate-line">
+    <i class="sky-plate-catalog">{entry.catalog}</i>
+    <span> · {rest}</span>
+  </span>
+</a>
+
+<style>
+  .sky-plate {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: hsl(var(--primary));
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+  }
+
+  .sky-eyepiece {
+    position: relative;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: none;
+    overflow: hidden;
+    border-radius: 50%;
+    background: #0b0c24;
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.08),
+      0 0 14px rgb(140 120 255 / 0.25);
+    transition:
+      transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.4s ease;
+  }
+
+  /* Lens vignette, so the thumbnail reads as a view through an eyepiece. */
+  .sky-eyepiece::after {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: inset 0 0 7px 2px rgb(0 0 0 / 0.75);
+    content: '';
+  }
+
+  .sky-eyepiece img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .sky-plate[data-spin] .sky-eyepiece img {
+    animation: sky-turn 140s linear infinite;
+  }
+
+  .sky-plate:hover .sky-eyepiece,
+  .sky-plate:focus-visible .sky-eyepiece {
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.08),
+      0 0 20px rgb(160 140 255 / 0.55);
+    transform: scale(1.12);
+  }
+
+  .sky-plate-catalog {
+    font-family: Georgia, 'Times New Roman', serif;
+    letter-spacing: 0.06em;
+  }
+
+  .sky-plate-line {
+    opacity: 0.9;
+  }
+
+  .sky-plate:hover .sky-plate-line {
+    opacity: 1;
+  }
+
+  @keyframes sky-turn {
+    to {
+      transform: rotate(-360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sky-plate[data-spin] .sky-eyepiece img {
+      animation: none;
+    }
+  }
+
+  :global(html.motion-off) .sky-plate[data-spin] .sky-eyepiece img {
+    animation: none;
+  }
+</style>

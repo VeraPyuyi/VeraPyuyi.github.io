@@ -243,6 +243,7 @@ const starPath =
               href={star.href}
               style={`--star:${starColor(galaxy.kind, star.group)};--delay:${(order * 0.37) % 3}s`}
               data-flight-star
+              data-star-id={star.id}
               data-galaxy={index}
               data-u={toUnit(star.x)}
               data-v={toUnit(star.y)}

@@ -19,6 +19,7 @@ import {
 } from '@/lib/galaxy-flight';
 import { blackHoleFrame, invert } from '@/lib/galaxy-flight/black-hole';
 import type { Vec3 } from '@/lib/galaxy-flight/scene';
+import { resolveDeepLink } from './deep-link';
 import { paintIntro } from './intro';
 import { loadModels } from './model-loader';
 import { createGalaxyRenderer, type ParticleLayer } from './renderer';
@@ -439,6 +440,24 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     if (event.key === 'Escape') revealed = -1;
   };
   window.addEventListener('keydown', onKey);
+  // Arriving from "find it in the sky" on a post: fly to its galaxy, open the story, light the star.
+  const deepLink = resolveDeepLink(
+    window.location.hash,
+    stars.map((star) => star.element),
+  );
+  let deepLinkTimer = 0;
+  if (deepLink) {
+    revealOnArrival = deepLink.stop;
+    const found = stars.find((star) => star.element === deepLink.star);
+    if (found) {
+      found.element.classList.add('is-found');
+      const { kind, date, title } = found.element.dataset;
+      infoDefaults[found.galaxy] = { head: `${kind ?? ''} · ${date ?? ''}`, title: title ?? '' };
+      setInfo(found.galaxy, infoDefaults[found.galaxy].head, infoDefaults[found.galaxy].title);
+    }
+    deepLinkTimer = window.setTimeout(() => travelTo(deepLink.stop), 700);
+  }
+
   stage.addEventListener('pointermove', onPointerMove);
   stage.addEventListener('pointerleave', onPointerLeave);
   root.addEventListener('pointerover', onStarEnter);
@@ -450,6 +469,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
 
   return () => {
     cancelAnimationFrame(raf);
+    window.clearTimeout(deepLinkTimer);
     models?.stop();
     resizeObserver.disconnect();
     window.removeEventListener('keydown', onKey);

@@ -1,0 +1,51 @@
+---
+/**
+ * How far a piece's light has travelled since it was published, in light-days.
+ * Rendered at build time and refreshed in the browser, so it keeps counting.
+ */
+import { lightDays } from '@/lib/sky-catalog';
+
+interface Props {
+  date: Date | string;
+  locale: string;
+}
+
+const { date, locale } = Astro.props;
+const published = new Date(date);
+const days = lightDays(published);
+const en = locale === 'en';
+---
+
+<span class="light-age" data-light-age={published.toISOString()} data-locale={locale}>
+  {en ? `${days} light-days out` : `光行 ${days} 日`}
+</span>
+
+<script>
+  import { AU_PER_LIGHT_DAY, lightDays } from '@/lib/sky-catalog';
+
+  function paintLightAges() {
+    for (const element of document.querySelectorAll<HTMLElement>('[data-light-age]')) {
+      const published = new Date(element.dataset.lightAge ?? '');
+      if (Number.isNaN(published.getTime())) continue;
+      const en = element.dataset.locale === 'en';
+      const days = lightDays(published);
+      const au = Math.round(days * AU_PER_LIGHT_DAY).toLocaleString(en ? 'en' : 'zh-CN');
+      element.textContent = en ? `${days} light-days out` : `光行 ${days} 日`;
+      element.title = en
+        ? `Since it was published, its light has travelled ${days} light-days: about ${au} times the distance from the Earth to the Sun.`
+        : `发表至今，这束光已经走了 ${days} 光日，约 ${au} 个日地距离。`;
+    }
+  }
+
+  if (document.readyState !== 'loading') paintLightAges();
+  document.addEventListener('astro:page-load', paintLightAges);
+</script>
+
+<style>
+  .light-age {
+    cursor: help;
+    text-decoration: underline dotted;
+    text-decoration-color: hsl(var(--primary) / 0.45);
+    text-underline-offset: 0.25em;
+  }
+</style>

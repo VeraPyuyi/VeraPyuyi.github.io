@@ -4,7 +4,9 @@ import CustomContent from '@components/common/CustomContent.astro';
 import { Icon } from 'astro-icon/components';
 import PageChrome from '@/components/personal/PageChrome.astro';
 import ResponsiveImage from '@/components/personal/ResponsiveImage.astro';
+import MoonGlyph from '@/components/sky/MoonGlyph.astro';
 import { defaultLocale } from '@/i18n';
+import { MOON_PHASE_NAMES, MOON_PHASE_NAMES_EN, moonPhase } from '@/lib/galaxy';
 
 interface Props {
   locale?: string;
@@ -17,14 +19,16 @@ const moments = (await getCollection('moments'))
 const rendered = await Promise.all(moments.map(async (entry) => ({ entry, Content: (await render(entry)).Content })));
 ---
 
-<PageChrome locale={locale} title={en ? 'Moments' : '生活动态'} description={en ? 'Days too small for an essay still deserve a quiet line.' : '撑不起一篇文章的日子，也值得被轻轻记下一行。'}>
+<PageChrome locale={locale} sky="moments" title={en ? 'Moments' : '生活动态'} description={en ? 'Days too small for an essay still deserve a quiet line.' : '撑不起一篇文章的日子，也值得被轻轻记下一行。'}>
   <ol class="relative ml-3 space-y-8 border-l border-pink-300/70 pl-8 dark:border-pink-400/25" data-pagefind-body>
     {rendered.map(({ entry, Content }) => (
       <li class="relative">
-        <span class="border-background absolute -left-[2.64rem] top-1 size-4 rounded-full border-4 bg-pink-400 shadow" aria-hidden="true"></span>
+        {/* The timeline is a run of moons: each moment is marked by the moon of the night it was written. */}
+        <MoonGlyph date={entry.data.date} locale={locale} class="moments-moon absolute -left-[2.62rem] top-0.5 size-[1.1rem]" />
         <article class="rounded-3xl border border-black/5 bg-white/55 p-6 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
           <div class="text-muted-foreground mb-4 flex flex-wrap items-center gap-3 text-xs">
             <time datetime={entry.data.date.toISOString()}>{new Intl.DateTimeFormat(en ? 'en' : 'zh-CN', { dateStyle: 'long', timeStyle: 'short' }).format(entry.data.date)}</time>
+            <span class="moments-moon-name">{(en ? MOON_PHASE_NAMES_EN : MOON_PHASE_NAMES)[moonPhase(entry.data.date.getTime()).index]}{en ? '' : '之夜'}</span>
             {entry.data.location && <span class="inline-flex items-center gap-1"><Icon name="ri:map-pin-2-line" />{entry.data.location}</span>}
           </div>
           <div class="prose dark:prose-invert"><CustomContent Content={Content} /></div>

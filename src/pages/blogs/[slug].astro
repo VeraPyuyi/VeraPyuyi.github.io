@@ -6,9 +6,11 @@ import { Icon } from 'astro-icon/components';
 import readingTime from 'reading-time';
 import { Comment } from '@/components/comment';
 import PageChrome from '@/components/personal/PageChrome.astro';
+import LightAge from '@/components/sky/LightAge.astro';
 import { defaultLocale, localizedPath } from '@/i18n';
 import { getBlogArticle, getBlogCategoryLabel } from '@/lib/blogs';
 import { displayDate } from '@/lib/date';
+import { skyHash } from '@/lib/sky-catalog';
 import { blogRoute } from '../_shared/routes';
 
 export const getStaticPaths = blogRoute.root;
@@ -27,6 +29,8 @@ const minutes = Math.max(1, Math.ceil(readingTime(entry.body ?? '').minutes));
 const publishedDate = displayDate.date(entry.data.publishedAt);
 const categoryLabel = getBlogCategoryLabel(entry.data.category);
 const categoryHref = `${localizedPath('/blogs', locale)}#${entry.data.category}`;
+// Each post is a star in M51 on the homepage; this flies there and lights it up.
+const starHref = `${localizedPath('/', locale)}${skyHash('blogs', `blog-${entry.data.routeSlug}`)}`;
 ---
 
 <PageChrome
@@ -39,6 +43,7 @@ const categoryHref = `${localizedPath('/blogs', locale)}#${entry.data.category}`
   keywords={entry.data.keywords}
   contentType="article"
   mathStyles
+  sky="blogs"
 >
   <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/55 p-4 text-sm dark:border-white/10 dark:bg-white/5">
     <div class="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -49,11 +54,19 @@ const categoryHref = `${localizedPath('/blogs', locale)}#${entry.data.category}`
       <time datetime={entry.data.publishedAt.toISOString()}>{publishedDate}</time>
       <span aria-hidden="true">·</span>
       <span>{en ? `${minutes} min read` : `约 ${minutes} 分钟阅读`}</span>
+      <span aria-hidden="true">·</span>
+      <LightAge date={entry.data.publishedAt} locale={locale} />
     </div>
-    <a class="text-primary inline-flex items-center gap-1 font-semibold hover:underline" href={localizedPath('/blogs', locale)}>
-      <Icon name="ri:arrow-left-line" />
-      {en ? 'All blogs' : '全部博客'}
-    </a>
+    <div class="flex flex-wrap items-center gap-4">
+      <a class="text-primary inline-flex items-center gap-1 font-semibold hover:underline" href={starHref}>
+        <Icon name="ri:sparkling-2-line" />
+        {en ? 'Find it in the sky' : '在星图中找到它'}
+      </a>
+      <a class="text-primary inline-flex items-center gap-1 font-semibold hover:underline" href={localizedPath('/blogs', locale)}>
+        <Icon name="ri:arrow-left-line" />
+        {en ? 'All blogs' : '全部博客'}
+      </a>
+    </div>
   </div>
   <article class="blog-content prose dark:prose-invert max-w-none" data-pagefind-body>
     <span class="sr-only" data-pagefind-meta="title">{entry.data.title}</span>
