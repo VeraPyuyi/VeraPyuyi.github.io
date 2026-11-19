@@ -33,12 +33,12 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
   {
     papers.map((paper, index) => (
       <article
-        class="group flex min-w-0 flex-col overflow-hidden rounded-3xl border border-black/5 bg-white/55 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none dark:border-white/10 dark:bg-white/5"
+        class="group flex min-w-0 flex-col"
         data-home-random-item={randomized ? '' : undefined}
         hidden={randomized && index >= visibleLimit}
       >
         <a
-          class="relative block aspect-video overflow-hidden bg-gradient-to-br from-pink-200/75 via-violet-100/70 to-sky-200/75"
+          class="relative block aspect-video overflow-hidden rounded-3xl bg-gradient-to-br from-pink-200/75 via-violet-100/70 to-sky-200/75 shadow-sm transition-shadow duration-500 group-hover:shadow-xl"
           href={localizedPath(`/papers/${paper.id}`, locale)}
           aria-label={en && paper.titleEn ? paper.titleEn : paper.title}
         >
@@ -52,7 +52,7 @@ const pagefindAttributes = indexable ? { 'data-pagefind-body': '' } : { 'data-pa
           />
           <span class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/5"></span>
         </a>
-        <div class="space-y-4 p-6">
+        <div class="space-y-4 px-1 pt-5 pb-2">
           <div class="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
             <span class="paper-issue">{issueNumbers.get(paper.id)}</span>
             <time datetime={paper.date}>{paper.date}</time>

@@ -5,7 +5,8 @@
  * 1. Aim   — the camera turns to the chosen star and slowly pushes in on it
  *            (the page itself zooms toward the star while the edges darken).
  * 2. Spool — nearby stars begin to stretch into trails as the drive charges,
- *            a warp bubble tightens around the star; the next page is fetched.
+ *            motes of light spiral into the star and a lens flare opens across it;
+ *            the next page is fetched.
  * 3. Jump  — a flash, full streaks; the streaks keep running until the new page
  *            has arrived and a minimum cruise has passed.
  * 4. Arrive — the streaks decelerate and the darkness lifts off the new page.
@@ -36,6 +37,15 @@
     color: string;
   }
 
+  interface Mote {
+    angle: number;
+    radius: number;
+    spin: number;
+    size: number;
+    color: string;
+    delay: number;
+  }
+
   type Phase = 'idle' | 'aim' | 'spool' | 'cruise' | 'arrive';
 
   const AIM_MS = 1100;
@@ -62,6 +72,7 @@
   let canvas: HTMLCanvasElement | null = null;
   let ctx: CanvasRenderingContext2D | null = null;
   let streaks: Streak[] = [];
+  let motes: Mote[] = [];
   let origin = { x: 0, y: 0 };
   let accent = '#ffd27a';
   let phaseAt = 0;
@@ -77,6 +88,25 @@
   const easeInCubic = (t: number) => t * t * t;
   const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
   const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+
+  function withAlpha(hex: string, alpha: number): string {
+    const value = hex.replace('#', '');
+    const full = value.length === 3 ? [...value].map((digit) => digit + digit).join('') : value.slice(0, 6);
+    const number = Number.parseInt(full, 16);
+    if (Number.isNaN(number)) return `rgba(255, 210, 122, ${alpha})`;
+    return `rgba(${(number >> 16) & 255}, ${(number >> 8) & 255}, ${number & 255}, ${alpha})`;
+  }
+
+  function createMotes(count: number): Mote[] {
+    return Array.from({ length: count }, () => ({
+      angle: Math.random() * Math.PI * 2,
+      radius: 70 + Math.random() ** 0.6 * 260,
+      spin: (2.2 + Math.random() * 2.4) * (Math.random() < 0.85 ? 1 : -1),
+      size: 0.8 + Math.random() * 1.8,
+      color: Math.random() < 0.45 ? accent : PALETTE[Math.floor(Math.random() * PALETTE.length)],
+      delay: Math.random() * 0.35,
+    }));
+  }
 
   function resize() {
     if (!canvas) return;
@@ -130,6 +160,7 @@
     if (canvas) canvas.style.opacity = '0';
     ctx?.clearRect(0, 0, window.innerWidth, window.innerHeight);
     streaks = [];
+    motes = [];
   }
 
   function enter(next: Phase, now: number) {
@@ -220,33 +251,68 @@
     }
     ctx.globalAlpha = 1;
 
-    // The chosen star: a glow that swells as the camera closes in.
+    // The chosen star: a soft corona that swells as the camera closes in and breathes while charging.
     if (phase === 'aim' || phase === 'spool') {
       const swell = phase === 'aim' ? easeInOut(clamp01(inPhase / AIM_MS)) : 1;
-      const radius = 10 + swell * 34 + (phase === 'spool' ? Math.sin(inPhase / 60) * 3 : 0);
-      const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, radius * 3);
-      glow.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-      glow.addColorStop(0.18, accent);
-      glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.globalAlpha = 0.35 + 0.65 * swell;
-      ctx.fillStyle = glow;
-      ctx.fillRect(center.x - radius * 3, center.y - radius * 3, radius * 6, radius * 6);
+      const charge = phase === 'spool' ? clamp01(inPhase / SPOOL_MS) : 0;
+      const breathe = phase === 'spool' ? 1 + Math.sin(inPhase / 90) * 0.06 * (1 - charge) : 1;
+      const radius = (14 + swell * 30 + charge * 26) * breathe;
+      const corona = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, radius * 4);
+      corona.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      corona.addColorStop(0.08, 'rgba(255, 252, 244, 0.95)');
+      corona.addColorStop(0.2, withAlpha(accent, 0.55));
+      corona.addColorStop(0.45, withAlpha(accent, 0.14));
+      corona.addColorStop(1, withAlpha(accent, 0));
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.3 + 0.7 * swell;
+      ctx.fillStyle = corona;
+      ctx.fillRect(center.x - radius * 4, center.y - radius * 4, radius * 8, radius * 8);
+
+      // Anamorphic lens flare: a thin horizontal light that opens across the star.
+      const flareWidth = (0.18 + 0.5 * swell + 0.55 * charge) * width;
+      const flare = ctx.createLinearGradient(center.x - flareWidth / 2, 0, center.x + flareWidth / 2, 0);
+      flare.addColorStop(0, withAlpha(accent, 0));
+      flare.addColorStop(0.42, withAlpha('#dbe9ff', 0.35));
+      flare.addColorStop(0.5, 'rgba(255, 255, 255, 0.9)');
+      flare.addColorStop(0.58, withAlpha('#dbe9ff', 0.35));
+      flare.addColorStop(1, withAlpha(accent, 0));
+      ctx.globalAlpha = (0.25 + 0.75 * swell) * (0.55 + 0.45 * charge);
+      ctx.fillStyle = flare;
+      const thickness = 1.2 + charge * 2.2;
+      ctx.fillRect(center.x - flareWidth / 2, center.y - thickness / 2, flareWidth, thickness);
+      ctx.globalAlpha *= 0.35;
+      ctx.fillRect(center.x - flareWidth / 2, center.y - thickness * 3, flareWidth, thickness * 6);
       ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
     }
 
-    // Warp bubble: rings that tighten around the star while the drive charges.
-    if (phase === 'spool') {
-      const p = clamp01(inPhase / SPOOL_MS);
-      for (let ring = 0; ring < 3; ring++) {
-        const q = (p * 1.6 + ring * 0.22) % 1;
-        ctx.strokeStyle = accent;
-        ctx.globalAlpha = (1 - q) * 0.55 * (1 - p * 0.4);
-        ctx.lineWidth = 1.5;
+    // Charging: motes of light spiral in and fall into the star, leaving short curved trails.
+    if (phase === 'spool' || (phase === 'aim' && inPhase > AIM_MS * 0.6)) {
+      const p = phase === 'spool' ? clamp01(inPhase / SPOOL_MS) : 0;
+      const warmup = phase === 'aim' ? clamp01((inPhase - AIM_MS * 0.6) / (AIM_MS * 0.4)) : 1;
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.lineCap = 'round';
+      for (const mote of motes) {
+        const local = clamp01((p - mote.delay) / (1 - mote.delay));
+        const fall = local ** 1.6;
+        const r = mote.radius * (1 - fall);
+        if (r < 3) continue;
+        const angle = mote.angle + mote.spin * (local + local * local);
+        const sweep = 0.05 + 0.25 * local;
+        const x = center.x + Math.cos(angle) * r;
+        const y = center.y + Math.sin(angle) * r * 0.62;
+        const tx = center.x + Math.cos(angle - sweep * Math.sign(mote.spin)) * r * 1.04;
+        const ty = center.y + Math.sin(angle - sweep * Math.sign(mote.spin)) * r * 0.62 * 1.04;
+        ctx.globalAlpha = warmup * (0.25 + 0.75 * local) * Math.min(1, r / 40);
+        ctx.strokeStyle = mote.color;
+        ctx.lineWidth = mote.size;
         ctx.beginPath();
-        ctx.ellipse(center.x, center.y, (1 - q) * 220 + 12, (1 - q) * 120 + 8, 0, 0, Math.PI * 2);
+        ctx.moveTo(tx, ty);
+        ctx.quadraticCurveTo((tx + x) / 2 + (y - ty) * 0.15, (ty + y) / 2 - (x - tx) * 0.15, x, y);
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
     }
 
     // Flash on the jump, and a softer one as we drop out of warp.
@@ -277,6 +343,7 @@
     const reach = Math.hypot(window.innerWidth, window.innerHeight) / 2;
     const count = Math.round(Math.min(560, (window.innerWidth * window.innerHeight) / 2400));
     streaks = Array.from({ length: count }, () => spawn(reach, true));
+    motes = createMotes(window.innerWidth < 640 ? 70 : 140);
     arrived = false;
     startedAt = performance.now();
     lastFrame = startedAt;
