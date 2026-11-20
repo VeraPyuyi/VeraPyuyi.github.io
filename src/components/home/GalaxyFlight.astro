@@ -411,25 +411,15 @@ const starPath =
 </section>
 
 <script>
+  import { mountScene, unmountScene } from '@/lib/scene-mount';
   import { mountGalaxyFlight } from './galaxy-flight/controller';
 
-  let unmount: (() => void) | null = null;
-  let mounted: HTMLElement | null = null;
-
-  function init() {
-    const root = document.querySelector<HTMLElement>('[data-flight]');
-    if (root === mounted) return;
-    unmount?.();
-    unmount = null;
-    mounted = root;
-    if (root) unmount = mountGalaxyFlight(root);
-  }
+  // Mounted through a tab-wide registry, so the flight runs once even if two builds of this
+  // script are live in the same tab (it stays open across a deploy).
+  const init = () =>
+    mountScene('flight', document.querySelector<HTMLElement>('[data-flight]'), '[data-flight-canvas]', mountGalaxyFlight);
 
   if (document.readyState !== 'loading') init();
   document.addEventListener('astro:page-load', init);
-  document.addEventListener('astro:before-swap', () => {
-    unmount?.();
-    unmount = null;
-    mounted = null;
-  });
+  document.addEventListener('astro:before-swap', () => unmountScene('flight'));
 </script>

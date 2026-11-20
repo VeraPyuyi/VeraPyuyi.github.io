@@ -23,6 +23,7 @@ import { Tooltips } from 'astro-tooltips';
 import { getHtmlLang, getLocaleFromUrl } from '@/i18n';
 import AppShell from './AppShell.astro';
 import BootScripts from './BootScripts.astro';
+import BuildGuard from './BuildGuard.astro';
 import HeadMeta from './HeadMeta.astro';
 
 import '@styles/index.css';
@@ -50,6 +51,7 @@ const meta: PageMeta = { ...metaProps, locale, title, description };
     <Tooltips />
 
     <BootScripts />
+    <BuildGuard />
 
     <!-- 子页面可通过 slot="head" 注入额外的 head 内容（如 JSON-LD） -->
     <slot name="head" />
