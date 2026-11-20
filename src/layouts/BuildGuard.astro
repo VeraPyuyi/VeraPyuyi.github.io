@@ -1,0 +1,27 @@
+---
+/**
+ * Keeps a tab on one build of the site. Client-side navigation keeps page scripts alive, so a tab
+ * left open across a deploy would run the old build's scripts next to the new one's on the same
+ * page (two renderers on one canvas, two caches). When the next page comes from a different
+ * build, the navigation becomes an ordinary full page load instead.
+ */
+import { BUILD_ID } from '@constants/build';
+---
+
+<meta name="site-build" content={BUILD_ID} />
+
+<script>
+  const buildOf = (doc: Document) => doc.querySelector<HTMLMetaElement>('meta[name="site-build"]')?.content;
+
+  document.addEventListener('astro:before-swap', (event) => {
+    const current = buildOf(document);
+    const next = buildOf(event.newDocument);
+    if (!current || !next || current === next) return;
+    const target = event.to.href;
+    event.swap = () => {
+      // Back/forward has already moved the address bar to the target; a link has not yet.
+      if (window.location.href === target) window.location.reload();
+      else window.location.assign(target);
+    };
+  });
+</script>

@@ -118,18 +118,18 @@ const stars = Array.from({ length: compact ? 90 : 140 }, () => {
 </section>
 
 <script>
+  import { mountScene, unmountScene } from '@/lib/scene-mount';
   import { mountSkyStage } from './sky-stage';
 
-  // The page's object, live: the homepage's WebGL galaxy (or black hole) for this stop.
-  let stopStage: (() => void) | null = null;
-  let mounted: HTMLElement | null = null;
-  function mountStage() {
-    const hero = document.querySelector<HTMLElement>('[data-sky-hero][data-object]');
-    if (hero === mounted) return;
-    stopStage?.();
-    mounted = hero;
-    stopStage = hero ? mountSkyStage(hero) : null;
-  }
+  // The page's object, live: the homepage's WebGL galaxy (or black hole) for this stop. Mounted
+  // through a tab-wide registry, so it runs once even if two builds of this script are live.
+  const mountStage = () =>
+    mountScene(
+      'sky-hero',
+      document.querySelector<HTMLElement>('[data-sky-hero][data-object]'),
+      '[data-sky-canvas]',
+      mountSkyStage,
+    );
 
   // Gentle parallax: as the page scrolls, the night lets go of the text (and a still image sinks a little).
   let frame = 0;
@@ -156,8 +156,6 @@ const stars = Array.from({ length: compact ? 90 : 140 }, () => {
   document.addEventListener('astro:page-load', start);
   document.addEventListener('astro:before-swap', () => {
     window.removeEventListener('scroll', onScroll);
-    stopStage?.();
-    stopStage = null;
-    mounted = null;
+    unmountScene('sky-hero');
   });
 </script>
