@@ -43,8 +43,11 @@ interface GalaxyState {
   drift: ReturnType<typeof galaxyDrift>;
   angle: number;
   speed: number;
-  /** Time the particles finished uploading, or -1 while still being built. */
-  readyAt: number;
+  /**
+   * Time the particles finished uploading (earlier than the clock for a model kept from before,
+   * so it shows at once), or null while still being built.
+   */
+  readyAt: number | null;
 }
 
 interface StarLink {
@@ -99,7 +102,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     drift: galaxyDrift(0, 0),
     angle: 0,
     speed: prefersStill() ? 0 : 1,
-    readyAt: -1,
+    readyAt: null,
   }));
 
   const renderer = createGalaxyRenderer(canvas);
@@ -107,7 +110,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   const small = Math.min(window.innerWidth, window.innerHeight) < 700 || (navigator.hardwareConcurrency || 8) <= 4;
   let width = 1;
   let height = 1;
-  let backdropReady = -1;
+  let backdropReady: number | null = null;
   const guard = createFrameGuard({
     maxRatio: small ? 1.25 : 2,
     onRatioChange: () => resize(),
@@ -241,7 +244,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
 
     if (renderer) {
       const layers: ParticleLayer[] = [];
-      if (backdropReady >= 0) {
+      if (backdropReady !== null) {
         layers.push({
           mesh: 'backdrop',
           model: IDENTITY,
@@ -260,7 +263,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       })).sort((a, b) => b.distance - a.distance);
       for (const { index } of byDistance) {
         const galaxy = galaxies[index];
-        if (galaxy.readyAt < 0) continue;
+        if (galaxy.readyAt === null) continue;
         const placement = GALAXY_PLACEMENTS[index];
         const base = {
           model: galaxy.matrix,
