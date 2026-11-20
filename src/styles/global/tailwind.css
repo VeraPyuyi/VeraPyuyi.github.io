@@ -135,7 +135,7 @@
     clip-path: polygon(0 0%, 100% 0%, 100% 100%, 8% 100%);
   }
   .logo-text {
-    font-size: 2rem;
+    font-size: min(2rem, 6.4vw);
     text-shadow:
       3px 4px 2px #060000,
       -1px -1px 0px #ffffff;

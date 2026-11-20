@@ -4,6 +4,7 @@
  * from the homepage flight (or custom art in the `art` slot), its atlas caption and the title.
  * The bottom of the hero fades from night into the page's dawn, so reading happens in daylight.
  */
+import { siteConfig } from '@constants/site-config';
 import { createRandom } from '@/lib/galaxy-flight/particles';
 import { SKY_CATALOG, type SkyObject } from '@/lib/sky-catalog';
 import SkyPlate from './SkyPlate.astro';
@@ -95,7 +96,7 @@ const stars = Array.from({ length: compact ? 90 : 140 }, () => {
         <SkyPlate object={object} locale={locale} />
       ) : (
         <p class="sky-hero-plate">
-          <span aria-hidden="true">✦</span> {plate ?? (locale === 'en' ? 'Pyuyi’s small universe' : 'Pyuyi 的小宇宙')}
+          <span aria-hidden="true">✦</span> {plate ?? (locale === 'en' ? (siteConfig.alternate ?? siteConfig.title) : siteConfig.title)}
         </p>
       )
     }

@@ -221,7 +221,7 @@ const starPath =
 
     <div class="flight-intro" data-flight-fade="0.35">
       <p class="flight-moon" data-flight-moon>{en ? 'Tonight' : '今晚'}</p>
-      <h1 id="flight-title" class="font-chill-round">{siteConfig.title}</h1>
+      <h1 id="flight-title" class="font-chill-round">{en ? (siteConfig.alternate ?? siteConfig.title) : siteConfig.title}</h1>
       <p class="flight-greeting" data-flight-greeting>{siteConfig.subtitle}</p>
       <p class="flight-lead">
         {

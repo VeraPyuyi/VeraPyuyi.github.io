@@ -12,7 +12,7 @@
 # =============================================================================
 site:
   title: Pyuyi 的小宇宙 # 网站名称
-  alternate: PYUYI'S Home # 网站英文名称 用于页脚、Logo、@ handle 等
+  alternate: Pyuyi's Microcosm # 网站英文名称（「小宇宙」）：英文页面的站名与顶栏，也用于页脚、@ handle 等
   subtitle: 把好奇心写进星光里 # 网站副标题
   name: Pyuyi # 作者名称
   description: 我是 Pyuyi，在一些暂时没有答案的问题旁边，留一盏灯。 # 网站描述
