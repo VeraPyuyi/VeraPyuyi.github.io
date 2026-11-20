@@ -3,20 +3,20 @@ layout: ../../layouts/PageLayout.astro
 title: "About Pyuyi"
 coverTitle: "About Pyuyi"
 date: 2026-08-26 18:00:00
-description: "Proofs, code and photographs are kept here, along with a few thoughts that have not yet converged."
+description: "The long way round before Q.E.D., and a few thoughts that have not yet converged."
 comments: false
 sky: hole
 ---
 
 ## Hi, I’m Pyuyi
 
-Most of the time I keep company with a few problems that are still unsolved: some later became papers, some a few lines of code, most just a question mark in the margin of a draft.
+Halfway through a proof you stand in an odd place: already convinced, not yet able to say why. I spend most of my time there.
 
-Mathematics has a phrase, *almost everywhere*: a statement holds nearly everywhere and fails only at some points whose total length is zero. Zero, but not nothing. Most of what is written here is points like those: a derivation that would not come out, a crooked photo, a sentence I never said aloud.
+In the end the answer is tidied into a paper: clean, rigorous, not one step too many. The long way round that led to it (the page that would not go further, a photo taken by the roadside, a thought that surfaced at night and was pressed back down) belongs to no paper, so I keep it here.
 
-No need to start from the first page. Wherever you stop is a way in.
+Which is to say: there is no finished version of me here.
 
-> A black hole gives off no light. The first time we saw one, it was by the light around it.
+> No one has ever seen a black hole itself. What we see is only the turn light takes as it passes by.
 
 ### Contact
 
