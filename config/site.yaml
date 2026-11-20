@@ -160,6 +160,18 @@ friends:
       desc: 我最牛！
       image: "" # 申请中使用了无效的示例头像，改用站点默认头像
       color: "#ffc0cb"
+    - site: 盗作
+      url: https://virgiling.wiki/
+      owner: virgiling
+      desc: Not all those who wander are lost.
+      image: https://cv.virgiling.wiki/bio.png
+      color: "#ffc0cb"
+    - site: Miles’s Digital Garden
+      url: https://imiles.me/
+      owner: Miles Ming
+      desc: 全栈开发者Miles的数字花园，记录前端工程、系统思考与设计。
+      image: https://imiles.me/images/weblogo.jpeg
+      color: "#190609"
 
 # =============================================================================
 # Announcements
