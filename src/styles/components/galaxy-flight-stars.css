@@ -1,0 +1,113 @@
+/* Homepage galaxy flight: the cues that its stars are links (galaxy-flight/star-hints.ts). */
+
+.flight-star:hover,
+.flight-star:focus-visible {
+  z-index: 3;
+}
+
+/* Hover card: what the star links to. It sits above the star (below near the top edge), flips
+   inwards near the side edges (data-tip-x, set by galaxy-flight/star-hints.ts), and undoes the
+   star's depth scaling (--s) so the text keeps one size. */
+.flight-star-tip {
+  --tx: -50%;
+  --ty: 0.35rem;
+  --ox: 50%;
+  --oy: 100%;
+  position: absolute;
+  bottom: calc(100% - 0.1rem);
+  left: 50%;
+  display: grid;
+  gap: 0.2rem;
+  width: max-content;
+  max-width: min(19rem, 70vw);
+  padding: 0.5rem 0.75rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--star) 38%, transparent);
+  border-radius: 0.7rem;
+  background: rgb(16 13 40 / 0.84);
+  box-shadow:
+    0 10px 30px rgb(4 3 16 / 0.45),
+    0 0 18px color-mix(in srgb, var(--star) 18%, transparent);
+  color: #f5f2ff;
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(var(--tx), var(--ty)) scale(calc(1 / var(--s, 1)));
+  transform-origin: var(--ox) var(--oy);
+  transition:
+    opacity 0.2s ease,
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  backdrop-filter: blur(8px);
+}
+
+.flight-star:hover .flight-star-tip,
+.flight-star:focus-visible .flight-star-tip {
+  --ty: 0rem;
+  opacity: 1;
+}
+
+.flight-star[data-tip-y='below'] .flight-star-tip {
+  --ty: -0.35rem;
+  --oy: 0%;
+  top: calc(100% - 0.1rem);
+  bottom: auto;
+}
+
+.flight-star[data-tip-x='start'] .flight-star-tip {
+  --tx: 0%;
+  --ox: 0%;
+  left: calc(50% - 1rem);
+}
+
+.flight-star[data-tip-x='end'] .flight-star-tip {
+  --tx: 0%;
+  --ox: 100%;
+  right: calc(50% - 1rem);
+  left: auto;
+}
+
+.flight-star-tip-kind {
+  color: color-mix(in srgb, var(--star) 75%, white);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.flight-star-tip-title {
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+/* The first time the camera settles on a galaxy, its stars send out one soft ring: they are links. */
+.flight-star.is-ping::before {
+  position: absolute;
+  inset: 0.45rem;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px var(--star),
+    0 0 10px color-mix(in srgb, var(--star) 60%, transparent);
+  content: '';
+  opacity: 0;
+  animation: flight-ping 1.3s ease-out calc(0.35s + var(--delay, 0s) * 0.3) 2;
+}
+
+@keyframes flight-ping {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.5);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flight-star.is-ping::before {
+    animation: none;
+  }
+
+  .flight-star-tip {
+    transition-duration: 0.01s;
+  }
+}

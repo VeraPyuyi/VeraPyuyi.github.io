@@ -20,6 +20,7 @@ import {
 import { blackHoleFrame, invert } from '@/lib/galaxy-flight/black-hole';
 import type { Vec3 } from '@/lib/galaxy-flight/scene';
 import { resolveDeepLink } from './deep-link';
+import { createStarHints } from './star-hints';
 import { createFrameGuard } from './frame-guard';
 import { createOverscrollPull } from './overscroll';
 import { paintIntro } from './intro';
@@ -102,6 +103,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   /** Turn of the star field about the route, so the sky drifts behind the black hole. */
   let skyTurn = 0;
   const overscroll = createOverscrollPull();
+  const hints = createStarHints();
   const galaxies: GalaxyState[] = GALAXY_PLACEMENTS.map((placement) => ({
     matrix: galaxyModelMatrix(placement),
     drift: galaxyDrift(0, 0),
@@ -346,7 +348,12 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       style.opacity = opacity.toFixed(3);
       style.visibility = opacity < 0.02 ? 'hidden' : 'visible';
       star.element.classList.toggle('is-idle', opacity < 0.5);
+      hints.place(star.element, point.x, point.y, width, height, scale);
     }
+    const settled = Math.round(progress);
+    // Ring the stars once the galaxy itself is showing (the black hole stop has no galaxy model).
+    if (!warp && !prefersStill() && Math.abs(progress - settled) < 0.06 && galaxies[settled]?.readyAt !== null)
+      hints.arrive(settled, () => stars.filter((star) => star.galaxy === settled).map((star) => star.element));
     // Stories stay hidden until their galaxy is clicked; leaving the galaxy closes it again.
     if (revealOnArrival >= 0 && Math.abs(progress - revealOnArrival) < 0.12) {
       revealed = revealOnArrival;
@@ -492,6 +499,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   return () => {
     cancelAnimationFrame(raf);
     window.clearTimeout(deepLinkTimer);
+    hints.stop();
     overscroll.stop();
     models?.stop();
     resizeObserver.disconnect();

@@ -190,6 +190,9 @@ export const uiStrings = {
   'floating.bgm': '背景音乐',
   'floating.toggleToolbar': '展开/收起工具栏',
   'floating.settings': '设置',
+  'floating.switchLanguage': '切换到{label}',
+  'floating.languageHint': '本站也有中文版',
+  'floating.dismiss': '关闭',
 
   // ── Settings Panel ────────────────────────────────────────
   'settings.title': '设置',

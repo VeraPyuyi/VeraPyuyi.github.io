@@ -2,6 +2,7 @@
  * FloatingGroup Component
  *
  * Floating action buttons for navigation and utilities.
+ * - Switch to the other language
  * - Scroll to top/bottom
  * - Christmas effects toggle
  * - Expand/collapse toggle
@@ -21,6 +22,7 @@ import { $isDrawerOpen, $isSettingsOpen, toggleSettings } from '@store/modal';
 import { bgmWidgetEnabled, initSettings } from '@store/settings';
 import { AnimatePresence, m } from 'motion/react';
 import { useEffect, useState } from 'react';
+import FloatingLanguage from './FloatingLanguage';
 
 interface FloatingButtonProps {
   onClick: () => void;
@@ -125,6 +127,7 @@ export default function FloatingGroup() {
               exit={{ y: 50, opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeInOut' }}
             >
+              <FloatingLanguage />
               {christmasConfig.enabled && (
                 <FloatingButton onClick={toggleChristmas} ariaLabel={t('floating.christmas')} title={t('floating.christmas')}>
                   <Icon icon={isChristmasEnabled ? 'ri:snowy-fill' : 'ri:snowy-line'} className="h-5 w-5" />

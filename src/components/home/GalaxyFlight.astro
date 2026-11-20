@@ -15,6 +15,7 @@ import { getPapers } from '@/lib/papers';
 // Story styles first, so the phone overrides in galaxy-flight.css win.
 import '@/styles/components/galaxy-flight-story.css';
 import '@/styles/components/galaxy-flight.css';
+import '@/styles/components/galaxy-flight-stars.css';
 
 interface Props {
   locale: string;
@@ -258,6 +259,12 @@ const starPath =
               <svg aria-hidden="true" viewBox="0 0 24 24">
                 <path d={starPath} />
               </svg>
+              <span class="flight-star-tip" aria-hidden="true">
+                <span class="flight-star-tip-kind">
+                  {kindLabel(galaxy.kind, star.group)} · {star.date}
+                </span>
+                <span class="flight-star-tip-title">{star.title}</span>
+              </span>
             </a>
           )),
         )
