@@ -27,6 +27,8 @@ interface MobilePostHeaderProps {
   logoText?: string;
   /** Logo image URL (for svg type) */
   logoSrc?: string;
+  /** Where the logo links: the homepage in the page's language (default `/`). */
+  logoHref?: string;
   /** Whether to enable CSS counter numbering in TOC (default: true) */
   enableNumbering?: boolean;
 }
@@ -34,9 +36,14 @@ interface MobilePostHeaderProps {
 // Scroll offset for detecting active heading
 const SCROLL_OFFSET_TOP = 80;
 
-function Logo({ logoElement, logoText, logoSrc }: Pick<MobilePostHeaderProps, 'logoElement' | 'logoText' | 'logoSrc'>) {
+function Logo({
+  logoElement,
+  logoText,
+  logoSrc,
+  logoHref = '/',
+}: Pick<MobilePostHeaderProps, 'logoElement' | 'logoText' | 'logoSrc' | 'logoHref'>) {
   return (
-    <a href="/" className="flex items-center gap-1">
+    <a href={logoHref} className="flex items-center gap-1">
       {logoElement === 'svg' && logoSrc ? (
         <img src={logoSrc} alt={siteConfig?.alternate ?? siteConfig?.name} className="h-8" height={32} />
       ) : (
@@ -51,6 +58,7 @@ export function MobilePostHeader({
   logoElement,
   logoText,
   logoSrc,
+  logoHref,
   enableNumbering = true,
 }: MobilePostHeaderProps) {
   const { t } = useTranslation();
@@ -70,7 +78,7 @@ export function MobilePostHeader({
 
   // If not mobile or not a post page, always show logo
   if (!isMobile) {
-    return <Logo logoElement={logoElement} logoText={logoText} logoSrc={logoSrc} />;
+    return <Logo logoElement={logoElement} logoText={logoText} logoSrc={logoSrc} logoHref={logoHref} />;
   }
 
   return (
@@ -116,7 +124,7 @@ export function MobilePostHeader({
               exit={{ opacity: 0 }}
               transition={shouldReduceMotion ? { duration: 0 } : animation.spring.gentle}
             >
-              <Logo logoElement={logoElement} logoText={logoText} logoSrc={logoSrc} />
+              <Logo logoElement={logoElement} logoText={logoText} logoSrc={logoSrc} logoHref={logoHref} />
             </m.div>
           )}
         </AnimatePresence>

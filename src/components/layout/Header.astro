@@ -7,7 +7,7 @@ import { MobilePostHeader } from '@components/layout/MobilePostHeader';
 import { MenuIcon } from '@components/ui/MenuIcon';
 import { MAX_WIDTH } from '@constants/layout';
 import { christmasConfig, siteConfig } from 'constants/site-config';
-import { getLocaleFromUrl } from '@/i18n';
+import { getLocaleFromUrl, localizedPath } from '@/i18n';
 import Navigator from './Navigator';
 
 interface Props {
@@ -18,6 +18,8 @@ interface Props {
 const { isPostPage = false, tocNumbering = true } = Astro.props;
 const { alternate, title, showLogo } = siteConfig;
 const locale = getLocaleFromUrl(Astro.url.pathname);
+// Each language shows its own site name: 「Pyuyi 的小宇宙」 or its English name.
+const brand = (locale === 'en' && alternate) || title;
 ---
 
 <div
@@ -28,14 +30,14 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
   <div class={`mx-auto flex items-center justify-between tablet:w-full px-6 tablet:pl-10 tablet:pr-3 ${MAX_WIDTH.content}`}>
     <!-- Desktop: Always show logo -->
     <a
-      transition:persist="page-header-avatar"
+      transition:persist={`page-header-avatar-${locale}`}
       class="tablet:hidden -my-4 mr-4 flex cursor-pointer items-center justify-center gap-1 whitespace-nowrap"
-      href="/"
+      href={localizedPath('/', locale)}
       target="_self"
-      title={alternate || title}
-      aria-label={alternate || title}
+      title={brand}
+      aria-label={brand}
     >
-      {showLogo ? <LogoSvg className="h-8" /> : <p class="logo-text">{alternate || title}</p>}
+      {showLogo ? <LogoSvg className="h-8" /> : <p class="logo-text">{brand}</p>}
     </a>
     <!-- Mobile: MobilePostHeader (shows heading on post pages, logo otherwise) -->
     <div class="tablet:flex tablet:grow hidden items-center justify-center">
@@ -44,8 +46,9 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
         isPostPage={isPostPage}
         enableNumbering={tocNumbering}
         logoElement={showLogo ? 'svg' : 'text'}
-        logoText={alternate || title}
+        logoText={brand}
         logoSrc={logoSrc}
+        logoHref={localizedPath('/', locale)}
       />
     </div>
     <Navigator client:load currentPath={Astro.url.pathname} locale={locale} />

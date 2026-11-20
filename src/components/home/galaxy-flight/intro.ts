@@ -10,7 +10,7 @@ const GREETINGS = {
     night: '夜深了，宇宙只为你亮着一盏灯',
   },
   en: {
-    morning: 'Good morning — first light in the small universe',
+    morning: 'Good morning — first light in the microcosm',
     afternoon: 'Good afternoon — still observing',
     evening: 'Good evening — the stars are coming out',
     night: 'Late night — the universe keeps one light on for you',
