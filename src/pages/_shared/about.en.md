@@ -3,18 +3,28 @@ layout: ../../layouts/PageLayout.astro
 title: "About Pyuyi"
 coverTitle: "About Pyuyi"
 date: 2026-08-26 18:00:00
-description: "Pyuyi’s personal space for mathematics, code, papers, photographs, and the unfinished pieces of everyday life."
+description: "Written after the long night"
 comments: false
 sky: hole
 ---
 
 ## Hi, I’m Pyuyi
 
-Welcome. I’m Pyuyi. I often spend time with questions that do not yet have answers. I am also researching a few things that may or may not make much sense, while slowly writing down what I have read, wondered about, and not quite figured out.
+The proof was finished just before dawn.
 
-This website feels more like a small room with the light still on—a place for papers, blogs, photographs, and a few thoughts that were never spoken in time. If you happen to pass by, feel free to look around. There may be no definite answers here, but I hope a page or a photograph can keep you company for a quiet moment.
+The ink at the end was not yet dry. I put down the pen and waited for something to happen.
 
-> Starlight cannot answer our questions; it only keeps the long night from becoming completely dark.
+Nothing happened.
+
+All that was truly mine were the days when I did not yet know whether there was an answer.
+
+The roads that led nowhere left not a word on the page, and no one ever knew of them.
+
+Outside, the first bird began to sing. Morning light fell on the page, and I switched off the lamp.
+
+When I got up, I no longer remember. Perhaps, somewhere far away, I am still bent over that desk.
+
+The last stroke of the pen has not yet fallen.
 
 ### Contact
 

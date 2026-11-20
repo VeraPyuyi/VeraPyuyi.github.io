@@ -3,6 +3,8 @@
  * Everything ever written, as a strip of star chart: each post a star placed by its date and
  * sized by its length, coloured as on the homepage. Posts of the same kind are joined into a
  * constellation in the order they were written. Hover or focus a star to read its name.
+ * The constellations are three ways of coming to understand (明 is both light and clarity):
+ * settled, as a proof is; sudden, as an idea is; slow, as learning is.
  */
 import type { ChartStar } from '@/lib/sky-catalog';
 
@@ -16,9 +18,9 @@ const en = locale === 'en';
 const WIDTH = 640;
 const HEIGHT = 340;
 const GROUPS = {
-  papers: { color: '#ffd27a', band: [58, 120], name: en ? 'Probatio' : '证明座' },
-  inspirations: { color: '#f7a8c8', band: [150, 230], name: en ? 'Inspiratio' : '灵感座' },
-  learning: { color: '#8fd3f7', band: [205, 285], name: en ? 'Disciplina' : '学习座' },
+  papers: { color: '#ffd27a', band: [58, 120], name: en ? 'Settled Light' : '既明座' },
+  inspirations: { color: '#f7a8c8', band: [150, 230], name: en ? 'Sudden Light' : '乍明座' },
+  learning: { color: '#8fd3f7', band: [205, 285], name: en ? 'Slow Light' : '渐明座' },
 } as const;
 
 const times = stars.map((star) => star.date.getTime());
@@ -69,7 +71,7 @@ while (cursor.getTime() <= last + 1) {
 ---
 
 <figure class="star-chart">
-  <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-labelledby="star-chart-caption">
+  <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={en ? 'Star chart of all posts' : '全部文章的星图'}>
     <g class="star-chart-sky">
     <g class="star-chart-grid" aria-hidden="true">
       {[90, 170, 250].map((y) => <line x1="20" x2={WIDTH - 20} y1={y} y2={y} />)}
@@ -110,13 +112,6 @@ while (cursor.getTime() <= last + 1) {
     }
     </g>
   </svg>
-  <figcaption id="star-chart-caption" class="star-chart-caption">
-    {
-      en
-        ? `Star chart of everything written: ${stars.length} stars by date and length, joined into three constellations.`
-        : `全部文字的星图：${stars.length} 颗星按时间排开、按篇幅定亮度，连成三座星座。`
-    }
-  </figcaption>
 </figure>
 
 <style>
@@ -205,13 +200,6 @@ while (cursor.getTime() <= last + 1) {
     outline: none;
   }
 
-  .star-chart-caption {
-    margin-top: 0.4rem;
-    color: rgb(220 220 255 / 0.5);
-    font-size: 0.72rem;
-    letter-spacing: 0.12em;
-    text-align: right;
-  }
 
   @keyframes star-chart-drift {
     0%,
@@ -244,10 +232,6 @@ while (cursor.getTime() <= last + 1) {
   @media (max-width: 768px) {
     .star-chart {
       width: 100%;
-    }
-
-    .star-chart-caption {
-      display: none;
     }
   }
 
