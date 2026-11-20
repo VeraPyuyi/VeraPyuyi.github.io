@@ -32,7 +32,6 @@ const ringPhotos = albums.flatMap((album) => album.data.photos).slice(0, 12);
       </button>
     ))}
   </div>
-  <p slot="meta">{en ? `${ringPhotos.length} on the ring · each new photo lights another knot` : `环上 ${ringPhotos.length} 张 · 每多一张照片，环上就多亮一处`}</p>
   <div class="space-y-10" data-pagefind-body>
     {albums.map((album) => (
       <section class="space-y-4">

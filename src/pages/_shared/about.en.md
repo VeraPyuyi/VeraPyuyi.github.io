@@ -3,18 +3,20 @@ layout: ../../layouts/PageLayout.astro
 title: "About Pyuyi"
 coverTitle: "About Pyuyi"
 date: 2026-08-26 18:00:00
-description: "Pyuyi’s personal space for mathematics, code, papers, photographs, and the unfinished pieces of everyday life."
+description: "Proofs, code and photographs are kept here, along with a few thoughts that have not yet converged."
 comments: false
 sky: hole
 ---
 
 ## Hi, I’m Pyuyi
 
-Welcome. I’m Pyuyi. I often spend time with questions that do not yet have answers. I am also researching a few things that may or may not make much sense, while slowly writing down what I have read, wondered about, and not quite figured out.
+Most of the time I keep company with a few problems that are still unsolved: some later became papers, some a few lines of code, most just a question mark in the margin of a draft.
 
-This website feels more like a small room with the light still on—a place for papers, blogs, photographs, and a few thoughts that were never spoken in time. If you happen to pass by, feel free to look around. There may be no definite answers here, but I hope a page or a photograph can keep you company for a quiet moment.
+Mathematics has a phrase, *almost everywhere*: a statement holds nearly everywhere and fails only at some points whose total length is zero. Zero, but not nothing. Most of what is written here is points like those: a derivation that would not come out, a crooked photo, a sentence I never said aloud.
 
-> Starlight cannot answer our questions; it only keeps the long night from becoming completely dark.
+No need to start from the first page. Wherever you stop is a way in.
+
+> A black hole gives off no light. The first time we saw one, it was by the light around it.
 
 ### Contact
 
