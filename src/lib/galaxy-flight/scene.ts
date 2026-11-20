@@ -73,7 +73,7 @@ export const GALAXY_PLACEMENTS: readonly GalaxyPlacement[] = [
     distance: 2.55,
     inclination: 0.5,
     roll: 0.3,
-    spin: -0.045,
+    spin: -0.034,
   },
   {
     kind: 'papers',
@@ -83,7 +83,7 @@ export const GALAXY_PLACEMENTS: readonly GalaxyPlacement[] = [
     distance: 2.55,
     inclination: 0.55,
     roll: 0.65,
-    spin: -0.035,
+    spin: -0.026,
   },
   {
     kind: 'photos',
@@ -93,7 +93,7 @@ export const GALAXY_PLACEMENTS: readonly GalaxyPlacement[] = [
     distance: 2.65,
     inclination: 0.28,
     roll: 0,
-    spin: 0.03,
+    spin: 0.022,
   },
   {
     kind: 'moments',
@@ -103,7 +103,7 @@ export const GALAXY_PLACEMENTS: readonly GalaxyPlacement[] = [
     distance: 2.45,
     inclination: 0.9,
     roll: 0.4,
-    spin: 0.012,
+    spin: 0.009,
   },
 ];
 
@@ -150,9 +150,9 @@ export function stopBasis(placement: FlightStop, tilt = 0): { x: Vec3; y: Vec3; 
 export function galaxyDrift(index: number, time: number): GalaxyDrift {
   const wave = (period: number, phase: number) => Math.sin((time * 2 * Math.PI) / period + phase);
   return {
-    lift: 0.055 * wave(11, index * 1.7) + 0.012 * wave(4.7, index * 0.9),
-    sway: 0.022 * wave(17, index * 2.1),
-    tilt: 0.05 * wave(13, index * 2.3),
+    lift: 0.032 * wave(13, index * 1.7) + 0.006 * wave(5.6, index * 0.9),
+    sway: 0.013 * wave(19, index * 2.1),
+    tilt: 0.03 * wave(15, index * 2.3),
   };
 }
 
@@ -248,7 +248,7 @@ export function cameraAt(progress: number, aspect: number, nudge: readonly [numb
   // Bank gently while travelling, like a ship turning towards the next galaxy.
   const forward = normalize(sub(target, position));
   const side = normalize(cross(forward, UP));
-  const bank = Math.sin(Math.PI * t) * 0.14 * (index % 2 === 0 ? 1 : -1);
+  const bank = Math.sin(Math.PI * t) * 0.06 * (index % 2 === 0 ? 1 : -1);
   const up = normalize(add(scale(UP, Math.cos(bank)), scale(side, Math.sin(bank))));
   const lifted = cross(side, forward);
   return { eye: add(position, add(scale(side, nudge[0]), scale(lifted, nudge[1]))), target, up };
