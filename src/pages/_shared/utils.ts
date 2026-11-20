@@ -78,6 +78,8 @@ const MIRROR_EXEMPT = new Set([
   '404',
   // Locale-agnostic RSS stylesheet asset.
   'rss/feed.xsl',
+  // Machine-readable friends list for the scheduled friend-application check.
+  'friends.json',
 ]);
 
 const toRoute = (moduleKey: string) => moduleKey.replace('/src/pages/', '').replace(/\.(astro|md|mdx|ts)$/, '');

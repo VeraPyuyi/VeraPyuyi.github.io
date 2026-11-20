@@ -1,0 +1,46 @@
+name: Friend applications
+
+# Every 30 minutes, compare the friend-link applications approved in the friends page's comments
+# with the ones the live site was built with, and redeploy the site when they differ.
+# Approving = the owner (friends.approvers in config/site.yaml) replies to the application.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: friend-applications
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.19.0
+
+      - name: Compare approved applications with the live site
+        id: friends
+        run: node .github/scripts/friend-applications.ts
+
+      - name: Redeploy the site
+        if: steps.friends.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          busy=$(gh run list --workflow deploy-pages.yml --limit 5 --json status --jq '[.[] | select(.status != "completed")] | length')
+          if [ "$busy" != "0" ]; then
+            echo "A deploy is already running; it will pick the applications up."
+            exit 0
+          fi
+          gh workflow run deploy-pages.yml --ref main

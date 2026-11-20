@@ -147,6 +147,10 @@ friends:
         desc: 站点简介 # 站点简介
         image: https://your-blog.com/avatar.jpg # 头像链接
         color: "#ffc0cb" # 主题色（可选）
+  # 友链申请自动上线：访客在友链页留言区粘贴上面的格式，下列 Waline 用户（站长，用 GitHub 登录的
+  # Pyuyi 账号）回复这条申请后，下次构建就会加上它；定时检查（.github/workflows/friend-applications.yml）
+  # 每 30 分钟看一次，有新通过的申请就自动重新部署。删掉回复或留言即可撤下。
+  approvers: [4]
   data:
     - site: 兰舟千帆
       url: https://daodaozi.xyz/
