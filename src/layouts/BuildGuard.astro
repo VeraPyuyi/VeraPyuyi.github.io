@@ -12,16 +12,22 @@ import { BUILD_ID } from '@constants/build';
 
 <script>
   const buildOf = (doc: Document) => doc.querySelector<HTMLMetaElement>('meta[name="site-build"]')?.content;
+  let reloadTo: string | null = null;
 
   document.addEventListener('astro:before-swap', (event) => {
     const current = buildOf(document);
     const next = buildOf(event.newDocument);
     if (!current || !next || current === next) return;
-    const target = event.to.href;
-    event.swap = () => {
-      // Back/forward has already moved the address bar to the target; a link has not yet.
-      if (window.location.href === target) window.location.reload();
-      else window.location.assign(target);
-    };
+    // Keep the old page on screen; the router still records the new address in history.
+    reloadTo = event.to.href;
+    event.swap = () => undefined;
+  });
+
+  // Once the router has moved to the new address, load it in full: reloading in place adds no
+  // history entry, so Back still leads to the page before.
+  document.addEventListener('astro:after-swap', () => {
+    if (!reloadTo) return;
+    if (window.location.href === reloadTo) window.location.reload();
+    else window.location.replace(reloadTo);
   });
 </script>
