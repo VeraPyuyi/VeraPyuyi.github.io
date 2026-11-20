@@ -34,6 +34,11 @@ const mix = (a: Vec3, b: Vec3, t: number): Vec3 => [
   a[1] + (b[1] - a[1]) * t,
   a[2] + (b[2] - a[2]) * t,
 ];
+/** How quickly the camera catches up with the scroll position (per second). */
+const FOLLOW_RATE = 2.6;
+/** Fastest the camera may travel along the route, in galaxies per second, however fast the page scrolls. */
+const MAX_TRAVEL_SPEED = 0.85;
+
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const prefersStill = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('motion-off');
@@ -186,7 +191,11 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     const still = prefersStill();
     if (!warp) {
       const target = scrollProgress();
-      progress += (target - progress) * (still ? 1 : 1 - Math.exp(-dt * 4.5));
+      if (still) progress = target;
+      else {
+        const step = (target - progress) * (1 - Math.exp(-dt * FOLLOW_RATE));
+        progress += Math.max(-MAX_TRAVEL_SPEED * dt, Math.min(MAX_TRAVEL_SPEED * dt, step));
+      }
       if (Math.abs(target - progress) < 1e-4) progress = target;
     }
 
