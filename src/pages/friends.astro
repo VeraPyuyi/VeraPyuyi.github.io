@@ -1,7 +1,8 @@
 ---
 import FriendRequestForm from '@components/friends/FriendRequestForm';
 import FriendsGrid from '@components/friends/FriendsGrid';
-import { friendsData } from '@constants/friends-config';
+import { friendSources } from '@constants/friends-config';
+import { loadFriends } from '@lib/friends/load';
 import { siteConfig } from '@constants/site-config';
 import { Comment } from '@/components/comment';
 import LocalGroup from '@/components/sky/LocalGroup.astro';
@@ -16,6 +17,8 @@ interface Props {
 const { locale = defaultLocale } = Astro.props;
 const en = locale === 'en';
 const heading = t(locale, 'friends.title');
+// Configured friends plus applications approved in this page's comments.
+const { friends } = await loadFriends(friendSources);
 ---
 
 <SkyPage
@@ -23,16 +26,16 @@ const heading = t(locale, 'friends.title');
   title={`${heading} | ${siteConfig.title}`}
   heading={heading}
   env="group"
-  plate={en ? `Local Group · ${friendsData.length + 1} galaxies` : `本星系群 · ${friendsData.length + 1} 个星系`}
+  plate={en ? `Local Group · ${friends.length + 1} galaxies` : `本星系群 · ${friends.length + 1} 个星系`}
   description={
     en
       ? 'Galaxies are rarely alone: the ones close enough feel each other’s pull and drift through the dark together.'
       : '星系很少独自存在。离得够近的，会感到彼此的引力，在黑暗里结伴漂流。'
   }
 >
-  <LocalGroup slot="art" friends={friendsData} locale={locale} />
+  <LocalGroup slot="art" friends={friends} locale={locale} />
   <div class="flex flex-col gap-12">
-    <FriendsGrid locale={locale} client:load />
+    <FriendsGrid friends={friends} locale={locale} client:load />
     <div>
       <FriendRequestForm locale={locale} client:visible />
       <div id="friend-comments" class="scroll-mt-24">

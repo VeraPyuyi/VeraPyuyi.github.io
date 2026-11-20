@@ -77,6 +77,8 @@ export interface FriendsIntro {
 export interface FriendsConfig {
   intro: FriendsIntro;
   data: FriendLink[];
+  /** Waline user ids whose reply to an application in the friends page comments approves it. */
+  approvers?: (number | string)[];
 }
 
 // =============================================================================
