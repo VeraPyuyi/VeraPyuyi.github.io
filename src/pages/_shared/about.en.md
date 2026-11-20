@@ -3,7 +3,7 @@ layout: ../../layouts/PageLayout.astro
 title: "About Pyuyi"
 coverTitle: "About Pyuyi"
 date: 2026-08-26 18:00:00
-description: "Written after the Q.E.D."
+description: "Written after the long night"
 comments: false
 sky: hole
 ---
@@ -12,15 +12,19 @@ sky: hole
 
 The proof was finished just before dawn.
 
-I put down the pen and waited for something to happen. Nothing did. Every step on the page stood firm, each line holding up the next, all the way from the first to the last. They no longer needed me. A theorem does not remember who proved it.
+The ink at the end was not yet dry. I put down the pen and waited for something to happen.
 
-What was truly mine was only the time before: not knowing the answer, not knowing whether there was one.
+Nothing happened.
 
-Outside, the first bird began. I turned the page and started writing something else. This, the thing you are reading now.
+All that was truly mine were the days when I did not yet know whether there was an answer.
 
-As for the theorem, it lives in section three of a paper these days. It is doing well. It never writes.
+The roads that led nowhere left not a word on the page, and no one ever knew of them.
 
-> To those watching from afar, a traveller falling into a black hole stays at the horizon for ever; the traveller has long since passed through.
+Outside, the first bird began to sing. Morning light fell on the page, and I switched off the lamp.
+
+When I got up, I no longer remember. Perhaps, somewhere far away, I am still bent over that desk.
+
+The last stroke of the pen has not yet fallen.
 
 ### Contact
 
