@@ -55,11 +55,22 @@ const ORBIT = [
   { x: 52, y: 12 },
   { x: 50, y: 90 },
 ];
+/** A friend's own colour, lifted towards starlight when it is too dark to see against the night. */
+function skyHue(color: string | undefined, site: string): string {
+  if (!color || color === '#ffc0cb') return `hsl(${seedOf(site) % 360} 80% 78%)`;
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color)?.[1];
+  if (!hex) return color;
+  const full = hex.length === 3 ? [...hex].map((c) => c + c).join('') : hex;
+  const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(full.slice(i, i + 2), 16) / 255);
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance < 0.35 ? `color-mix(in oklab, ${color} 35%, #f4ecff)` : color;
+}
+
 const neighbours = friends.slice(0, ORBIT.length - 1).map((friend, index) => ({
   ...friend,
   ...ORBIT[index],
   galaxy: galaxy(seedOf(friend.url)),
-  hue: friend.color && friend.color !== '#ffc0cb' ? friend.color : `hsl(${seedOf(friend.site) % 360} 80% 78%)`,
+  hue: skyHue(friend.color, friend.site),
 }));
 const vacancy = ORBIT[neighbours.length];
 const home = galaxy(seedOf('Pyuyi'));
