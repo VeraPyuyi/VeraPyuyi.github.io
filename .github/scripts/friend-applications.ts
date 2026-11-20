@@ -22,7 +22,12 @@ interface PublishedFriends {
 const SITE = process.env.SITE_URL ?? 'https://verapyuyi.github.io';
 
 async function getJson<T>(url: URL | string): Promise<T> {
-  const response = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { 'cache-control': 'no-cache' } });
+  // Waline only answers requests from the site's own domains (secure-domains), so present as the site.
+  const origin = new URL(SITE).origin;
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(15000),
+    headers: { 'cache-control': 'no-cache', Origin: origin, Referer: `${origin}/` },
+  });
   if (!response.ok) throw new Error(`${url} answered ${response.status}`);
   return (await response.json()) as T;
 }
