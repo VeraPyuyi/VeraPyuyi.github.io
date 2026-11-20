@@ -3,20 +3,20 @@ layout: ../../layouts/PageLayout.astro
 title: "About Pyuyi"
 coverTitle: "About Pyuyi"
 date: 2026-08-26 18:00:00
-description: "The long way round before Q.E.D., and a few thoughts that have not yet converged."
+description: "Existence proved; construction omitted."
 comments: false
 sky: hole
 ---
 
 ## Hi, I’m Pyuyi
 
-Halfway through a proof you stand in an odd place: already convinced, not yet able to say why. I spend most of my time there.
+Mathematics has a kind of proof that asserts existence without construction: it knows a thing is there and cannot point to where.
 
-In the end the answer is tidied into a paper: clean, rigorous, not one step too many. The long way round that led to it (the page that would not go further, a photo taken by the roadside, a thought that surfaced at night and was pressed back down) belongs to no paper, so I keep it here.
+This site is such a proof of me. Papers, code, photographs, a few lines with no beginning or end: together they are enough to deduce that someone is here, yet no single page can point that person out.
 
-Which is to say: there is no finished version of me here.
+I am still looking for the constructive proof myself.
 
-> No one has ever seen a black hole itself. What we see is only the turn light takes as it passes by.
+> That a black hole sits at the centre of the Milky Way was first proved the same way: no one saw it, only a few stars circling a patch of apparent emptiness, year after year.
 
 ### Contact
 
