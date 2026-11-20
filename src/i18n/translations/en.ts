@@ -191,6 +191,9 @@ export const uiStrings: UIStrings = {
   'floating.bgm': 'Background music',
   'floating.toggleToolbar': 'Toggle toolbar',
   'floating.settings': 'Settings',
+  'floating.switchLanguage': 'Switch to {label}',
+  'floating.languageHint': 'This site is also in English',
+  'floating.dismiss': 'Dismiss',
 
   // ── Settings Panel ────────────────────────────────────────
   'settings.title': 'Settings',
