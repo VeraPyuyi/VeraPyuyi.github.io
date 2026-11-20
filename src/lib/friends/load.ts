@@ -18,6 +18,11 @@ export interface FriendSources<T extends FriendEntry> {
   path: string;
   /** Waline user ids whose reply approves an application. */
   approvers: readonly (number | string)[];
+  /**
+   * The site's own address. Waline only answers requests that come from the site's domains
+   * (its secure-domains setting), so server-side reads present themselves as coming from it.
+   */
+  siteURL?: string;
 }
 
 export interface LoadedFriends<T extends FriendEntry> {
@@ -37,8 +42,15 @@ interface WalinePage {
   data?: ApplicationComment[];
 }
 
+/** Headers that make a server-side request look like it comes from the site's pages. */
+export function siteHeaders(siteURL?: string): Record<string, string> {
+  if (!siteURL) return {};
+  const origin = new URL(siteURL).origin;
+  return { Origin: origin, Referer: `${origin}/` };
+}
+
 /** Every top-level comment (with its replies) on one Waline path. */
-export async function fetchWalineComments(serverURL: string, path: string): Promise<ApplicationComment[]> {
+export async function fetchWalineComments(serverURL: string, path: string, siteURL?: string): Promise<ApplicationComment[]> {
   const comments: ApplicationComment[] = [];
   for (let page = 1; page <= MAX_PAGES; page++) {
     const url = new URL('/api/comment', serverURL);
@@ -49,7 +61,7 @@ export async function fetchWalineComments(serverURL: string, path: string): Prom
       sortBy: 'insertedAt_asc',
       lang: 'zh-CN',
     }).toString();
-    const response = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const response = await fetch(url, { headers: siteHeaders(siteURL), signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!response.ok) throw new Error(`Waline answered ${response.status}`);
     const body = (await response.json()) as { errno?: number; errmsg?: string; data?: WalinePage } & WalinePage;
     if (body.errno) throw new Error(`Waline error ${body.errno}: ${body.errmsg ?? ''}`);
@@ -63,11 +75,11 @@ export async function fetchWalineComments(serverURL: string, path: string): Prom
 const loads = new Map<string, Promise<ApplicationComment[] | null>>();
 
 /** One read of the comments per build, shared by every locale's friends page. */
-function commentsOnce(serverURL: string, path: string): Promise<ApplicationComment[] | null> {
+function commentsOnce(serverURL: string, path: string, siteURL?: string): Promise<ApplicationComment[] | null> {
   const key = `${serverURL}\n${path}`;
   let load = loads.get(key);
   if (!load) {
-    load = fetchWalineComments(serverURL, path).catch((error: unknown) => {
+    load = fetchWalineComments(serverURL, path, siteURL).catch((error: unknown) => {
       console.warn(`[friends] Could not read friend applications from Waline; using configured friends only. ${error}`);
       return null;
     });
@@ -77,11 +89,11 @@ function commentsOnce(serverURL: string, path: string): Promise<ApplicationComme
 }
 
 export async function loadFriends<T extends FriendEntry>(sources: FriendSources<T>): Promise<LoadedFriends<T>> {
-  const { configured, serverURL, path, approvers } = sources;
+  const { configured, serverURL, path, approvers, siteURL } = sources;
   if (!serverURL || approvers.length === 0) {
     return { friends: [...configured], applications: [], commentsRead: false };
   }
-  const comments = await commentsOnce(serverURL, path);
+  const comments = await commentsOnce(serverURL, path, siteURL);
   if (!comments) return { friends: [...configured], applications: [], commentsRead: false };
   const applications = mergeFriends<FriendEntry>(configured, approvedApplications(comments, approvers)).slice(
     configured.length,

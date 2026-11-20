@@ -3,7 +3,7 @@
 import type { FriendLink, FriendsIntro } from '@lib/config/types';
 import type { FriendSources } from '@lib/friends/load';
 import yamlConfig from '../../config/site.yaml';
-import { commentConfig } from './site-config';
+import { commentConfig, siteConfig } from './site-config';
 
 // Re-export type for backwards compatibility
 export type { FriendLink };
@@ -19,6 +19,7 @@ export const friendSources: FriendSources<FriendLink> = {
   serverURL: commentConfig.provider === 'waline' ? commentConfig.waline?.serverURL : undefined,
   path: FRIENDS_COMMENT_PATH,
   approvers: yamlConfig.friends?.approvers ?? [],
+  siteURL: siteConfig.url,
 };
 
 export const friendsIntro: FriendsIntro = yamlConfig.friends?.intro ?? {
