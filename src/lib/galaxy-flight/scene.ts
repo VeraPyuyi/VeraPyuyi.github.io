@@ -234,8 +234,8 @@ export function cameraAt(progress: number, aspect: number, nudge: readonly [numb
   const p = Math.min(last, Math.max(0, progress));
   const index = Math.min(last - 1, Math.floor(p));
   const raw = p - index;
-  // Linger a little near each galaxy, travel faster in between.
-  const t = raw + (smoothstep(raw) - raw) * 0.55;
+  // Linger a little near each galaxy, travel a little faster in between.
+  const t = raw + (smoothstep(raw) - raw) * 0.35;
   const poses = ROUTE.map((_, i) => restingPose(i, aspect));
   const eye = (i: number): Vec3 => {
     if (i < 0) return lerp(poses[0].eye, poses[1].eye, -0.5);

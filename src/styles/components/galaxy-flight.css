@@ -8,7 +8,7 @@ html:has([data-flight]) {
   background: #05061a;
 }
 .flight {
-  --segment: 115vh;
+  --segment: 160vh;
   position: relative;
   height: calc(100vh + (var(--stops, 5) - 1) * var(--segment));
   background: #05061a;
@@ -17,7 +17,7 @@ html:has([data-flight]) {
 
 @supports (height: 100svh) {
   .flight {
-    --segment: 115svh;
+    --segment: 160svh;
     height: calc(100svh + (var(--stops, 5) - 1) * var(--segment));
   }
 }
