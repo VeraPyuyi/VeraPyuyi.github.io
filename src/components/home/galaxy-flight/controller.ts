@@ -36,9 +36,9 @@ const mix = (a: Vec3, b: Vec3, t: number): Vec3 => [
   a[2] + (b[2] - a[2]) * t,
 ];
 /** How quickly the camera catches up with the scroll position (per second). */
-const FOLLOW_RATE = 2.6;
+const FOLLOW_RATE = 2.2;
 /** Fastest the camera may travel along the route, in galaxies per second, however fast the page scrolls. */
-const MAX_TRAVEL_SPEED = 0.85;
+const MAX_TRAVEL_SPEED = 0.7;
 
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const prefersStill = () =>
@@ -203,10 +203,10 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
 
     const aspect = width / height;
     // Pointer parallax: the eye drifts a little with the pointer, so the galaxy seems to float in depth.
-    const ease = still ? 1 : 1 - Math.exp(-dt * 2.2);
+    const ease = still ? 1 : 1 - Math.exp(-dt * 1.6);
     nudge.x += ((pointer && !still ? (pointer.x / width - 0.5) * 2 : 0) - nudge.x) * ease;
     nudge.y += ((pointer && !still ? (pointer.y / height - 0.5) * 2 : 0) - nudge.y) * ease;
-    const pose = cameraAt(progress, aspect, [nudge.x * 1.1, -nudge.y * 0.7]);
+    const pose = cameraAt(progress, aspect, [nudge.x * 0.6, -nudge.y * 0.4]);
     let eye = pose.eye;
     let target = pose.target;
     // Pushing past either end of the route eases the camera towards that object instead of bouncing the page.
