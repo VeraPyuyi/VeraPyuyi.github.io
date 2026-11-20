@@ -19,7 +19,7 @@ export const friendSources: FriendSources<FriendLink> = {
   serverURL: commentConfig.provider === 'waline' ? commentConfig.waline?.serverURL : undefined,
   path: FRIENDS_COMMENT_PATH,
   approvers: yamlConfig.friends?.approvers ?? [],
-  siteURL: siteConfig.url,
+  siteURL: siteConfig.site,
 };
 
 export const friendsIntro: FriendsIntro = yamlConfig.friends?.intro ?? {
