@@ -400,3 +400,14 @@ html:has([data-flight]) {
     transition-duration: 0.2s;
   }
 }
+
+/* Over the night sky the floating toolbar turns to dark glass with pale icons, instead of pale discs. */
+body:has([data-flight]) .floating-toolbar :is(button, a) {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(12 12 32 / 0.45);
+  color: rgb(244 233 238 / 0.85);
+}
+
+body:has([data-flight]) .floating-toolbar :is(button, a):hover {
+  background: rgb(12 12 32 / 0.7);
+}

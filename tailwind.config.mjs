@@ -124,7 +124,21 @@ export default {
         '5.5xl': '3.5rem',
       },
       fontFamily: {
-        sans: ['寒蝉全圆体', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        sans: [
+          'PingFang SC',
+          'Hiragino Sans GB',
+          'Noto Sans SC',
+          'Microsoft YaHei',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica',
+          'Arial',
+          'sans-serif',
+        ],
+        // Titles: a book serif (Songti on Apple, Noto/Source Han Serif elsewhere).
+        display: ['Songti SC', 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'STSong', 'serif'],
         'chill-round': ['寒蝉全圆体', 'sans-serif'],
       },
       clipPath: {

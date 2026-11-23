@@ -183,7 +183,6 @@ void main() {
   vec2 c = v_uv - 0.5;
   vec3 hdr = texture(u_scene, v_uv).rgb + texture(u_bloom, v_uv).rgb * u_bloomStrength;
   vec3 mapped = aces(hdr * u_exposure);
-  mapped = max(mix(vec3(dot(mapped, vec3(0.2126, 0.7152, 0.0722))), mapped, 1.2), 0.0);
   vec3 color = pow(mapped, vec3(1.0 / 2.2));
   color *= 1.0 - dot(c, c) * 0.6;
   color += (hash(gl_FragCoord.xy + fract(u_time) * 97.0) - 0.5) / 255.0;

@@ -12,7 +12,7 @@
     radial-gradient(60% 50% at 0% 30%, rgb(122 140 255 / 0.32), transparent 70%),
     radial-gradient(60% 50% at 100% 70%, rgb(245 140 196 / 0.28), transparent 70%),
     radial-gradient(120% 80% at 50% 110%, rgb(150 120 230 / 0.35), transparent 60%),
-    linear-gradient(180deg, #1b2257 0%, #241f5e 50%, #2d2466 100%);
+    linear-gradient(180deg, #1a2150 0%, #211f52 50%, #29245a 100%);
 }
 
 .sky-nebula {
@@ -89,8 +89,8 @@
 /* ---- The reading panel: dawn light with edges that dissolve into the sky ---- */
 .sky-dawn {
   --feather: 9rem;
-  --panel: rgb(246 241 250 / 0.86);
-  --panel-glow: rgb(247 198 221 / 0.55);
+  --panel: rgb(246 245 248 / 0.88);
+  --panel-glow: rgb(236 214 226 / 0.42);
   position: relative;
   width: min(100%, 64rem);
   margin: -5rem auto 0;
@@ -118,7 +118,7 @@
   border-radius: calc(var(--feather) * 0.8);
   background:
     radial-gradient(70% 22rem at 50% 0, var(--panel-glow), transparent 75%),
-    linear-gradient(180deg, rgb(242 228 241 / 0.9) 0, var(--panel) 18rem);
+    linear-gradient(180deg, rgb(240 234 241 / 0.9) 0, var(--panel) 18rem);
   filter: blur(calc(var(--feather) * 0.42));
   content: '';
 }

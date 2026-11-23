@@ -110,25 +110,23 @@ const isActive = (path?: string) => Boolean(path) && (path === '/' ? current ===
     position: absolute;
     top: 50%;
     left: 0;
-    width: 3px;
+    width: 1.5px;
     height: 5rem;
     margin-top: -2.5rem;
-    border-radius: 0 3px 3px 0;
-    background: linear-gradient(to bottom, transparent, #f7a8c8 30%, #b8e6fe 70%, transparent);
-    box-shadow: 0 0 14px 1px rgb(247 168 200 / 0.45);
-    opacity: 0.6;
+    background: linear-gradient(to bottom, transparent, rgb(255 255 255 / 0.7) 50%, transparent);
+    opacity: 0.4;
     transition: opacity 0.3s ease;
-    animation: side-rail-glint 3.6s ease-in-out infinite;
+    animation: side-rail-glint 5s ease-in-out infinite;
   }
 
   @keyframes side-rail-glint {
     0%,
     100% {
-      opacity: 0.35;
+      opacity: 0.25;
     }
 
     50% {
-      opacity: 0.75;
+      opacity: 0.55;
     }
   }
 

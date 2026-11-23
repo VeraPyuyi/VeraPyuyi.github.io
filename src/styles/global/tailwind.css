@@ -3,12 +3,6 @@
 @import "./utils.css";
 @config "../../../tailwind.config.mjs";
 
-@font-face {
-  font-family: "Bear Days";
-  src: url("/fonts/bear-days.woff2") format("woff2");
-  font-display: swap;
-}
-
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
@@ -39,8 +33,18 @@
   h4,
   h5,
   h6 {
-    font-family: "寒蝉全圆体", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Songti SC", "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", STSong, serif;
+    font-weight: 600;
     letter-spacing: 0.02em;
+    text-wrap: balance;
+  }
+
+  /* Print-like Chinese typesetting: tighter paired punctuation, no lone character on a last line. */
+  p,
+  li,
+  blockquote {
+    text-wrap: pretty;
+    text-spacing-trim: normal;
   }
 
   ::selection {
@@ -134,21 +138,16 @@
   .clip-path-post-img-right {
     clip-path: polygon(0 0%, 100% 0%, 100% 100%, 8% 100%);
   }
+  /* Site name in the header: set like a title on a book spine, in the serif, quietly spaced. */
   .logo-text {
-    font-size: min(2rem, 6.4vw);
-    text-shadow:
-      3px 4px 2px #060000,
-      -1px -1px 0px #ffffff;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    line-height: 0.95;
+    font-size: min(1.35rem, 5.2vw);
+    letter-spacing: 0.14em;
+    line-height: 1.1;
     text-align: center;
-    font-family: "Bear Days", sans-serif;
-    font-weight: 700;
-    color: #e9546b;
+    font-family: "Songti SC", "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", STSong, serif;
+    font-weight: 600;
+    /* The header always sits over the night sky (its icons are white), so a pale rose. */
+    color: color-mix(in oklab, hsl(var(--primary)) 40%, white);
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.35);
   }
-}
-
-.dark .logo-text {
-  color: #ed788c;
 }
