@@ -10,7 +10,7 @@ export const FONT_PRESETS = ['round', 'system', 'serif', 'wenkai'] as const;
 export type FontPreset = (typeof FONT_PRESETS)[number];
 
 export const READER_DEFAULTS = {
-  fontPreset: 'round' as FontPreset,
+  fontPreset: 'system' as FontPreset,
   fontSize: 16,
   lineHeight: 1.8,
   measure: null as number | null,

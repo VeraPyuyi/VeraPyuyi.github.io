@@ -40,7 +40,7 @@ const categoryCounts = Object.fromEntries(
             <span class="sky-section-kicker">
               {en ? 'Arm' : '旋臂'} {ARMS[category].roman} · {en ? `${categoryCounts[category]} stars` : `${categoryCounts[category]} 颗星`}
             </span>
-            <strong class="font-chill-round mt-1 block text-xl">{getBlogCategoryLabel(category)}</strong>
+            <strong class="font-display mt-1 block text-xl">{getBlogCategoryLabel(category)}</strong>
             <span class="text-muted-foreground mt-1 block text-sm leading-6">{getBlogCategoryDescription(category, locale)}</span>
           </span>
         </a>
@@ -58,7 +58,7 @@ const categoryCounts = Object.fromEntries(
               <p class="sky-section-kicker">
                 {en ? 'Arm' : '旋臂'} {ARMS[category].roman} · {categoryCounts[category]}
               </p>
-              <h2 id={`${category}-title`} class="font-chill-round mt-1 text-2xl font-bold">
+              <h2 id={`${category}-title`} class="font-display mt-1 text-2xl font-bold">
                 {getBlogCategoryLabel(category)}
               </h2>
             </div>

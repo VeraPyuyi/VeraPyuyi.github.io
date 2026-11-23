@@ -72,7 +72,7 @@ const MenuIcon = ({ className, id }: MenuIconProps) => {
     <LazyMotionProvider>
       <div className={cn('flex-center', className)} id={id} style={{ viewTransitionName: 'home-menu-icon' }}>
         <button
-          className="size-10 flex-center cursor-pointer select-none rounded-full bg-white/20 text-shoka"
+          className="size-10 flex-center cursor-pointer select-none rounded-full border border-white/20 bg-black/20 text-primary backdrop-blur-sm"
           onClick={toggleDrawer}
           aria-label={isOpen ? '关闭菜单' : '打开菜单'}
           aria-expanded={isOpen}

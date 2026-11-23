@@ -74,7 +74,7 @@ function FloatingButton({
       onPointerDown={onIntent}
       onFocus={onIntent}
       className={cn(
-        'rounded-full bg-background/80 p-2 opacity-80 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-background hover:opacity-100',
+        'rounded-full border border-current/20 bg-background/60 p-2 opacity-85 backdrop-blur-sm transition-all duration-200 hover:bg-background/85 hover:opacity-100',
         className,
       )}
       aria-label={ariaLabel}
@@ -110,7 +110,7 @@ export default function FloatingGroup() {
   return (
     <LazyMotionProvider>
       <m.div
-        className="fixed right-4 bottom-4 z-50 flex flex-col gap-2 text-primary"
+        className="floating-toolbar fixed right-4 bottom-4 z-50 flex flex-col gap-2 text-primary"
         animate={{
           x: isHidden ? 200 : 0,
           opacity: isHidden ? 0 : 1,

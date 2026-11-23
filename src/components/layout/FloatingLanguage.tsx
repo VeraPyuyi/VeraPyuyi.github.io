@@ -90,7 +90,7 @@ export default function FloatingLanguage() {
       <a
         href={href}
         hrefLang={targetLocale}
-        className="flex-center size-9 rounded-full bg-background/80 font-semibold text-sm opacity-80 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-background hover:opacity-100"
+        className="flex-center size-9 rounded-full border border-current/20 bg-background/60 font-medium text-[0.8rem] tracking-wide opacity-85 backdrop-blur-sm transition-all duration-200 hover:bg-background/85 hover:opacity-100"
         aria-label={label}
         title={label}
       >
