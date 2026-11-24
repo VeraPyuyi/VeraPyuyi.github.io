@@ -1,8 +1,8 @@
 ---
 title: Some Thoughts on Combining RAPTOR and GraphRAG
 summary: Could graph structure guide hierarchical summaries? A proposal that distinguishes central entities from summary nodes and preserves relational evidence alongside a traceable abstraction layer.
-publishedAt: "2026-10-10T12:54:35Z"
-updatedAt: "2026-10-30T14:34:14Z"
+publishedAt: "2026-10-10 20:54:35"
+updatedAt: "2026-10-30 22:34:14"
 language: en
 translationKey: raptor-graphrag-hierarchy
 routeSlug: raptor-graphrag-hierarchy

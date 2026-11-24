@@ -1,7 +1,7 @@
 ---
 title: "Understanding Machine Learning Through Free Energy: From Bayesian Inference to Generalization and Training Dynamics"
 summary: Two curves fit ten points. Which one should we trust on the eleventh? Free energy connects the weights we give models, generalization bounds, and the solutions training actually reaches.
-publishedAt: "2026-11-18"
+publishedAt: "2026-11-18 00:00:00"
 language: en
 translationKey: physics-of-deep-learning-free-energy
 routeSlug: physics-of-deep-learning-free-energy

@@ -1,8 +1,8 @@
 ---
 title: 关于无理数编码与 Agent 记忆的一些想法
 summary: 把有限信息放进一个无理数并不困难；真正值得区分的是可逆编码、存储压缩，以及 Agent 能否按需读到正确的记忆。
-publishedAt: "2026-10-29T18:18:30Z"
-updatedAt: "2026-10-30T14:34:14Z"
+publishedAt: "2026-10-30 02:18:30"
+updatedAt: "2026-10-30 22:34:14"
 language: zh
 translationKey: irrational-encoding-agent-memory
 routeSlug: irrational-encoding-agent-memory

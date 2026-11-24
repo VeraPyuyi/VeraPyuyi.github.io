@@ -1,7 +1,7 @@
 ---
 title: 多智能体如何形成合作：从博弈论到概念学习与群体动力学
 summary: 从囚徒困境、概念蒸馏和社会学习出发，理解伙伴选择、网络结构与探索如何影响多智能体的合作。
-publishedAt: "2026-11-13T09:26:28Z"
+publishedAt: "2026-11-13 17:26:28"
 language: zh
 translationKey: multi-agent-cooperation
 routeSlug: multi-agent-cooperation

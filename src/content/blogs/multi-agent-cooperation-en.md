@@ -1,7 +1,7 @@
 ---
 title: "How Multi-Agent Cooperation Emerges: From Game Theory to Concept Learning and Population Dynamics"
 summary: Prisoner's Dilemma, concept distillation, and social learning offer a starting point for understanding how partner selection, networks, and exploration shape cooperation.
-publishedAt: "2026-11-13T09:26:28Z"
+publishedAt: "2026-11-13 17:26:28"
 language: en
 translationKey: multi-agent-cooperation
 routeSlug: multi-agent-cooperation

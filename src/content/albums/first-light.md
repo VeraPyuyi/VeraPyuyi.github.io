@@ -2,7 +2,7 @@
 name: 初见小宇宙
 description: 站点建立时留下的第一束光。
 cover: /og.png
-date: 2026-08-26 18:00:00
+date: "2026-08-26 18:00:00"
 language: zh
 photos:
   - src: /og.png

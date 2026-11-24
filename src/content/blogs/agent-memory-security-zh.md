@@ -1,8 +1,8 @@
 ---
 title: 关于 Agent 记忆安全的一些想法
 summary: 当外部资料能够进入长期记忆，一次错误读取可能影响之后的许多任务。记忆系统需要管理的不只是相关性，还有来源、权限、时效与可撤销性。
-publishedAt: "2026-10-22T10:36:51Z"
-updatedAt: "2026-10-30T14:34:14Z"
+publishedAt: "2026-10-22 18:36:51"
+updatedAt: "2026-10-30 22:34:14"
 language: zh
 translationKey: agent-memory-security
 routeSlug: agent-memory-security

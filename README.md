@@ -22,6 +22,17 @@ pnpm dev
 
 本地没有 Pandoc/Tectonic 时，论文页会显示构建占位提示；GitHub Actions 始终使用 `--strict` 生成完整 HTML/MathML 与 PDF。
 
+## 在线编辑（Pages CMS）
+
+1. 打开 [app.pagescms.org](https://app.pagescms.org)，用 GitHub 登录。
+2. 第一次使用时按提示给 `VeraPyuyi` 账号安装 Pages CMS 的 GitHub App，并允许它访问本仓库。
+3. 选择本仓库，即可编辑「博客文章」「生活动态」「相册」并上传图片。每次保存都会提交到 `main`，几分钟后自动部署上线。
+
+- 时间一律按北京时间填写，格式为 `2026-11-24 16:30:00`。
+- 博客正文是 Markdown 源码（公式用 `$…$` / `$$…$$`），这样公式里的 `_`、`<`、`\` 不会被可视化编辑器转义。
+- 还没写完的文章请勾选「草稿」：草稿不会出现在网站上。发布时需要封面和封面替代文字。
+- 同一篇文章的中英文版本使用相同的「固定链接」和「双语内容 ID」；只写一种语言也可以。
+
 ## 公开服务配置
 
 Giscus 已绑定本仓库的 `Announcements` Discussions 分类，公开仓库 ID 和分类 ID 保存在

@@ -25,6 +25,15 @@ const dateInSiteTimezone = z
     return parseDateInSiteTimezone(val);
   });
 
+/**
+ * Optional date. Editors such as Pages CMS write an empty value when the field is left blank, so an
+ * empty string or null counts as "not set" rather than an invalid date.
+ */
+const optionalDateInSiteTimezone = z.preprocess(
+  (val) => (val === '' || val === null ? undefined : val),
+  dateInSiteTimezone.optional(),
+);
+
 const blogArticleCollection = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blogs' }),
   schema: z
@@ -32,7 +41,7 @@ const blogArticleCollection = defineCollection({
       title: z.string(),
       summary: z.string(),
       publishedAt: dateInSiteTimezone,
-      updatedAt: dateInSiteTimezone.optional(),
+      updatedAt: optionalDateInSiteTimezone,
       language: z.enum(['zh', 'en']),
       translationKey: z.string().min(1),
       routeSlug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
@@ -80,13 +89,13 @@ const albumCollection = defineCollection({
     name: z.string(),
     description: z.string().optional(),
     cover: z.string(),
-    date: dateInSiteTimezone.optional(),
+    date: optionalDateInSiteTimezone,
     language: z.enum(['zh', 'en']).default('zh'),
     photos: z.array(
       z.object({
         src: z.string(),
         alt: z.string().min(1),
-        date: dateInSiteTimezone.optional(),
+        date: optionalDateInSiteTimezone,
       }),
     ),
   }),

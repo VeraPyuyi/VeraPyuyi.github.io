@@ -1,8 +1,8 @@
 ---
 title: Some Thoughts on Agent Memory Security
 summary: Persistent memory can carry an untrusted observation into later tasks. Retrieval quality therefore needs to be considered alongside provenance, permissions, validity and revocation.
-publishedAt: "2026-10-22T10:36:51Z"
-updatedAt: "2026-10-30T14:34:14Z"
+publishedAt: "2026-10-22 18:36:51"
+updatedAt: "2026-10-30 22:34:14"
 language: en
 translationKey: agent-memory-security
 routeSlug: agent-memory-security

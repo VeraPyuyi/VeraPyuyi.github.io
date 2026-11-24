@@ -67,11 +67,14 @@ const blogArticles = readdirSync(join(root, 'src/content/blogs'), { withFileType
     const source = readFileSync(join(root, 'src/content/blogs', entry.name), 'utf8');
     const { data } = matter(source);
     return {
+      draft: data.draft === true,
       language: data.language,
       routeSlug: data.routeSlug,
       translationKey: data.translationKey,
     };
-  });
+  })
+  // Drafts (saved from the CMS before they are ready) are not built, so they have no page or feed item.
+  .filter((article) => !article.draft);
 for (const article of blogArticles) {
   const localePrefix = article.language === 'en' ? 'en/' : '';
   required.push(`${localePrefix}blogs/${article.routeSlug}/index.html`);
