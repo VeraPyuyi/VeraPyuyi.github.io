@@ -20,6 +20,7 @@ import {
 import { blackHoleFrame, invert } from '@/lib/galaxy-flight/black-hole';
 import type { Vec3 } from '@/lib/galaxy-flight/scene';
 import { resolveDeepLink } from './deep-link';
+import { createCatalogue } from './catalogue';
 import { createStarHints } from './star-hints';
 import { createFrameGuard } from './frame-guard';
 import { createOverscrollPull } from './overscroll';
@@ -104,6 +105,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   let skyTurn = 0;
   const overscroll = createOverscrollPull();
   const hints = createStarHints();
+  const catalogue = createCatalogue(root);
   const galaxies: GalaxyState[] = GALAXY_PLACEMENTS.map((placement) => ({
     matrix: galaxyModelMatrix(placement),
     drift: galaxyDrift(0, 0),
@@ -349,6 +351,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       style.visibility = opacity < 0.02 ? 'hidden' : 'visible';
       star.element.classList.toggle('is-idle', opacity < 0.5);
       hints.place(star.element, point.x, point.y, width, height, scale);
+      catalogue.place(star.element, point.x, point.y, opacity > 0.3);
     }
     const settled = Math.round(progress);
     // Ring the stars once the galaxy itself is showing (the black hole stop has no galaxy model).
@@ -366,6 +369,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       label.style.opacity = (warp ? 0 : clamp(1 - Math.abs(offset) * 2.4)).toFixed(3);
       label.style.transform = `translate3d(0, ${(-offset * 48).toFixed(1)}px, 0)`;
     });
+    catalogue.update(progress, revealed, Boolean(warp));
     const active = Math.round(progress);
     if (ask) {
       const visible = !warp && revealed !== active && Math.abs(progress - active) < 0.2;
@@ -500,6 +504,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     cancelAnimationFrame(raf);
     window.clearTimeout(deepLinkTimer);
     hints.stop();
+    catalogue.stop();
     overscroll.stop();
     models?.stop();
     resizeObserver.disconnect();

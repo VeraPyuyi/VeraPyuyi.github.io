@@ -1,0 +1,189 @@
+/*
+ * Homepage galaxy flight: the star catalogue beside each galaxy (galaxy-flight/catalogue.ts).
+ * A plain list of the galaxy's newest posts, set like an observatory log, with a leader line to
+ * the star a row points at.
+ */
+
+.flight-log {
+  position: absolute;
+  bottom: clamp(5.5rem, 17vh, 10rem);
+  left: clamp(1.5rem, 6vw, 6rem);
+  width: min(25rem, 36vw);
+  color: rgb(232 230 245 / 0.9);
+  text-shadow: 0 1px 12px rgb(5 6 26 / 0.9);
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+.flight-log.is-idle {
+  pointer-events: none;
+}
+
+.flight-log-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.16);
+}
+
+.flight-log-title {
+  color: #fff;
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+}
+
+.flight-log-sub {
+  color: color-mix(in srgb, var(--accent) 70%, white);
+  font-size: 0.7rem;
+  letter-spacing: 0.32em;
+  opacity: 0.75;
+}
+
+.flight-log-list {
+  margin: 0.2rem 0 0;
+  list-style: none;
+  padding: 0;
+}
+
+.flight-log-row {
+  display: grid;
+  grid-template-columns: 5.4rem minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: baseline;
+  padding: 0.42rem 0;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  color: rgb(226 228 255 / 0.74);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  transition: color 0.25s ease;
+}
+
+.flight-log-row time {
+  color: rgb(226 228 255 / 0.42);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  transition: color 0.25s ease;
+}
+
+.flight-log-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A dot in the star's own colour, so each row is visibly one of the stars in the sky. */
+.flight-log-name::before {
+  display: inline-block;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin: 0 0.55rem 0.15rem 0;
+  border-radius: 50%;
+  background: var(--star);
+  box-shadow: 0 0 6px var(--star);
+  content: '';
+  opacity: 0.75;
+  vertical-align: middle;
+}
+
+.flight-log-row:hover,
+.flight-log-row:focus-visible,
+.flight-log-row.is-pointed,
+.flight-log-row.is-echoed {
+  color: #fff;
+}
+
+.flight-log-row:focus-visible {
+  outline: none;
+}
+
+.flight-log-row:is(:hover, :focus-visible, .is-pointed, .is-echoed) time {
+  color: var(--star);
+}
+
+.flight-log-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.7rem;
+  color: color-mix(in srgb, var(--accent) 75%, white);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  opacity: 0.8;
+  transition: opacity 0.25s ease;
+}
+
+.flight-log-all:hover,
+.flight-log-all:focus-visible {
+  opacity: 1;
+}
+
+/* Leader line from a pointed row to its star, like the annotations inked onto a glass plate. */
+.flight-leader {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.flight-leader path {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.55);
+  stroke-width: 0.8;
+}
+
+/* The star a row points at: steady and bright, with a fine ring. */
+.flight-star.is-pointed svg {
+  transform: scale(1.7);
+  animation: none;
+}
+
+.flight-star.is-pointed::after {
+  position: absolute;
+  inset: 0.3rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--star);
+  content: '';
+}
+
+/* Reading the catalogue turns the sky down, so the words come forward. */
+.flight-canvas {
+  transition: opacity 0.6s ease;
+}
+
+.flight.is-reading .flight-canvas {
+  opacity: 0.45;
+}
+
+.flight.is-reading .flight-star:not(.is-pointed) svg {
+  opacity: 0.35;
+  transition: opacity 0.4s ease;
+}
+
+@media (max-height: 760px) and (min-width: 769px) {
+  .flight-log-list li:nth-child(n + 5) {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .flight-log {
+    right: 4.75rem;
+    bottom: 4.6rem;
+    left: 1.25rem;
+    width: auto;
+  }
+
+  .flight-log-list li:nth-child(n + 4) {
+    display: none;
+  }
+
+  .flight-log-row {
+    grid-template-columns: 4.7rem minmax(0, 1fr);
+    gap: 0.6rem;
+    font-size: 0.8rem;
+  }
+}

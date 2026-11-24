@@ -16,6 +16,7 @@ import { getPapers } from '@/lib/papers';
 import '@/styles/components/galaxy-flight-story.css';
 import '@/styles/components/galaxy-flight.css';
 import '@/styles/components/galaxy-flight-stars.css';
+import '@/styles/components/galaxy-flight-log.css';
 
 interface Props {
   locale: string;
@@ -156,6 +157,11 @@ const placed = galaxies.map((galaxy) => {
   const stars = placeGalaxyItems(galaxy.kind, itemsByKind[galaxy.kind]);
   return { ...galaxy, stars, newest: stars.find((star) => star.newest) };
 });
+
+/** Rows in each galaxy's star catalogue: its newest stars (fewer on short or narrow screens, in CSS). */
+const LOG_ROWS = 6;
+const catalogueOf = (stars: (typeof placed)[number]['stars']) =>
+  [...stars].sort((a, b) => b.date.localeCompare(a.date)).slice(0, LOG_ROWS);
 
 /** The last stop: the black hole at the heart of the Milky Way, holding the self-introduction. */
 const hole = {
@@ -377,6 +383,45 @@ const starPath =
       <p class="flight-quote">{hole.quote}</p>
       <p class="flight-note">{hole.note}</p>
     </article>
+
+    {
+      placed.map((galaxy, index) => (
+        <aside
+          class="flight-log"
+          data-flight-log={index}
+          style={`--accent:${galaxy.accent}`}
+          aria-label={en ? `${galaxy.section}: newest` : `${galaxy.section}：最近的文字`}
+        >
+          <p class="flight-log-head">
+            <span class="flight-log-title font-display">{galaxy.section}</span>
+            <span class="flight-log-sub">{en ? 'catalogue' : '星表'}</span>
+          </p>
+          <ol class="flight-log-list">
+            {catalogueOf(galaxy.stars).map((star) => (
+              <li>
+                <a
+                  class="flight-log-row"
+                  href={star.href}
+                  style={`--star:${starColor(galaxy.kind, star.group)}`}
+                  data-log-star={star.id}
+                  data-warp
+                  data-warp-color={starColor(galaxy.kind, star.group)}
+                >
+                  <time>{star.date}</time>
+                  <span class="flight-log-name">{star.title}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+          <a class="flight-log-all" href={galaxy.href} data-warp data-warp-color={galaxy.accent}>
+            {en ? `All ${galaxy.stars.length} stars` : `全部 ${galaxy.stars.length} 颗星`}
+            <Icon name="ri:arrow-right-line" aria-hidden="true" />
+          </a>
+        </aside>
+      ))
+    }
+
+    <svg class="flight-leader" aria-hidden="true"><path data-flight-leader d=""></path></svg>
 
     <nav class="flight-nav" aria-label={en ? 'Four galaxies and a black hole' : '四个星系和一个黑洞'}>
       {
