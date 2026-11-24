@@ -72,6 +72,8 @@ const orbitPoint = (angle: number, aspect: number): Vec3 => {
   return [Math.cos(angle) * 0.86 * squeeze, (Math.sin(angle) * 0.5) / squeeze, 0];
 };
 const HOLE = blackHoleFrame();
+/** How strongly the black hole shows while still far down the route. */
+const DISTANT_HOLE = 0.85;
 
 interface Warp {
   start: number;
@@ -236,7 +238,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
 
     // Galaxy under the pointer (only the one we are visiting) and the spin it should have.
     hoverGalaxy = pointer ? galaxyAt(pointer.x, pointer.y) : -1;
-    surface.style.cursor = hoverGalaxy >= 0 ? 'pointer' : '';
+    surface.style.cursor = hoverGalaxy >= 0 || (pointer && distantHoleAt(pointer.x, pointer.y)) ? 'pointer' : '';
     galaxies.forEach((galaxy, index) => {
       const goal = still || warp || hoverStar === index ? 0 : hoverGalaxy === index ? 0.12 : 1;
       galaxy.speed += (goal - galaxy.speed) * (1 - Math.exp(-dt / 0.45));
@@ -248,8 +250,11 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     // field drifts slowly behind it, as if the hole were moving through space: stars passing behind it are
     // lensed into arcs that sweep round the shadow. Away from it the sky settles back to where it was.
     const toHole = Math.hypot(HOLE.center[0] - eye[0], HOLE.center[1] - eye[1], HOLE.center[2] - eye[2]);
-    const holeAlpha = clamp((330 - toHole) / 80);
-    if (!still && holeAlpha > 0.3) skyTurn += dt * 0.016 * holeAlpha;
+    const nearHole = clamp((330 - toHole) / 80);
+    // From the first galaxy on, the hole already hangs far ahead at the end of the route: small,
+    // faint, always in sight, growing as the visitor flies towards it.
+    const holeAlpha = Math.max(nearHole, DISTANT_HOLE);
+    if (!still && nearHole > 0.3) skyTurn += dt * 0.016 * nearHole;
     else if (!still) {
       const settled = Math.round(skyTurn / (2 * Math.PI)) * 2 * Math.PI;
       skyTurn += (settled - skyTurn) * (1 - Math.exp(-dt * 1.2));
@@ -300,6 +305,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
               inverseViewProjection: invert(viewProjection) ?? IDENTITY,
               time: still ? 0 : time,
               alpha: holeAlpha,
+              sharp: nearHole === 0,
             }
           : null;
       renderer.render({
@@ -315,6 +321,16 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
 
     updateOverlay();
     guard.tick(dt, Boolean(renderer) && !models?.busy && document.visibilityState === 'visible');
+  }
+
+  /** Whether (x, y) falls on the distant black hole while it is still far ahead. */
+  function distantHoleAt(x: number, y: number): boolean {
+    if (warp || progress > last - 0.6) return false;
+    const hole = ROUTE[last];
+    const point = project(viewProjection, hole.center, width, height);
+    if (point.depth <= 0) return false;
+    const reach = (hole.radius * height) / (2 * Math.tan(FIELD_OF_VIEW / 2) * point.depth);
+    return Math.hypot(x - point.x, y - point.y) < Math.max(18, reach);
   }
 
   /** Index of the galaxy being visited if (x, y) falls on its disk, else -1. */
@@ -436,6 +452,12 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       if (element?.closest('[data-flight-label], .flight-nav, a, button')) return;
       // A click on the galaxy itself opens (or closes) its story; a click on empty space closes it.
       const rect = stage.getBoundingClientRect();
+      // The far-off black hole is a way there: fly to the end of the route and open its story.
+      if (distantHoleAt(event.clientX - rect.left, event.clientY - rect.top)) {
+        revealOnArrival = last;
+        travelTo(last);
+        return;
+      }
       const hit = galaxyAt(event.clientX - rect.left, event.clientY - rect.top);
       revealed = hit >= 0 && revealed !== hit ? hit : -1;
       return;

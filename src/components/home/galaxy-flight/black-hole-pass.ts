@@ -5,7 +5,9 @@
  * the Schwarzschild radius), which reproduces the photon sphere, the shadow and the lensed image
  * of the far side of the disk arching over and under it. Rays that escape sample the already
  * rendered scene in their bent direction, so the stars and galaxies behind are lensed too.
- * It runs at half resolution and is merged into the HDR scene before bloom.
+ * It runs at half resolution when the hole fills the screen, and at full resolution while it is
+ * far away and small (only the few pixels around it trace rays then), and is merged into the HDR
+ * scene before bloom.
  */
 
 import type { Vec3 } from '@/lib/galaxy-flight/scene';
@@ -23,6 +25,8 @@ export interface BlackHoleInput {
   time: number;
   /** 0–1 fade, so the hole appears gently as the camera approaches. */
   alpha: number;
+  /** Trace at full resolution: the hole is far away and covers only a few pixels. */
+  sharp?: boolean;
 }
 
 export interface BlackHolePass {
@@ -234,15 +238,23 @@ export function createBlackHolePass(gl: WebGL2RenderingContext, hdr: boolean): B
   } catch {
     return null;
   }
-  let target: Target | null = null;
+  let half: Target | null = null;
+  /** Full-resolution target, made the first time the distant hole is drawn. */
+  let full: Target | null = null;
+  let size = [1, 1];
 
   return {
     resize(width, height) {
-      deleteTarget(gl, target);
-      target = createTarget(gl, hdr, Math.max(1, Math.floor(width / 2)), Math.max(1, Math.floor(height / 2)));
+      deleteTarget(gl, half);
+      deleteTarget(gl, full);
+      full = null;
+      size = [width, height];
+      half = createTarget(gl, hdr, Math.max(1, Math.floor(width / 2)), Math.max(1, Math.floor(height / 2)));
     },
 
     draw(scene, out, input, emptyVao) {
+      if (input.sharp && !full) full = createTarget(gl, hdr, size[0], size[1]);
+      const target = input.sharp ? full : half;
       if (!target) return;
       gl.bindVertexArray(emptyVao);
       gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
@@ -275,8 +287,10 @@ export function createBlackHolePass(gl: WebGL2RenderingContext, hdr: boolean): B
     },
 
     destroy() {
-      deleteTarget(gl, target);
-      target = null;
+      deleteTarget(gl, half);
+      deleteTarget(gl, full);
+      half = null;
+      full = null;
     },
   };
 }
