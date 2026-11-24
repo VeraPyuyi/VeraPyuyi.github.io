@@ -27,6 +27,8 @@ export interface BlackHoleInput {
   alpha: number;
   /** Trace at full resolution: the hole is far away and covers only a few pixels. */
   sharp?: boolean;
+  /** Distance from the camera; particle layers nearer than this are drawn over the hole. */
+  depth?: number;
 }
 
 export interface BlackHolePass {
@@ -215,7 +217,9 @@ void main() {
     bend = smoothstep(0.5, 14.0, pixels);
   }
   float cover = (1.0 - smoothstep(BOUND * 0.8, BOUND * 0.98, sqrt(h2))) * max(alpha, bend);
-  outColor = vec4(color + (1.0 - alpha) * background, cover * u_alpha);
+  // A faint hole (far away, or fading in) dims its own light as well as its cover, so the bright ring
+  // does not stay vivid while the hole is meant to be barely there.
+  outColor = vec4(color * sqrt(u_alpha) + (1.0 - alpha) * background, cover * u_alpha);
 }`;
 
 const MERGE_FRAGMENT = `#version 300 es

@@ -21,7 +21,7 @@ import { blackHoleFrame, invert } from '@/lib/galaxy-flight/black-hole';
 import type { Vec3 } from '@/lib/galaxy-flight/scene';
 import { resolveDeepLink } from './deep-link';
 import { createCatalogue } from './catalogue';
-import { horizonBoost } from './horizon';
+import { horizonAlpha, horizonBoost } from './horizon';
 import { createStarHints } from './star-hints';
 import { createFrameGuard } from './frame-guard';
 import { createOverscrollPull } from './overscroll';
@@ -277,7 +277,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
         index,
         distance: Math.hypot(placement.center[0] - eye[0], placement.center[1] - eye[1], placement.center[2] - eye[2]),
       })).sort((a, b) => b.distance - a.distance);
-      for (const { index } of byDistance) {
+      for (const { index, distance } of byDistance) {
         const galaxy = galaxies[index];
         if (galaxy.readyAt === null) continue;
         const placement = GALAXY_PLACEMENTS[index];
@@ -288,6 +288,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
           wobble: still ? 0 : 0.012,
           alpha: easeInOut(clamp((time - galaxy.readyAt) / 1.4)),
           soft: [0.018, 0.045] as const,
+          depth: distance,
         };
         layers.push({ ...base, mesh: `${placement.kind}-light`, dust: false });
         // Dust also dims the deep-space background drawn under it, so it needs a lighter hand
@@ -301,8 +302,10 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
         viewProjection,
         inverseViewProjection: invert(viewProjection) ?? IDENTITY,
         time: still ? 0 : time,
-        alpha: 1,
+        // Far down the route it only shows faintly through, behind whatever lies in front of it.
+        alpha: horizonAlpha(toHole),
         sharp: nearHole === 0,
+        depth: toHole,
       };
       renderer.render({
         view,
