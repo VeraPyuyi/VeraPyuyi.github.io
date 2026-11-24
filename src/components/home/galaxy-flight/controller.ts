@@ -21,7 +21,7 @@ import { blackHoleFrame, invert } from '@/lib/galaxy-flight/black-hole';
 import type { Vec3 } from '@/lib/galaxy-flight/scene';
 import { resolveDeepLink } from './deep-link';
 import { createCatalogue } from './catalogue';
-import { createHorizon, horizonBoost } from './horizon';
+import { horizonBoost } from './horizon';
 import { createStarHints } from './star-hints';
 import { createFrameGuard } from './frame-guard';
 import { createOverscrollPull } from './overscroll';
@@ -107,7 +107,6 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   const overscroll = createOverscrollPull();
   const hints = createStarHints();
   const catalogue = createCatalogue(root);
-  const horizon = createHorizon(root);
   const galaxies: GalaxyState[] = GALAXY_PLACEMENTS.map((placement) => ({
     matrix: galaxyModelMatrix(placement),
     drift: galaxyDrift(0, 0),
@@ -371,9 +370,6 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       hints.place(star.element, point.x, point.y, width, height, scale);
       catalogue.place(star.element, point.x, point.y, opacity > 0.3);
     }
-    const holePoint = project(viewProjection, ROUTE[last].center, width, height);
-    const noted = warp || holePoint.depth <= 0 ? 0 : clamp((last - 1.4 - progress) / 0.6);
-    horizon.place(holePoint.x, holePoint.y, holeReach(holePoint.depth), noted);
     const settled = Math.round(progress);
     // Ring the stars once the galaxy itself is showing (the black hole stop has no galaxy model).
     if (!warp && !prefersStill() && Math.abs(progress - settled) < 0.06 && galaxies[settled]?.readyAt !== null)
