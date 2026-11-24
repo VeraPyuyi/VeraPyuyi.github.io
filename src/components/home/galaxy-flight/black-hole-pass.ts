@@ -204,7 +204,8 @@ void main() {
   // two are the same and there is nothing to see.
   float reach = 1.0 - smoothstep(BOUND * 0.18, BOUND * 0.92, sqrt(h2));
   vec3 bent = normalize(mix(direction, normalize(transpose(u_toLocal) * vel), reach * reach * (3.0 - 2.0 * reach)));
-  vec3 background = escaped ? sky(bent) * mix(0.3, 1.0, clear) : vec3(0.0);
+  // The dimming just outside the shadow belongs to the hole's own look, so it fades with the hole.
+  vec3 background = escaped ? sky(bent) * mix(1.0 - 0.7 * u_alpha, 1.0, clear) : vec3(0.0);
   // How much the lensed view replaces the plain scene follows how far the ray was actually bent,
   // measured in screen pixels: where the bend is under a pixel the untouched full-resolution
   // scene shows, and the lensing grows in smoothly from there. There is no edge to see; the
@@ -216,10 +217,22 @@ void main() {
     float pixels = length((landed - v_uv) * vec2(textureSize(u_scene, 0)));
     bend = smoothstep(0.5, 14.0, pixels);
   }
-  float cover = (1.0 - smoothstep(BOUND * 0.8, BOUND * 0.98, sqrt(h2))) * max(alpha, bend);
-  // A faint hole (far away, or fading in) dims its own light as well as its cover, so the bright ring
-  // does not stay vivid while the hole is meant to be barely there.
-  outColor = vec4(color * sqrt(u_alpha) + (1.0 - alpha) * background, cover * u_alpha);
+  // A faint hole (far away, or fading in) is only faint in what it shows of itself: the shadow lets
+  // the scene through and the disk is dimmed. The bending of the light behind it stays at full
+  // strength, so even while it hides behind the galaxies the stars around it still curve.
+  float fade = u_alpha;
+  vec3 plain = texture(u_scene, v_uv).rgb;
+  vec3 view = escaped ? mix(plain, background, bend) : plain * (1.0 - fade);
+  vec3 seen = color * fade * sqrt(fade) + (1.0 - alpha * fade) * view;
+  float cover = max(escaped ? bend : 0.0, fade * (escaped ? alpha : 1.0));
+  float edge = 1.0 - smoothstep(BOUND * 0.8, BOUND * 0.98, sqrt(h2));
+  if (cover < 1e-4) {
+    outColor = vec4(0.0);
+    return;
+  }
+  // The merge mixes the full-resolution scene with this colour by the cover; pick the colour so the
+  // mix lands on what is seen, while the scene's own detail still shows wherever the cover is light.
+  outColor = vec4(max(plain + (seen - plain) / cover, 0.0), edge * cover);
 }`;
 
 const MERGE_FRAGMENT = `#version 300 es
