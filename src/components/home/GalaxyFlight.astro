@@ -423,6 +423,10 @@ const starPath =
 
     <svg class="flight-leader" aria-hidden="true"><path data-flight-leader d=""></path></svg>
 
+    <p class="flight-horizon" data-flight-horizon aria-hidden="true">
+      <span class="flight-horizon-text">{en ? 'End of the route · Sagittarius A*' : '航线尽头 · 人马座 A*'}</span>
+    </p>
+
     <nav class="flight-nav" aria-label={en ? 'Four galaxies and a black hole' : '四个星系和一个黑洞'}>
       {
         placed.map((galaxy, index) => (

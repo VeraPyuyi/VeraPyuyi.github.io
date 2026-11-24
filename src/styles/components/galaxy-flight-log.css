@@ -187,3 +187,52 @@
     font-size: 0.8rem;
   }
 }
+
+/* The black hole on the horizon (galaxy-flight/horizon.ts): a note with a fine leader line, set at
+   the hole's projected centre; --reach is the hole's on-screen radius. */
+.flight-horizon {
+  --reach: 40px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  color: rgb(255 228 190 / 0.85);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.flight-horizon::before {
+  position: absolute;
+  top: calc(var(--reach) * 0.5);
+  left: calc(var(--reach) * -0.7);
+  width: 2rem;
+  height: 1px;
+  background: currentColor;
+  content: '';
+  opacity: 0.6;
+  transform: rotate(143.13deg);
+  transform-origin: 0 50%;
+}
+
+.flight-horizon-text {
+  position: absolute;
+  top: calc(var(--reach) * 0.5 + 1.2rem);
+  right: calc(var(--reach) * 0.7 + 2.05rem);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-shadow: 0 1px 10px rgb(5 6 26 / 0.9);
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.flight.is-flat .flight-horizon {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .flight-horizon-text {
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+  }
+}
