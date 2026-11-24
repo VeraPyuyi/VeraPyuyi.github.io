@@ -1,8 +1,8 @@
 ---
 title: 关于 RAPTOR 与 GraphRAG 融合的一些想法
 summary: 能否用知识图谱的连接关系指导层次摘要构建？从中心节点与摘要节点的区别出发，尝试保留关系图，同时建立可回溯的概括层。
-publishedAt: "2026-10-10T12:54:35Z"
-updatedAt: "2026-10-30T14:34:14Z"
+publishedAt: "2026-10-10 20:54:35"
+updatedAt: "2026-10-30 22:34:14"
 language: zh
 translationKey: raptor-graphrag-hierarchy
 routeSlug: raptor-graphrag-hierarchy

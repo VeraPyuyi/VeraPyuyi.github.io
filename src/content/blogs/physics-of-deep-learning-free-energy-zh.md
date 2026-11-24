@@ -1,7 +1,7 @@
 ---
 title: 用自由能理解机器学习：从贝叶斯推断到泛化与训练动力学
 summary: 从穿过十个点的曲线出发，理解拟合与先验如何决定模型的权重，泛化界能保证什么，以及训练最终会选中哪一个解。
-publishedAt: "2026-11-18"
+publishedAt: "2026-11-18 00:00:00"
 language: zh
 translationKey: physics-of-deep-learning-free-energy
 routeSlug: physics-of-deep-learning-free-energy

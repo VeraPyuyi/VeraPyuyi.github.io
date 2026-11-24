@@ -1,8 +1,8 @@
 ---
 title: Some Thoughts on Potential Functions and Latent-Space Topology
 summary: Starting from iterated encoding and decoding, distinguish local rotation from global topological obstructions and examine what potentials, universal covers and Hodge decomposition can explain.
-publishedAt: "2026-08-31T14:04:43Z"
-updatedAt: "2026-10-30T14:34:14Z"
+publishedAt: "2026-08-31 22:04:43"
+updatedAt: "2026-10-30 22:34:14"
 language: en
 translationKey: potential-functions-latent-topology
 routeSlug: potential-functions-latent-topology

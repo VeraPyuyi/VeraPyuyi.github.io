@@ -1,8 +1,8 @@
 ---
 title: Some Thoughts on Irrational Encodings and Agent Memory
 summary: Encoding finite information in an irrational number is possible; the harder questions concern storage, selective retrieval, and what an agent can actually read.
-publishedAt: "2026-10-29T18:18:30Z"
-updatedAt: "2026-10-30T14:34:14Z"
+publishedAt: "2026-10-30 02:18:30"
+updatedAt: "2026-10-30 22:34:14"
 language: en
 translationKey: irrational-encoding-agent-memory
 routeSlug: irrational-encoding-agent-memory

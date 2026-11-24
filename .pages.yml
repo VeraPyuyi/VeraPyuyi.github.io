@@ -21,11 +21,11 @@ content:
     fields:
       - { name: title, label: 标题, type: string, required: true }
       - { name: summary, label: 摘要, type: text, required: true }
-      - { name: publishedAt, label: 发布时间, type: date, required: true }
-      - { name: updatedAt, label: 更新时间, type: date }
+      - { name: publishedAt, label: 发布时间, type: date, required: true, description: 北京时间, options: { time: true, format: "yyyy-MM-dd HH:mm:ss" } }
+      - { name: updatedAt, label: 更新时间, type: date, default: "", description: 北京时间, options: { time: true, format: "yyyy-MM-dd HH:mm:ss" } }
       - { name: language, label: 语言, type: select, required: true, options: { values: [zh, en] } }
-      - { name: translationKey, label: 双语内容 ID, type: string, required: true }
-      - { name: routeSlug, label: 固定链接, type: string, required: true }
+      - { name: translationKey, label: 双语内容 ID, type: string, required: true, description: 同一篇文章的中英文版本填同一个值 }
+      - { name: routeSlug, label: 固定链接, type: string, required: true, description: 只用小写字母、数字和连字符，例如 agent-memory-security；中英文版本填同一个值 }
       - { name: category, label: 博客分类, type: select, required: true, options: { values: [inspirations, learning] } }
       - { name: keywords, label: SEO 关键词, type: string, list: true }
       - { name: draft, label: 草稿, type: boolean }
@@ -34,10 +34,18 @@ content:
       - name: cover
         label: 封面
         type: image
+        description: 发布（非草稿）时必填
         options: { media: images, path: blogs, rename: safe }
-      - { name: coverAlt, label: 封面替代文字, type: string }
+      - { name: coverAlt, label: 封面替代文字, type: string, description: 发布（非草稿）时必填 }
       - { name: order, label: 排序, type: number }
-      - { name: body, label: 正文, type: rich-text, required: true, options: { format: markdown, switcher: true } }
+      # Every post has LaTeX ($…$, $$…$$) and tables; a visual editor would escape their _ < > \ and break them,
+      # so posts are edited as Markdown source.
+      - name: body
+        label: 正文（Markdown 源码）
+        type: code
+        required: true
+        description: 数学公式用 $…$ 或 $$…$$
+        options: { format: markdown }
 
   - name: moments
     label: 生活动态
@@ -49,7 +57,7 @@ content:
       sort: [date]
       default: { sort: date, order: desc }
     fields:
-      - { name: date, label: 时间, type: date, required: true }
+      - { name: date, label: 时间, type: date, required: true, description: 北京时间, options: { time: true, format: "yyyy-MM-dd HH:mm:ss" } }
       - name: photos
         label: 照片
         type: object
@@ -84,7 +92,7 @@ content:
         type: image
         required: true
         options: { media: images, path: albums, rename: safe }
-      - { name: date, label: 拍摄日期, type: date }
+      - { name: date, label: 拍摄日期, type: date, default: "", description: 北京时间, options: { time: true, format: "yyyy-MM-dd HH:mm:ss" } }
       - { name: language, label: 语言, type: select, options: { values: [zh, en] } }
       - name: photos
         label: 照片
@@ -99,7 +107,7 @@ content:
             required: true
             options: { media: images, path: albums, rename: safe }
           - { name: alt, label: 替代文字, type: string, required: true }
-          - { name: date, label: 拍摄日期, type: date }
+          - { name: date, label: 拍摄日期, type: date, default: "", options: { format: yyyy-MM-dd } }
       - { name: body, label: 相册故事, type: rich-text, options: { format: markdown, switcher: true } }
 
   - name: site

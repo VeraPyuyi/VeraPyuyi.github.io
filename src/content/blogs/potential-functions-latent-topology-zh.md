@@ -1,8 +1,8 @@
 ---
 title: 关于势函数与潜在空间拓扑的一些想法
 summary: 从反复编码—解码产生的潜在动力学出发，区分局部旋转与全局拓扑障碍，思考势函数、万有覆叠和 Hodge 分解各自能解释什么。
-publishedAt: "2026-08-31T14:04:43Z"
-updatedAt: "2026-10-30T14:34:14Z"
+publishedAt: "2026-08-31 22:04:43"
+updatedAt: "2026-10-30 22:34:14"
 language: zh
 translationKey: potential-functions-latent-topology
 routeSlug: potential-functions-latent-topology

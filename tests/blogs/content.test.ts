@@ -14,35 +14,71 @@ function read(path: string): string {
   return readFileSync(join(root, path), 'utf8');
 }
 
-test('published blogs form twelve complete bilingual pairs across the two categories', () => {
-  const files = readdirSync(blogRoot)
+/**
+ * The essays published before online editing (Pages CMS) was set up, with the times they were first
+ * published. They are held to the full editorial checks below; posts added later through the CMS
+ * only need to be well formed, so writing a new post online cannot fail the build over house style.
+ */
+const ESTABLISHED = new Map([
+  ['monte-carlo-control-natural-starts', '2026-08-30 15:48:15'],
+  ['workflow-to-agent-harness', '2026-08-21 01:35:36'],
+  ['sgd-zigzag-posets', '2026-08-24 02:37:52'],
+  ['llm-sampling-energy-view', '2026-08-26 01:58:33'],
+  ['attention-as-spiking-dynamics', '2026-08-28 13:07:34'],
+  ['irrational-encoding-agent-memory', '2026-10-29T18:18:30Z'],
+  ['agent-layered-memory', '2026-10-22T10:36:51Z'],
+  ['agent-memory-security', '2026-10-22T10:36:51Z'],
+  ['raptor-graphrag-hierarchy', '2026-10-10T12:54:35Z'],
+  ['potential-functions-latent-topology', '2026-08-31T14:04:43Z'],
+  ['multi-agent-cooperation', '2026-11-13T09:26:28Z'],
+  ['physics-of-deep-learning-free-energy', '2026-11-18'],
+]);
+const LEARNING = new Set(['multi-agent-cooperation', 'physics-of-deep-learning-free-energy']);
+
+/** Offset of the site timezone (config/site.yaml: Asia/Shanghai, which has no daylight saving). */
+const SITE_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+/**
+ * The instant a frontmatter date stands for, read the way the content schema reads it: text without
+ * an offset is site time, and a YAML date (which the parser takes as UTC) is site wall-clock time too.
+ * So the same moment compares equal however an editor happened to write it.
+ */
+function siteInstant(value: unknown): number {
+  if (value instanceof Date) return value.getTime() - SITE_OFFSET_MS;
+  assert.equal(typeof value, 'string', `not a date: ${String(value)}`);
+  const text = String(value).trim();
+  if (/(?:Z|[+-]\d\d:?\d\d)$/.test(text)) return Date.parse(text);
+  const match = text.match(/^(\d{4})-(\d\d)-(\d\d)(?:[ T](\d\d):(\d\d)(?::(\d\d))?)?$/);
+  assert.ok(match, `unreadable date: ${text}`);
+  const [, year, month, day, hour = '0', minute = '0', second = '0'] = match;
+  return Date.UTC(+year, +month - 1, +day, +hour, +minute, +second) - SITE_OFFSET_MS;
+}
+
+function blogs() {
+  return readdirSync(blogRoot)
     .filter((name) => /\.(md|mdx)$/.test(name))
-    .sort();
-  assert.equal(files.length, 24);
+    .sort()
+    .map((filename) => ({ filename, ...matter(readFileSync(join(blogRoot, filename), 'utf8')) }));
+}
 
-  const learningArticles = new Set(['multi-agent-cooperation', 'physics-of-deep-learning-free-energy']);
-  const pairs = new Map<string, Set<string>>();
-  for (const filename of files) {
-    const source = readFileSync(join(blogRoot, filename), 'utf8');
-    const { data, content } = matter(source);
+test('the site timezone the date checks assume is still the configured one', () => {
+  assert.match(read('config/site.yaml'), /timezone: Asia\/Shanghai\b/);
+});
 
-    assert.match(data.routeSlug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-    assert.equal(data.translationKey, data.routeSlug);
-    assert.ok(['zh', 'en'].includes(data.language));
-    assert.equal(data.category, learningArticles.has(data.routeSlug) ? 'learning' : 'inspirations');
-    assert.equal(data.draft, false);
-    assert.equal(data.comments, true);
-    assert.equal(data.cover, `/uploads/blogs/${data.routeSlug}/cover.png`);
-    assert.ok(typeof data.coverAlt === 'string' && data.coverAlt.trim().length > 0);
-    assert.ok(Array.isArray(data.keywords) && data.keywords.length > 0);
-    assert.doesNotMatch(
-      content,
-      /(?:cite|filecite)|chatgpt-content-reference|turn\d+(?:search|view|academia)|sandbox:\/|chatgpt\.com\/(?:c|g)\/|\uFFFD/,
-    );
+test('every blog post is well formed, whether written locally or online', () => {
+  for (const { filename, data, content } of blogs()) {
+    assert.match(data.routeSlug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/, filename);
+    assert.equal(data.translationKey, data.routeSlug, filename);
+    assert.ok(['zh', 'en'].includes(data.language), filename);
+    assert.ok(Number.isFinite(siteInstant(data.publishedAt)), filename);
+    if (!data.draft) {
+      assert.ok(typeof data.cover === 'string' && existsSync(join(root, 'public', data.cover.slice(1))), `${filename} cover`);
+      assert.ok(typeof data.coverAlt === 'string' && data.coverAlt.trim().length > 0, `${filename} coverAlt`);
+    }
     assert.equal(
       [...content].some((character) => {
         const codePoint = character.codePointAt(0) ?? 0;
-        return (codePoint < 32 && codePoint !== 9 && codePoint !== 10) || codePoint === 127;
+        return (codePoint < 32 && codePoint !== 9 && codePoint !== 10 && codePoint !== 13) || codePoint === 127;
       }),
       false,
       `${filename} contains an unexpected control character`,
@@ -56,53 +92,63 @@ test('published blogs form twelve complete bilingual pairs across the two catego
       );
     }
     assert.doesNotMatch(content, /^#\s/m, `${filename} must not repeat the page title as an H1`);
+  }
+});
+
+test('translations of one post share its publication time and cover', () => {
+  const byKey = new Map<string, Array<Record<string, unknown>>>();
+  for (const { data } of blogs()) byKey.set(data.translationKey, [...(byKey.get(data.translationKey) ?? []), data]);
+  for (const [key, versions] of byKey) {
+    assert.ok(versions.length <= 2, `${key} has more than two versions`);
+    assert.equal(new Set(versions.map((version) => version.language)).size, versions.length, `${key} repeats a language`);
+    if (versions.length < 2) continue;
+    const [first, second] = versions;
+    assert.equal(siteInstant(first.publishedAt), siteInstant(second.publishedAt), `${key} publishedAt`);
+    assert.equal(first.cover, second.cover, `${key} cover`);
+  }
+});
+
+test('the established essays keep their bilingual pairs, house style and sources', () => {
+  const pairs = new Map<string, Set<string>>();
+  for (const { filename, data, content } of blogs()) {
+    if (!ESTABLISHED.has(data.routeSlug)) continue;
+    assert.equal(data.category, LEARNING.has(data.routeSlug) ? 'learning' : 'inspirations', filename);
+    assert.equal(data.draft, false, filename);
+    assert.equal(data.comments, true, filename);
+    assert.equal(data.cover, `/uploads/blogs/${data.routeSlug}/cover.png`, filename);
+    assert.ok(Array.isArray(data.keywords) && data.keywords.length > 0, filename);
+    assert.doesNotMatch(
+      content,
+      /(?:cite|filecite)|chatgpt-content-reference|turn\d+(?:search|view|academia)|sandbox:\/|chatgpt\.com\/(?:c|g)\/|\uFFFD/,
+    );
     assert.match(content, data.language === 'zh' ? /^## 参考资料$/m : /^## References$/m);
     assert.ok((content.match(/https:\/\//g) ?? []).length >= 2, `${filename} should cite primary sources`);
-
-    const languages = pairs.get(data.translationKey) ?? new Set<string>();
-    languages.add(data.language);
-    pairs.set(data.translationKey, languages);
+    pairs.set(data.routeSlug, (pairs.get(data.routeSlug) ?? new Set<string>()).add(data.language));
   }
 
-  assert.equal(pairs.size, 12);
+  assert.deepEqual([...pairs.keys()].sort(), [...ESTABLISHED.keys()].sort());
   for (const languages of pairs.values()) assert.deepEqual([...languages].sort(), ['en', 'zh']);
 });
 
-test('blog publication timestamps match the source conversation or publication date', () => {
-  const expected = new Map([
-    ['monte-carlo-control-natural-starts', '2026-08-30 15:48:15'],
-    ['workflow-to-agent-harness', '2026-08-21 01:35:36'],
-    ['sgd-zigzag-posets', '2026-08-24 02:37:52'],
-    ['llm-sampling-energy-view', '2026-08-26 01:58:33'],
-    ['attention-as-spiking-dynamics', '2026-08-28 13:07:34'],
-    ['irrational-encoding-agent-memory', '2026-10-29T18:18:30Z'],
-    ['agent-layered-memory', '2026-10-22T10:36:51Z'],
-    ['agent-memory-security', '2026-10-22T10:36:51Z'],
-    ['raptor-graphrag-hierarchy', '2026-10-10T12:54:35Z'],
-    ['potential-functions-latent-topology', '2026-08-31T14:04:43Z'],
-    ['multi-agent-cooperation', '2026-11-13T09:26:28Z'],
-    ['physics-of-deep-learning-free-energy', '2026-11-18'],
-  ]);
-
-  for (const filename of readdirSync(blogRoot).filter((name) => /\.md$/.test(name))) {
-    const { data } = matter(readFileSync(join(blogRoot, filename), 'utf8'));
-    assert.equal(data.publishedAt, expected.get(data.routeSlug), filename);
+test('the established essays keep their original publication times', () => {
+  for (const { filename, data } of blogs()) {
+    const expected = ESTABLISHED.get(data.routeSlug);
+    if (expected) assert.equal(siteInstant(data.publishedAt), siteInstant(expected), filename);
   }
 });
 
-test('bilingual blog covers retain full-size widescreen sources and documented responsive resources', async () => {
-  const files = readdirSync(blogRoot).filter((name) => /\.(md|mdx)$/.test(name));
+test("the established essays' covers retain full-size widescreen sources and documented responsive resources", async () => {
   const covers = new Map<string, Set<string>>();
   const manifest = JSON.parse(read('public/media-manifest.json')) as Record<string, string[]>;
 
-  for (const filename of files) {
-    const { data } = matter(readFileSync(join(blogRoot, filename), 'utf8'));
+  for (const { data } of blogs()) {
+    if (!ESTABLISHED.has(data.routeSlug)) continue;
     const pairCovers = covers.get(data.translationKey) ?? new Set<string>();
     pairCovers.add(data.cover);
     covers.set(data.translationKey, pairCovers);
   }
 
-  assert.equal(covers.size, 12);
+  assert.equal(covers.size, ESTABLISHED.size);
   for (const [slug, pairCovers] of covers) {
     assert.equal(pairCovers.size, 1, `${slug} translations must share one cover`);
     const [cover] = pairCovers;
@@ -146,8 +192,11 @@ test('the selected articles preserve equivalent mathematics across their transla
     const zh = matter(read(`src/content/blogs/${slug}-zh.md`));
     const en = matter(read(`src/content/blogs/${slug}-en.md`));
     assert.deepEqual(formulas(en.content), formulas(zh.content), `${slug} translations changed the mathematics`);
-    assert.equal(en.data.publishedAt, zh.data.publishedAt);
-    assert.equal(en.data.updatedAt, zh.data.updatedAt);
+    assert.equal(siteInstant(en.data.publishedAt), siteInstant(zh.data.publishedAt));
+    assert.equal(
+      en.data.updatedAt === undefined ? undefined : siteInstant(en.data.updatedAt),
+      zh.data.updatedAt === undefined ? undefined : siteInstant(zh.data.updatedAt),
+    );
     assert.equal(en.data.cover, zh.data.cover);
     assert.ok(zh.content.length > 1000 && en.content.length > 1000, `${slug} must contain complete essays`);
   }
@@ -174,10 +223,9 @@ test('responsive media URLs include generated bytes in their cache revision', ()
   }
 });
 
-test('Inspirations titles use the agreed reflective form in both languages', () => {
-  for (const filename of readdirSync(blogRoot).filter((name) => /\.md$/.test(name))) {
-    const { data } = matter(readFileSync(join(blogRoot, filename), 'utf8'));
-    if (data.category !== 'inspirations') continue;
+test('the established Inspirations titles use the agreed reflective form in both languages', () => {
+  for (const { data } of blogs()) {
+    if (!ESTABLISHED.has(data.routeSlug) || data.category !== 'inspirations') continue;
     if (data.language === 'zh') assert.match(data.title, /^关于.+的一些想法$/);
     else assert.match(data.title, /^Some Thoughts on /);
   }

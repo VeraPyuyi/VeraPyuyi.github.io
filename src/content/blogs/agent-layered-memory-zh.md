@@ -1,8 +1,8 @@
 ---
 title: 关于 Agent 分层记忆架构的一些想法
 summary: 从分层记忆系统出发，思考 Agent 如何区分事实、经历和操作经验，并在有限上下文中决定何时记住、读取、更新与遗忘。
-publishedAt: "2026-10-22T10:36:51Z"
-updatedAt: "2026-10-30T14:34:14Z"
+publishedAt: "2026-10-22 18:36:51"
+updatedAt: "2026-10-30 22:34:14"
 language: zh
 translationKey: agent-layered-memory
 routeSlug: agent-layered-memory

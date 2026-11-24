@@ -1,8 +1,8 @@
 ---
 title: Some Thoughts on Layered Memory Architectures for Agents
 summary: A reflection on separating facts, experiences and procedures, then deciding what an agent should store, retrieve, revise or forget under a finite context budget.
-publishedAt: "2026-10-22T10:36:51Z"
-updatedAt: "2026-10-30T14:34:14Z"
+publishedAt: "2026-10-22 18:36:51"
+updatedAt: "2026-10-30 22:34:14"
 language: en
 translationKey: agent-layered-memory
 routeSlug: agent-layered-memory
