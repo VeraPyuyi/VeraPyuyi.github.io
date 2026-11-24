@@ -87,7 +87,7 @@
     0 0 10px color-mix(in srgb, var(--star) 60%, transparent);
   content: '';
   opacity: 0;
-  animation: flight-ping 1.3s ease-out calc(0.35s + var(--delay, 0s) * 0.3) 2;
+  animation: flight-ping 1.6s ease-out calc(0.35s + var(--delay, 0s) * 0.3) 1;
 }
 
 @keyframes flight-ping {
