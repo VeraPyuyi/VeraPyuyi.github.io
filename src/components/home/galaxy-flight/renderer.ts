@@ -28,6 +28,12 @@ export interface ParticleLayer {
   soft: readonly [number, number];
   /** 0–1: draw stars as sharp points with faint diffraction spikes (the background sky). */
   spikes?: number;
+  /**
+   * Distance from the camera. Layers nearer than the black hole are drawn over it after it is
+   * lensed, so a galaxy in front shines across the hole instead of being swallowed by it;
+   * layers without a depth (the background sky) are always behind.
+   */
+  depth?: number;
 }
 
 export interface FrameInput {
@@ -301,41 +307,54 @@ export function createGalaxyRenderer(canvas: HTMLCanvasElement): GalaxyRenderer 
 
     render(frame) {
       if (!scene || gl.isContextLost()) return;
+      const sceneHeight = scene.height;
       gl.bindFramebuffer(gl.FRAMEBUFFER, scene.framebuffer);
       gl.viewport(0, 0, scene.width, scene.height);
       gl.useProgram(sky.program);
       gl.bindVertexArray(emptyVao);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-      gl.enable(gl.BLEND);
-      gl.useProgram(particles.program);
-      const u = particles.uniform;
-      gl.uniformMatrix4fv(u('u_view'), false, frame.view);
-      gl.uniformMatrix4fv(u('u_projection'), false, frame.projection);
-      gl.uniform1f(u('u_time'), frame.time);
-      gl.uniform1f(u('u_pixels'), scene.height / (2 * Math.tan(frame.fieldOfView / 2)));
-      gl.uniform2f(u('u_sizeRange'), Math.max(1, ratio), Math.min(maxPoint, 64 * ratio));
-      for (const layer of frame.layers) {
-        const mesh = meshes.get(layer.mesh);
-        if (!mesh || layer.alpha <= 0.001) continue;
-        if (layer.dust) gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_COLOR);
-        else gl.blendFunc(gl.ONE, gl.ONE);
-        gl.uniformMatrix4fv(u('u_model'), false, layer.model);
-        gl.uniform1f(u('u_scale'), layer.modelScale);
-        gl.uniform1f(u('u_spin'), layer.spin);
-        gl.uniform1f(u('u_wobble'), layer.wobble);
-        gl.uniform1f(u('u_alpha'), layer.alpha);
-        gl.uniform2f(u('u_soft'), layer.soft[0], layer.soft[1]);
-        gl.uniform1f(u('u_spikes'), layer.spikes ?? 0);
-        gl.bindVertexArray(mesh.vao);
-        gl.drawArrays(gl.POINTS, 0, Math.floor(mesh.count * detail));
-      }
-      gl.disable(gl.BLEND);
+      const drawLayers = (layers: readonly ParticleLayer[]) => {
+        if (layers.length === 0) return;
+        gl.enable(gl.BLEND);
+        gl.useProgram(particles.program);
+        const u = particles.uniform;
+        gl.uniformMatrix4fv(u('u_view'), false, frame.view);
+        gl.uniformMatrix4fv(u('u_projection'), false, frame.projection);
+        gl.uniform1f(u('u_time'), frame.time);
+        gl.uniform1f(u('u_pixels'), sceneHeight / (2 * Math.tan(frame.fieldOfView / 2)));
+        gl.uniform2f(u('u_sizeRange'), Math.max(1, ratio), Math.min(maxPoint, 64 * ratio));
+        for (const layer of layers) {
+          const mesh = meshes.get(layer.mesh);
+          if (!mesh || layer.alpha <= 0.001) continue;
+          if (layer.dust) gl.blendFunc(gl.ZERO, gl.ONE_MINUS_SRC_COLOR);
+          else gl.blendFunc(gl.ONE, gl.ONE);
+          gl.uniformMatrix4fv(u('u_model'), false, layer.model);
+          gl.uniform1f(u('u_scale'), layer.modelScale);
+          gl.uniform1f(u('u_spin'), layer.spin);
+          gl.uniform1f(u('u_wobble'), layer.wobble);
+          gl.uniform1f(u('u_alpha'), layer.alpha);
+          gl.uniform2f(u('u_soft'), layer.soft[0], layer.soft[1]);
+          gl.uniform1f(u('u_spikes'), layer.spikes ?? 0);
+          gl.bindVertexArray(mesh.vao);
+          gl.drawArrays(gl.POINTS, 0, Math.floor(mesh.count * detail));
+        }
+        gl.disable(gl.BLEND);
+      };
 
-      // The black hole bends everything already drawn; the lensed copy replaces the scene from here on.
+      const hole = frame.blackHole && blackHolePass && lensed ? frame.blackHole : null;
+      const holeDepth = hole?.depth ?? Number.POSITIVE_INFINITY;
+      const inFront = (layer: ParticleLayer) => layer.depth !== undefined && layer.depth < holeDepth;
+      drawLayers(hole ? frame.layers.filter((layer) => !inFront(layer)) : frame.layers);
+
+      // The black hole bends everything behind it; the lensed copy replaces the scene from here on,
+      // and whatever lies in front of the hole is drawn over it, unbent.
       let lit = scene;
-      if (frame.blackHole && blackHolePass && lensed) {
-        blackHolePass.draw(scene, lensed, frame.blackHole, emptyVao);
+      if (hole && blackHolePass && lensed) {
+        blackHolePass.draw(scene, lensed, hole, emptyVao);
         lit = lensed;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, lensed.framebuffer);
+        gl.viewport(0, 0, lensed.width, lensed.height);
+        drawLayers(frame.layers.filter(inFront));
       }
 
       // Bloom: threshold and halve down the chain, then add each level back up.
