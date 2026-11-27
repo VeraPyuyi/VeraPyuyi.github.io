@@ -11,6 +11,7 @@ import { localizedPath } from '@/i18n';
 import { getBlogArticles } from '@/lib/blogs';
 import { displayDate } from '@/lib/date';
 import { type GalaxyItem, type GalaxyKind, placeGalaxyItems } from '@/lib/galaxy';
+import { TELEGRAMS_SHOWN, toTelegrams } from '@/lib/news';
 import { getPapers } from '@/lib/papers';
 // Story styles first, so the phone overrides in galaxy-flight.css win.
 import '@/styles/components/galaxy-flight-story.css';
@@ -28,6 +29,18 @@ const en = locale === 'en';
 const blogs = await getBlogArticles(locale);
 const papers = getPapers();
 const albums = (await getCollection('albums')).filter((entry) => entry.data.language === 'zh' || entry.data.language === locale);
+/** News: the newest few telegrams, each with a nova in the opening sky (see `@/lib/news`). */
+const telegrams = toTelegrams(
+  (await getCollection('news')).map((entry) => ({ id: entry.id, ...entry.data })),
+  locale,
+)
+  .slice(0, TELEGRAMS_SHOWN)
+  .map((telegram) => ({
+    ...telegram,
+    href: telegram.href?.startsWith('/') ? localizedPath(telegram.href, locale) : telegram.href,
+  }));
+const NOVA_COLOR = '#fff1d0';
+const telegramHead = (number: number, date: Date) => `ATel #${number} · ${displayDate.date(date)}`;
 const moments = (await getCollection('moments')).filter(
   (entry) => !entry.data.draft && (entry.data.language === 'zh' || entry.data.language === locale),
 );
@@ -276,6 +289,33 @@ const starPath =
         )
       }
       {
+        telegrams.map((telegram, order) => {
+          const Nova = telegram.href ? 'a' : 'span';
+          return (
+            <Nova
+              class="flight-star flight-nova"
+              href={telegram.href}
+              target={telegram.external ? '_blank' : undefined}
+              rel={telegram.external ? 'noopener noreferrer' : undefined}
+              tabindex={telegram.href ? undefined : 0}
+              style={`--star:${NOVA_COLOR};--delay:${order * 0.9}s`}
+              data-nova
+              data-star-id={telegram.starId}
+              data-posted={telegram.date.toISOString()}
+              aria-label={`${telegramHead(telegram.number, telegram.date)}${en ? ': ' : '：'}${telegram.text}`}
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d={starPath} />
+              </svg>
+              <span class="flight-star-tip" aria-hidden="true">
+                <span class="flight-star-tip-kind">{telegramHead(telegram.number, telegram.date)}</span>
+                <span class="flight-star-tip-title">{telegram.text}</span>
+              </span>
+            </Nova>
+          );
+        })
+      }
+      {
         orbitLinks.map((link, order) => (
           <a
             class="flight-star flight-orbit"
@@ -419,6 +459,45 @@ const starPath =
           </a>
         </aside>
       ))
+    }
+
+    {
+      telegrams.length > 0 && (
+        <aside
+          class="flight-log flight-telegrams"
+          data-telegrams
+          style={`--accent:${NOVA_COLOR}`}
+          aria-label={en ? 'News: telegrams' : '近况：电报'}
+        >
+          <p class="flight-log-head">
+            <span class="flight-log-title font-display">{en ? 'Telegrams' : '电报'}</span>
+            <span class="flight-log-sub">{en ? 'new stars tonight' : '今夜新星'}</span>
+          </p>
+          <ol class="flight-log-list">
+            {telegrams.map((telegram) => {
+              const Row = telegram.href ? 'a' : 'p';
+              return (
+                <li>
+                  <Row
+                    class="flight-log-row"
+                    href={telegram.href}
+                    target={telegram.external ? '_blank' : undefined}
+                    rel={telegram.external ? 'noopener noreferrer' : undefined}
+                    style={`--star:${NOVA_COLOR}`}
+                    data-log-star={telegram.starId}
+                  >
+                    <time datetime={telegram.date.toISOString()}>{displayDate.date(telegram.date)}</time>
+                    <span class="flight-log-name">
+                      <span class="flight-telegram-no">ATel #{telegram.number}</span>
+                      {telegram.text}
+                    </span>
+                  </Row>
+                </li>
+              );
+            })}
+          </ol>
+        </aside>
+      )
     }
 
     <svg class="flight-leader" aria-hidden="true"><path data-flight-leader d=""></path></svg>

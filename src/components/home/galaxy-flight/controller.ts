@@ -24,6 +24,7 @@ import { createCatalogue } from './catalogue';
 import { horizonAlpha, horizonBoost } from './horizon';
 import { createStarHints } from './star-hints';
 import { createFrameGuard } from './frame-guard';
+import { createNovae } from './novae';
 import { createOverscrollPull } from './overscroll';
 import { paintIntro } from './intro';
 import { loadModels } from './model-loader';
@@ -107,6 +108,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   const overscroll = createOverscrollPull();
   const hints = createStarHints();
   const catalogue = createCatalogue(root);
+  const novae = createNovae(root);
   const galaxies: GalaxyState[] = GALAXY_PLACEMENTS.map((placement) => ({
     matrix: galaxyModelMatrix(placement),
     drift: galaxyDrift(0, 0),
@@ -373,6 +375,13 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
       hints.place(star.element, point.x, point.y, width, height, scale);
       catalogue.place(star.element, point.x, point.y, opacity > 0.3);
     }
+    novae.update(
+      { viewProjection, eye: camera.eye, width, height, progress, warp: Boolean(warp) },
+      (element, x, y, showing) => {
+        hints.place(element, x, y, width, height, 1);
+        catalogue.place(element, x, y, showing);
+      },
+    );
     const settled = Math.round(progress);
     // Ring the stars once the galaxy itself is showing (the black hole stop has no galaxy model).
     if (!warp && !prefersStill() && Math.abs(progress - settled) < 0.06 && galaxies[settled]?.readyAt !== null)

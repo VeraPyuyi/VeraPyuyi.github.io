@@ -47,6 +47,23 @@ content:
         description: 数学公式用 $…$ 或 $$…$$
         options: { format: markdown }
 
+  - name: news
+    label: 新闻（首页电报）
+    type: collection
+    path: src/content/news
+    filename: "{year}-{month}-{day}-{hour}-{minute}.md"
+    view:
+      fields: [text, date, draft]
+      primary: text
+      sort: [date]
+      default: { sort: date, order: desc }
+    fields:
+      - { name: date, label: 时间, type: date, required: true, description: 北京时间；新星会从这一刻起慢慢变暗, options: { time: true, format: "yyyy-MM-dd HH:mm:ss" } }
+      - { name: text, label: 内容, type: string, required: true, description: 一句话，像一则电报 }
+      - { name: textEn, label: 英文内容（可选）, type: string, description: 留空时英文页显示中文 }
+      - { name: href, label: 链接（可选）, type: string, description: 站外链接写完整网址；站内写路径，例如 /papers/xxx }
+      - { name: draft, label: 草稿, type: boolean }
+
   - name: moments
     label: 生活动态
     type: collection

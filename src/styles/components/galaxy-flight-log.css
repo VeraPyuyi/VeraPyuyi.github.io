@@ -187,3 +187,59 @@
     font-size: 0.8rem;
   }
 }
+
+/* ---- News: telegrams in the bottom-right corner of the opening view (galaxy-flight/novae.ts) ---- */
+.flight-telegrams {
+  right: clamp(1.5rem, 6vw, 6rem);
+  left: auto;
+  width: min(22rem, 30vw);
+}
+
+.flight-telegram-no {
+  margin-right: 0.5rem;
+  color: color-mix(in srgb, var(--star) 80%, white);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+
+/* A telegram is a sentence, not a title: let it wrap to a second line before it is cut. */
+.flight-telegrams .flight-log-name {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* A telegram without a link is still a row that points at its nova. */
+p.flight-log-row {
+  margin: 0;
+  cursor: default;
+}
+
+@media (max-width: 768px) {
+  /* On a phone: the newest telegram alone, just under the title. */
+  .flight-telegrams {
+    top: 13.25rem;
+    right: 4.75rem;
+    bottom: auto;
+    left: 1.25rem;
+    width: auto;
+  }
+
+  .flight-telegrams .flight-log-head {
+    display: none;
+  }
+
+  .flight-telegrams .flight-log-list li:nth-child(n + 2) {
+    display: none;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 769px) {
+  /* Short screens: two telegrams, so the corner stays clear of the galaxy index above it. */
+  .flight-telegrams .flight-log-list li:nth-child(n + 3) {
+    display: none;
+  }
+}
