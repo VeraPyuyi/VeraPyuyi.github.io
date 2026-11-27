@@ -28,8 +28,7 @@ export function createCatalogue(root: HTMLElement): Catalogue {
   const rows = new Map<string, HTMLElement>();
   for (const row of root.querySelectorAll<HTMLElement>('[data-log-star]')) rows.set(row.dataset.logStar ?? '', row);
   const starsById = new Map<string, HTMLElement>();
-  for (const star of root.querySelectorAll<HTMLElement>('[data-flight-star][data-star-id]'))
-    starsById.set(star.dataset.starId ?? '', star);
+  for (const star of root.querySelectorAll<HTMLElement>('[data-star-id]')) starsById.set(star.dataset.starId ?? '', star);
 
   /** The row being pointed at, and its star. */
   let pointedRow: HTMLElement | null = null;
@@ -61,8 +60,8 @@ export function createCatalogue(root: HTMLElement): Catalogue {
   const onOver = (event: Event) => {
     const target = event.target as Element | null;
     point(target?.closest<HTMLElement>('[data-log-star]') ?? null);
-    echo(target?.closest<HTMLElement>('[data-flight-star][data-star-id]') ?? null);
-    root.classList.toggle('is-reading', Boolean(target?.closest('[data-flight-log]')));
+    echo(target?.closest<HTMLElement>('[data-star-id]') ?? null);
+    root.classList.toggle('is-reading', Boolean(target?.closest('[data-flight-log], [data-telegrams]')));
   };
   const onLeave = () => {
     point(null);
@@ -84,9 +83,12 @@ export function createCatalogue(root: HTMLElement): Catalogue {
       }
       const box = stage.getBoundingClientRect();
       const from = pointedRow.getBoundingClientRect();
-      const startX = from.right - box.left + 6;
+      // Out of the row's far side from the star: the right edge for the catalogues on the left, the
+      // left edge for the telegrams in the bottom-right corner, whose novae are up and to their left.
+      const leftward = x < from.left - box.left;
+      const startX = leftward ? from.left - box.left - 6 : from.right - box.left + 6;
       const startY = from.top + from.height / 2 - box.top;
-      const turn = startX + (x > startX ? ELBOW : -ELBOW);
+      const turn = startX + (leftward || x < startX ? -ELBOW : ELBOW);
       leader.setAttribute('d', `M${startX.toFixed(1)} ${startY.toFixed(1)}H${turn.toFixed(1)}L${x.toFixed(1)} ${y.toFixed(1)}`);
     },
     update(progress, revealed, warp) {

@@ -111,3 +111,43 @@
     transition-duration: 0.01s;
   }
 }
+
+/* ---- Novae: the news (galaxy-flight/novae.ts) ----
+   --glow is 1 when the news is fresh and falls to about 0.2 over a few weeks: a fresh nova is
+   larger, brighter and breathes; a faded one is an ordinary star again. */
+.flight-nova svg {
+  width: calc(0.8rem + 0.7rem * var(--glow, 1));
+  height: calc(0.8rem + 0.7rem * var(--glow, 1));
+  opacity: calc(0.45 + 0.55 * var(--glow, 1));
+  filter: drop-shadow(0 0 calc(3px + 7px * var(--glow, 1)) var(--star))
+    drop-shadow(0 0 calc(6px + 22px * var(--glow, 1)) color-mix(in srgb, var(--star) 65%, transparent));
+  animation: flight-nova-breathe 4.6s ease-in-out var(--delay, 0s) infinite;
+}
+
+/* A soft halo whose size follows the glow. */
+.flight-nova::before {
+  position: absolute;
+  inset: calc(0.6rem - 0.9rem * var(--glow, 1));
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--star) 32%, transparent), transparent 68%);
+  content: '';
+  opacity: calc(0.25 + 0.75 * var(--glow, 1));
+  pointer-events: none;
+}
+
+@keyframes flight-nova-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(calc(1 + 0.18 * var(--glow, 1)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flight-nova svg {
+    animation: none;
+  }
+}

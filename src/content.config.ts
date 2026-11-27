@@ -101,8 +101,21 @@ const albumCollection = defineCollection({
   }),
 });
 
+/** One-line news for the homepage: a numbered telegram and a nova in the opening sky (see `@/lib/news`). */
+const newsCollection = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/news' }),
+  schema: z.object({
+    date: dateInSiteTimezone,
+    text: z.string().trim().min(1),
+    textEn: z.string().optional(),
+    href: z.string().optional(),
+    draft: z.boolean().default(false),
+  }),
+});
+
 export const collections = {
   blogs: blogArticleCollection,
   moments: momentCollection,
   albums: albumCollection,
+  news: newsCollection,
 };
