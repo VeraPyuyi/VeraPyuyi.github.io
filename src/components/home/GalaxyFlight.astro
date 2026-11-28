@@ -203,8 +203,20 @@ const hole = {
   accent: '#ffcf8a',
 };
 
+interface OrbitLink {
+  key: string;
+  label: string;
+  href: string;
+  icon: string;
+  external: boolean;
+  /** Opens the booking card instead of following the link. */
+  booking?: boolean;
+  /** Shown in the hover card in place of the link's host. */
+  note?: string;
+}
+
 /** Links that orbit the black hole: social profiles first, then a few doors inside the site. */
-const orbitLinks = [
+const orbitLinks: OrbitLink[] = [
   ...Object.entries(socialConfig).map(([key, link]) => ({
     key,
     label: (link.label ?? key).replace(/\s*\(.*\)|\s*@\S+/g, ''),
