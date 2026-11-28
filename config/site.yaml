@@ -287,7 +287,7 @@ content:
 # 短链接 https://calendar.app.google/… 只能在新窗口打开。留空则不显示。
 # =============================================================================
 booking:
-  url: ''
+  url: https://calendar.google.com/calendar/appointments/schedules/AcZssZ206vKLzR292IGkhQcoVKEGTLhc5hwvEn3Zmb8PrVS3Y2h2NpSwuhSwJAaR680QqzWH1mWqDIt9
   timezone: Asia/Taipei # 你所在的时区，与访客的当地时间并排显示
 
 # =============================================================================
