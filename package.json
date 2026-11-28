@@ -35,7 +35,7 @@
     "migrate": "pnpm koharu migrate",
     "save-slugs": "tsx scripts/save-slugs.ts",
     "test": "pnpm test:config && pnpm test:about && pnpm test:analytics && pnpm test:markdown && pnpm test:toc && pnpm test:migrate && pnpm test:moments && pnpm test:papers && pnpm test:blogs && pnpm test:bgm && pnpm test:giscus && pnpm test:waline && pnpm test:galaxy && pnpm test:friends",
-    "test:config": "tsx --test src/lib/config/content.test.ts",
+    "test:config": "tsx --test src/lib/config/content.test.ts src/lib/config/booking.test.ts",
     "test:about": "tsx --test tests/about/*.test.ts",
     "test:analytics": "tsx --test tests/analytics/*.test.ts",
     "test:markdown": "tsx --test src/lib/markdown/*.test.ts",

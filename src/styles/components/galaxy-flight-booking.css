@@ -1,0 +1,165 @@
+/* "约一次会合": the booking card opened from the black hole's orbit (galaxy-flight/booking.ts).
+   Styled as an observing-time request: a dark card, a round-cornered eyepiece holding Google's
+   booking page, and the two skies (the visitor's and the owner's) on the first line. */
+
+/* The page behind stays where it is while the card is open. */
+:root:has(.flight-booking[open]) {
+  overflow: hidden;
+}
+
+/* The booking satellite carries a faint companion: two bodies about to meet. */
+.flight-orbit[data-booking] svg {
+  filter: drop-shadow(-0.55rem 0 0 rgb(184 230 254 / 0.55)) drop-shadow(0 0 6px rgb(255 207 138 / 0.8));
+}
+
+.flight-booking {
+  width: min(46rem, calc(100vw - 1.5rem));
+  max-width: none;
+  height: min(46rem, calc(100dvh - 1.5rem));
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f4efe6;
+  overflow: visible;
+}
+
+.flight-booking::backdrop {
+  background: radial-gradient(ellipse at 50% 40%, rgb(13 10 40 / 0.55), rgb(3 3 14 / 0.82));
+  backdrop-filter: blur(3px);
+}
+
+.flight-booking[open] {
+  animation: flight-booking-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.flight-booking-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1.4rem 1.5rem 1.1rem;
+  border: 1px solid rgb(255 207 138 / 0.22);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(1px 1px at 12% 18%, rgb(255 255 255 / 0.5), transparent),
+    radial-gradient(1px 1px at 78% 9%, rgb(255 255 255 / 0.4), transparent),
+    radial-gradient(1px 1px at 91% 64%, rgb(255 255 255 / 0.35), transparent),
+    radial-gradient(1px 1px at 33% 92%, rgb(255 255 255 / 0.3), transparent),
+    linear-gradient(160deg, rgb(28 22 64 / 0.96), rgb(10 9 30 / 0.97));
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.03) inset,
+    0 30px 80px rgb(0 0 0 / 0.55),
+    0 0 60px rgb(255 190 110 / 0.08);
+}
+
+.flight-booking-head {
+  position: relative;
+  padding-right: 2.5rem;
+}
+
+.flight-booking-kicker {
+  margin: 0;
+  color: #ffcf8a;
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+}
+
+.flight-booking-title {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.3rem, 3.2vw, 1.75rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.flight-booking-skies {
+  min-height: 1.4em;
+  margin: 0.55rem 0 0;
+  color: rgb(244 239 230 / 0.72);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+
+.flight-booking-close {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.3rem;
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.04);
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.flight-booking-close:hover,
+.flight-booking-close:focus-visible {
+  border-color: rgb(255 207 138 / 0.5);
+  background: rgb(255 207 138 / 0.12);
+  outline: none;
+}
+
+/* The eyepiece: Google's page is light, so it sits in a soft dark rim rather than edge to edge. */
+.flight-booking-eyepiece {
+  flex: 1;
+  min-height: 0;
+  padding: 0.35rem;
+  border-radius: 1rem;
+  background: radial-gradient(circle at 50% 0%, rgb(255 207 138 / 0.16), rgb(255 255 255 / 0.04) 70%);
+  box-shadow: 0 0 0 1px rgb(255 207 138 / 0.18);
+}
+
+.flight-booking-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0.75rem;
+  background: #f7f5f0;
+}
+
+.flight-booking-note {
+  flex: 1;
+  margin: 0;
+  color: rgb(244 239 230 / 0.72);
+}
+
+.flight-booking-out {
+  align-self: flex-end;
+  color: rgb(244 239 230 / 0.66);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+
+.flight-booking-out:hover,
+.flight-booking-out:focus-visible {
+  color: #ffcf8a;
+}
+
+@keyframes flight-booking-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flight-booking[open] {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .flight-booking-card {
+    padding: 1.1rem 1rem 0.9rem;
+  }
+}

@@ -7,7 +7,7 @@
  */
 
 import { normalizeMomentsConfig, resolveMomentsNavigation } from '@lib/config/moments';
-import { contentConfig, enabledLocaleCodes, i18nConfig, siteConfig } from '@lib/config/site';
+import { bookingConfig, contentConfig, enabledLocaleCodes, i18nConfig, siteConfig } from '@lib/config/site';
 import type {
   AnalyticsConfig,
   BangumiConfig,
@@ -24,7 +24,7 @@ import type { UmamiStatsConfig } from '@/types/umami-stats';
 import yamlConfig from '../../config/site.yaml';
 import { DEFAULT_ROUTERS, RESERVED_ROUTES } from './router';
 
-export { contentConfig, i18nConfig, siteConfig };
+export { bookingConfig, contentConfig, i18nConfig, siteConfig };
 
 export const socialConfig: SocialConfig = yamlConfig.social ?? {};
 
