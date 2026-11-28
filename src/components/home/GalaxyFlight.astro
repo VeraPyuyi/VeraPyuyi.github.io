@@ -5,7 +5,7 @@
  * riding its galaxy's arms, ring or clumps.
  */
 import { getCollection } from 'astro:content';
-import { siteConfig, socialConfig } from '@constants/site-config';
+import { bookingConfig, siteConfig, socialConfig } from '@constants/site-config';
 import { Icon } from 'astro-icon/components';
 import { localizedPath } from '@/i18n';
 import { getBlogArticles } from '@/lib/blogs';
@@ -18,6 +18,7 @@ import '@/styles/components/galaxy-flight-story.css';
 import '@/styles/components/galaxy-flight.css';
 import '@/styles/components/galaxy-flight-stars.css';
 import '@/styles/components/galaxy-flight-log.css';
+import '@/styles/components/galaxy-flight-booking.css';
 
 interface Props {
   locale: string;
@@ -211,6 +212,20 @@ const orbitLinks = [
     icon: link.icon,
     external: /^https?:/.test(link.url),
   })),
+  // "约一次会合": opens the booking card (galaxy-flight/booking.ts); the link itself is the no-script way.
+  ...(bookingConfig
+    ? [
+        {
+          key: 'booking',
+          label: en ? 'Book a conjunction' : '约一次会合',
+          href: bookingConfig.url,
+          icon: 'ri:calendar-event-line',
+          external: true,
+          booking: true,
+          note: en ? 'pick a time' : '预约时间',
+        },
+      ]
+    : []),
   {
     key: 'guestbook',
     label: en ? 'Guestbook' : '留言板',
@@ -329,8 +344,12 @@ const starPath =
             data-v="0"
             data-orbit={((order / orbitLinks.length) * Math.PI * 2).toFixed(4)}
             data-title={link.label}
-            data-date={link.external ? new URL(link.href).hostname.replace(/^www\./, '') : en ? 'on this site' : '站内'}
+            data-date={
+              link.note ?? (link.external ? new URL(link.href).hostname.replace(/^www\./, '') : en ? 'on this site' : '站内')
+            }
             data-kind={en ? 'Link' : '链接'}
+            data-booking={link.booking ? '' : undefined}
+            aria-haspopup={link.booking ? 'dialog' : undefined}
           >
             <Icon name={link.icon} aria-hidden="true" />
             <span class="flight-orbit-name">{link.label}</span>
@@ -540,6 +559,48 @@ const starPath =
     </p>
   </div>
 </section>
+
+{
+  bookingConfig && (
+    <dialog
+      class="flight-booking"
+      data-booking-dialog
+      data-timezone={bookingConfig.timezone}
+      aria-labelledby="flight-booking-title"
+      data-pagefind-ignore="all"
+    >
+      <div class="flight-booking-card">
+        <header class="flight-booking-head">
+          <p class="flight-booking-kicker">{en ? 'Observing time request' : '观测时间申请'}</p>
+          <h2 id="flight-booking-title" class="flight-booking-title font-display">
+            {en ? 'Pick a night that suits you' : '选一个你方便的夜晚'}
+          </h2>
+          <p class="flight-booking-skies" data-booking-skies />
+          <button type="button" class="flight-booking-close" data-booking-close aria-label={en ? 'Close' : '关闭'}>
+            <Icon name="ri:close-line" aria-hidden="true" />
+          </button>
+        </header>
+        {bookingConfig.embedUrl ? (
+          <div class="flight-booking-eyepiece">
+            <iframe
+              class="flight-booking-frame"
+              data-booking-frame
+              data-src={bookingConfig.embedUrl}
+              title={en ? 'Appointment booking (Google Calendar)' : '预约时间（Google 日历）'}
+            />
+          </div>
+        ) : (
+          <p class="flight-booking-note">
+            {en ? 'The booking page opens in a new window.' : '预约页会在新窗口打开。'}
+          </p>
+        )}
+        <a class="flight-booking-out" href={bookingConfig.url} target="_blank" rel="noopener noreferrer">
+          {en ? 'Open in a new window →' : '在新窗口打开 →'}
+        </a>
+      </div>
+    </dialog>
+  )
+}
 
 <script>
   import { mountScene, unmountScene } from '@/lib/scene-mount';

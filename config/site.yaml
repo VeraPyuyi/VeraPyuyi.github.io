@@ -281,6 +281,16 @@ content:
   enableEncryptedBlock: true    # :::encrypted{password="..."} 加密内容块
 
 # =============================================================================
+# Booking (optional)
+# 预约时间：首页黑洞旁的「约一次会合」。填入 Google 日历「预约时间表」的预约页链接即可启用：
+# 完整链接 https://calendar.google.com/calendar/appointments/schedules/… 会直接嵌在页面里；
+# 短链接 https://calendar.app.google/… 只能在新窗口打开。留空则不显示。
+# =============================================================================
+booking:
+  url: ''
+  timezone: Asia/Taipei # 你所在的时区，与访客的当地时间并排显示
+
+# =============================================================================
 # Moments Archive (optional)
 # 碎碎念动态归档 - 默认关闭；启用时还需配置 KOHARU_SUITE_URL 和 dynamic Docker target
 # =============================================================================

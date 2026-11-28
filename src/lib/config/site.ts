@@ -9,6 +9,7 @@
 
 import yamlConfig from '../../../config/site.yaml';
 import { DEFAULT_TIMEZONE, isValidTimezone } from '../timezone';
+import { normalizeBookingConfig, type ResolvedBookingConfig } from './booking';
 import { normalizeContentConfig } from './content';
 import type { I18nConfig, ResolvedContentConfig, ResolvedSiteConfig } from './types';
 
@@ -22,6 +23,9 @@ export const enabledLocaleCodes = i18nConfig.locales.flatMap((locale) => (locale
 
 /** Content processing flags with field-level defaults applied. */
 export const contentConfig: ResolvedContentConfig = normalizeContentConfig(yamlConfig.content);
+
+/** Appointment booking on the homepage, or null when `booking.url` is not set. */
+export const bookingConfig: ResolvedBookingConfig | null = normalizeBookingConfig(yamlConfig.booking);
 
 /**
  * Site timezone in IANA format.

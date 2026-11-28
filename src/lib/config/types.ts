@@ -4,6 +4,8 @@
  * These types match the structure of config/site.yaml
  */
 
+import type { BookingConfigInput } from './booking';
+
 // =============================================================================
 // Site Basic Configuration
 // =============================================================================
@@ -628,4 +630,6 @@ export interface SiteYamlConfig {
   dev?: DevConfig;
   /** Internationalization configuration */
   i18n?: I18nConfig;
+  /** Google Calendar appointment schedule booked from the homepage black hole ("约一次会合") */
+  booking?: BookingConfigInput;
 }

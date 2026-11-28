@@ -20,6 +20,7 @@ import {
 import { blackHoleFrame, invert } from '@/lib/galaxy-flight/black-hole';
 import type { Vec3 } from '@/lib/galaxy-flight/scene';
 import { resolveDeepLink } from './deep-link';
+import { createBooking } from './booking';
 import { createCatalogue } from './catalogue';
 import { horizonAlpha, horizonBoost } from './horizon';
 import { createStarHints } from './star-hints';
@@ -108,6 +109,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   const overscroll = createOverscrollPull();
   const hints = createStarHints();
   const catalogue = createCatalogue(root);
+  const stopBooking = createBooking(root);
   const novae = createNovae(root);
   const galaxies: GalaxyState[] = GALAXY_PLACEMENTS.map((placement) => ({
     matrix: galaxyModelMatrix(placement),
@@ -505,7 +507,8 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
   };
 
   const onKey = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') revealed = -1;
+    // Escape inside the booking card only closes the card, not the story behind it.
+    if (event.key === 'Escape' && !document.querySelector('dialog[open]')) revealed = -1;
   };
   window.addEventListener('keydown', onKey);
   // Arriving from "find it in the sky" on a post: fly to its galaxy, open the story, light the star.
@@ -544,6 +547,7 @@ export function mountGalaxyFlight(root: HTMLElement): () => void {
     models?.stop();
     resizeObserver.disconnect();
     window.removeEventListener('keydown', onKey);
+    stopBooking();
     stage.removeEventListener('pointermove', onPointerMove);
     stage.removeEventListener('pointerleave', onPointerLeave);
     root.removeEventListener('pointerover', onStarEnter);
